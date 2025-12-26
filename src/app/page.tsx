@@ -1,3 +1,4 @@
+console.log('NEW PAGE LOADED');
 'use client';
 
 import { useEffect, useState } from 'react';
