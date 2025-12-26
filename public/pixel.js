@@ -1,7 +1,6 @@
 (function(window, document) {
   'use strict';
 
-  // Configuration
   var BP = window._bp || [];
   var apiKey = null;
   var endpoint = null;
@@ -9,7 +8,6 @@
   var sessionId = null;
   var initialized = false;
 
-  // Generate unique ID
   function generateId() {
     return 'xxxxxxxx-xxxx-4xxx-yxxx-xxxxxxxxxxxx'.replace(/[xy]/g, function(c) {
       var r = Math.random() * 16 | 0;
@@ -18,47 +16,55 @@
     });
   }
 
-  // Get or create anonymous ID
   function getAnonymousId() {
-    var stored = localStorage.getItem('_bp_aid');
-    if (stored) return stored;
-    var id = generateId();
-    localStorage.setItem('_bp_aid', id);
-    return id;
-  }
-
-  // Get or create session ID (expires after 30 min of inactivity)
-  function getSessionId() {
-    var stored = sessionStorage.getItem('_bp_sid');
-    var lastActivity = sessionStorage.getItem('_bp_last');
-    var now = Date.now();
-    
-    if (stored && lastActivity && (now - parseInt(lastActivity)) < 30 * 60 * 1000) {
-      sessionStorage.setItem('_bp_last', now.toString());
-      return stored;
+    try {
+      var stored = localStorage.getItem('_bp_aid');
+      if (stored) return stored;
+      var id = generateId();
+      localStorage.setItem('_bp_aid', id);
+      return id;
+    } catch (e) {
+      return generateId();
     }
-    
-    var id = generateId();
-    sessionStorage.setItem('_bp_sid', id);
-    sessionStorage.setItem('_bp_last', now.toString());
-    return id;
   }
 
-  // Get UTM parameters
+  function getSessionId() {
+    try {
+      var stored = sessionStorage.getItem('_bp_sid');
+      var lastActivity = sessionStorage.getItem('_bp_last');
+      var now = Date.now();
+      
+      if (stored && lastActivity && (now - parseInt(lastActivity)) < 30 * 60 * 1000) {
+        sessionStorage.setItem('_bp_last', now.toString());
+        return stored;
+      }
+      
+      var id = generateId();
+      sessionStorage.setItem('_bp_sid', id);
+      sessionStorage.setItem('_bp_last', now.toString());
+      return id;
+    } catch (e) {
+      return generateId();
+    }
+  }
+
   function getUTMParams() {
-    var params = new URLSearchParams(window.location.search);
-    return {
-      utmSource: params.get('utm_source'),
-      utmMedium: params.get('utm_medium'),
-      utmCampaign: params.get('utm_campaign'),
-      utmTerm: params.get('utm_term'),
-      utmContent: params.get('utm_content')
-    };
+    try {
+      var params = new URLSearchParams(window.location.search);
+      return {
+        utmSource: params.get('utm_source'),
+        utmMedium: params.get('utm_medium'),
+        utmCampaign: params.get('utm_campaign'),
+        utmTerm: params.get('utm_term'),
+        utmContent: params.get('utm_content')
+      };
+    } catch (e) {
+      return {};
+    }
   }
 
-  // Send event to server
   function sendEvent(eventType, properties) {
-    if (!initialized || !apiKey) {
+    if (!initialized || !apiKey || !endpoint) {
       console.warn('[Boopin] Pixel not initialized');
       return;
     }
@@ -81,58 +87,31 @@
       utmContent: utm.utmContent
     };
 
-    // Use sendBeacon if available (more reliable for page unload)
-    if (navigator.sendBeacon && eventType === 'page_view') {
-      var blob = new Blob([JSON.stringify(payload)], { type: 'application/json' });
-      navigator.sendBeacon(endpoint, blob);
-    } else {
-      fetch(endpoint, {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-          'X-API-Key': apiKey
-        },
-        body: JSON.stringify(payload),
-        keepalive: true
-      }).catch(function(err) {
-        console.error('[Boopin] Failed to send event:', err);
-      });
-    }
-  }
-
-  // Track page view
-  function trackPageView() {
-    var startTime = Date.now();
-    var maxScroll = 0;
-
-    // Track scroll depth
-    function updateScroll() {
-      var scrollTop = window.pageYOffset || document.documentElement.scrollTop;
-      var docHeight = document.documentElement.scrollHeight - window.innerHeight;
-      var scrollPercent = docHeight > 0 ? Math.round((scrollTop / docHeight) * 100) : 0;
-      if (scrollPercent > maxScroll) maxScroll = scrollPercent;
-    }
-    window.addEventListener('scroll', updateScroll);
-
-    // Send page view
-    sendEvent('page_view', {});
-
-    // Send time on page and scroll depth when leaving
-    window.addEventListener('beforeunload', function() {
-      var timeOnPage = Math.round((Date.now() - startTime) / 1000);
-      sendEvent('page_leave', {
-        time_on_page: timeOnPage,
-        scroll_depth: maxScroll
-      });
+    fetch(endpoint, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        'X-API-Key': apiKey
+      },
+      body: JSON.stringify(payload),
+      mode: 'cors'
+    }).then(function(response) {
+      if (!response.ok) {
+        console.error('[Boopin] Track failed:', response.status);
+      }
+    }).catch(function(err) {
+      console.error('[Boopin] Failed to send event:', err);
     });
   }
 
-  // Track clicks
+  function trackPageView() {
+    sendEvent('page_view', {});
+  }
+
   function trackClicks() {
     document.addEventListener('click', function(e) {
       var target = e.target;
       
-      // Find clickable parent
       while (target && target !== document) {
         if (target.tagName === 'A' || target.tagName === 'BUTTON' || target.onclick) {
           break;
@@ -146,15 +125,13 @@
         element: target.tagName.toLowerCase(),
         text: (target.innerText || '').substring(0, 100),
         href: target.href || null,
-        id: target.id || null,
-        class: target.className || null
+        id: target.id || null
       };
 
       sendEvent('click', props);
     });
   }
 
-  // Track form submissions
   function trackForms() {
     document.addEventListener('submit', function(e) {
       var form = e.target;
@@ -163,17 +140,13 @@
       var props = {
         form_id: form.id || null,
         form_name: form.name || null,
-        form_action: form.action || null,
-        fields: Array.from(form.elements)
-          .filter(function(el) { return el.name; })
-          .map(function(el) { return el.name; })
+        form_action: form.action || null
       };
 
       sendEvent('form_submit', props);
     });
   }
 
-  // Public methods
   window.boopin = {
     track: function(eventType, properties) {
       sendEvent(eventType, properties);
@@ -186,7 +159,6 @@
     }
   };
 
-  // Process queued commands
   function processQueue() {
     for (var i = 0; i < BP.length; i++) {
       var args = BP[i];
@@ -194,24 +166,26 @@
       
       if (cmd === 'init') {
         apiKey = args[1];
-        // Determine endpoint from script URL or use default
         var scripts = document.getElementsByTagName('script');
         for (var j = 0; j < scripts.length; j++) {
           if (scripts[j].src && scripts[j].src.indexOf('pixel.js') !== -1) {
-            var url = new URL(scripts[j].src);
-            endpoint = url.origin + '/api/track';
+            try {
+              var url = new URL(scripts[j].src);
+              endpoint = url.origin + '/api/track';
+            } catch (e) {
+              endpoint = 'https://boopin-data-platform.vercel.app/api/track';
+            }
             break;
           }
         }
         if (!endpoint) {
-          endpoint = window.location.origin + '/api/track';
+          endpoint = 'https://boopin-data-platform.vercel.app/api/track';
         }
         
         anonymousId = getAnonymousId();
         sessionId = getSessionId();
         initialized = true;
         
-        // Auto-track
         trackPageView();
         trackClicks();
         trackForms();
@@ -223,7 +197,6 @@
     }
   }
 
-  // Initialize
   if (document.readyState === 'complete') {
     processQueue();
   } else {
