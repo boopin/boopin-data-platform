@@ -8,21 +8,19 @@ export async function OPTIONS() {
       'Access-Control-Allow-Origin': '*',
       'Access-Control-Allow-Methods': 'POST, OPTIONS',
       'Access-Control-Allow-Headers': 'Content-Type, X-API-Key',
+      'Access-Control-Max-Age': '86400',
     },
   });
 }
 
 export async function POST(request: NextRequest) {
-  const corsHeaders = {
-    'Access-Control-Allow-Origin': '*',
-    'Access-Control-Allow-Methods': 'POST, OPTIONS',
-    'Access-Control-Allow-Headers': 'Content-Type, X-API-Key',
-  };
-
   try {
     const apiKey = request.headers.get('X-API-Key');
     if (!apiKey) {
-      return NextResponse.json({ error: 'Missing API key' }, { status: 401, headers: corsHeaders });
+      return NextResponse.json({ error: 'Missing API key' }, { 
+        status: 401, 
+        headers: { 'Access-Control-Allow-Origin': '*' } 
+      });
     }
 
     const clientResult = await sql`
@@ -32,19 +30,28 @@ export async function POST(request: NextRequest) {
     `;
 
     if (clientResult.length === 0) {
-      return NextResponse.json({ error: 'Invalid API key' }, { status: 401, headers: corsHeaders });
+      return NextResponse.json({ error: 'Invalid API key' }, { 
+        status: 401, 
+        headers: { 'Access-Control-Allow-Origin': '*' } 
+      });
     }
 
     const client = clientResult[0];
     if (!client.is_active) {
-      return NextResponse.json({ error: 'Client is inactive' }, { status: 403, headers: corsHeaders });
+      return NextResponse.json({ error: 'Client is inactive' }, { 
+        status: 403, 
+        headers: { 'Access-Control-Allow-Origin': '*' } 
+      });
     }
 
     const body = await request.json();
     const { anonymousId, eventType, properties = {}, pageUrl, pagePath, pageTitle, referrer, userAgent, sessionId, utmSource, utmMedium, utmCampaign, utmTerm, utmContent } = body;
 
     if (!anonymousId || !eventType) {
-      return NextResponse.json({ error: 'Missing required fields' }, { status: 400, headers: corsHeaders });
+      return NextResponse.json({ error: 'Missing required fields' }, { 
+        status: 400, 
+        headers: { 'Access-Control-Allow-Origin': '*' } 
+      });
     }
 
     const ip = request.headers.get('x-forwarded-for')?.split(',')[0] || request.headers.get('x-real-ip') || null;
@@ -75,10 +82,16 @@ export async function POST(request: NextRequest) {
       }
     }
 
-    return NextResponse.json({ success: true, visitorId }, { status: 200, headers: corsHeaders });
+    return NextResponse.json({ success: true, visitorId }, { 
+      status: 200, 
+      headers: { 'Access-Control-Allow-Origin': '*' } 
+    });
 
   } catch (error) {
     console.error('Track error:', error);
-    return NextResponse.json({ error: 'Internal server error' }, { status: 500, headers: corsHeaders });
+    return NextResponse.json({ error: 'Internal server error' }, { 
+      status: 500, 
+      headers: { 'Access-Control-Allow-Origin': '*' } 
+    });
   }
 }
