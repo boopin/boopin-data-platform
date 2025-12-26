@@ -1,7 +1,7 @@
 import type { Metadata } from "next";
 
 export const metadata: Metadata = {
-  title: "Boopin Data Platform",
+  title: "Boopin Data Platform TEST 123",
   description: "1st Party Data Collection & Analytics",
 };
 
