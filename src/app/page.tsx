@@ -181,6 +181,7 @@ export default function Dashboard() {
             <nav style={{ display: 'flex', gap: '16px' }}>
               <a href="/" style={{ color: '#22d3ee', textDecoration: 'none', fontSize: '14px', fontWeight: 600 }}>Dashboard</a>
               <a href="/visitors" style={{ color: '#94a3b8', textDecoration: 'none', fontSize: '14px' }}>Visitors</a>
+              <a href="/segments" style={{ color: '#94a3b8', textDecoration: 'none', fontSize: '14px' }}>Segments</a>
             </nav>
             <div style={{ textAlign: 'right' }}>
               <p style={{ color: '#e2e8f0', margin: 0, fontSize: '14px', fontWeight: 500 }}>{currentTime.toLocaleTimeString()}</p>
