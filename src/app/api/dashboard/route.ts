@@ -1,6 +1,9 @@
 import { sql } from '../../../lib/db';
 import { NextResponse } from 'next/server';
 
+export const dynamic = 'force-dynamic';
+export const revalidate = 0;
+
 function parseUserAgent(ua: string) {
   if (!ua) return { browser: 'Unknown', os: 'Unknown' };
   
@@ -153,6 +156,12 @@ export async function GET() {
       countryBreakdown,
       cityBreakdown,
       identifiedUsers,
+    }, {
+      headers: {
+        'Cache-Control': 'no-store, no-cache, must-revalidate, proxy-revalidate',
+        'Pragma': 'no-cache',
+        'Expires': '0',
+      },
     });
   } catch (error) {
     console.error('Dashboard error:', error);
