@@ -7,7 +7,7 @@ interface Segment {
   id: string;
   name: string;
   description: string;
-  rules: object[];
+  rules: Record<string, unknown>[];
   user_count: number;
   created_at: string;
   updated_at: string;
@@ -117,9 +117,9 @@ export default function SegmentsPage() {
                     {segment.description || 'No description'}
                   </p>
                   <div style={{ display: 'flex', gap: '8px', flexWrap: 'wrap', marginBottom: '16px' }}>
-                    {segment.rules.slice(0, 3).map((rule: Record<string, unknown>, i: number) => (
+                    {segment.rules.slice(0, 3).map((rule, i) => (
                       <span key={i} style={{ background: '#0f172a', color: '#64748b', padding: '4px 8px', borderRadius: '4px', fontSize: '11px' }}>
-                        {rule.type as string}
+                        {String(rule.type || '')}
                       </span>
                     ))}
                     {segment.rules.length > 3 && (
