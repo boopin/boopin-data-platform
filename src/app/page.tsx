@@ -42,6 +42,11 @@ interface IdentifiedUser {
   visit_count: number;
 }
 
+interface Filters {
+  countries: string[];
+  eventTypes: string[];
+}
+
 export default function Dashboard() {
   const [stats, setStats] = useState<Stats | null>(null);
   const [recentEvents, setRecentEvents] = useState<RecentEvent[]>([]);
@@ -54,45 +59,88 @@ export default function Dashboard() {
   const [countryBreakdown, setCountryBreakdown] = useState<BreakdownItem[]>([]);
   const [cityBreakdown, setCityBreakdown] = useState<BreakdownItem[]>([]);
   const [identifiedUsers, setIdentifiedUsers] = useState<IdentifiedUser[]>([]);
+  const [availableFilters, setAvailableFilters] = useState<Filters>({ countries: [], eventTypes: [] });
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [currentTime, setCurrentTime] = useState(new Date());
   const [lastUpdated, setLastUpdated] = useState(new Date());
 
-  useEffect(() => {
-    async function fetchData() {
-      try {
-        const res = await fetch('/api/dashboard');
-        if (!res.ok) throw new Error('Failed to fetch');
-        const data = await res.json();
-        setStats(data.stats);
-        setRecentEvents(data.recentEvents);
-        setDeviceBreakdown(data.deviceBreakdown || []);
-        setBrowserBreakdown(data.browserBreakdown || []);
-        setOsBreakdown(data.osBreakdown || []);
-        setTopPages(data.topPages || []);
-        setEventBreakdown(data.eventBreakdown || []);
-        setTrafficSources(data.trafficSources || []);
-        setCountryBreakdown(data.countryBreakdown || []);
-        setCityBreakdown(data.cityBreakdown || []);
-        setIdentifiedUsers(data.identifiedUsers || []);
-        setLastUpdated(new Date());
-      } catch (err) {
-        setError(err instanceof Error ? err.message : 'Error');
-      } finally {
-        setLoading(false);
-      }
+  // Filter states
+  const [dateFrom, setDateFrom] = useState('');
+  const [dateTo, setDateTo] = useState('');
+  const [eventTypeFilter, setEventTypeFilter] = useState('all');
+  const [countryFilter, setCountryFilter] = useState('all');
+  const [deviceFilter, setDeviceFilter] = useState('all');
+
+  const buildQueryString = () => {
+    const params = new URLSearchParams();
+    if (dateFrom) params.set('dateFrom', dateFrom);
+    if (dateTo) params.set('dateTo', dateTo);
+    if (eventTypeFilter !== 'all') params.set('eventType', eventTypeFilter);
+    if (countryFilter !== 'all') params.set('country', countryFilter);
+    if (deviceFilter !== 'all') params.set('device', deviceFilter);
+    return params.toString();
+  };
+
+  async function fetchData() {
+    try {
+      const query = buildQueryString();
+      const res = await fetch(`/api/dashboard${query ? `?${query}` : ''}`);
+      if (!res.ok) throw new Error('Failed to fetch');
+      const data = await res.json();
+      setStats(data.stats);
+      setRecentEvents(data.recentEvents);
+      setDeviceBreakdown(data.deviceBreakdown || []);
+      setBrowserBreakdown(data.browserBreakdown || []);
+      setOsBreakdown(data.osBreakdown || []);
+      setTopPages(data.topPages || []);
+      setEventBreakdown(data.eventBreakdown || []);
+      setTrafficSources(data.trafficSources || []);
+      setCountryBreakdown(data.countryBreakdown || []);
+      setCityBreakdown(data.cityBreakdown || []);
+      setIdentifiedUsers(data.identifiedUsers || []);
+      setAvailableFilters(data.filters || { countries: [], eventTypes: [] });
+      setLastUpdated(new Date());
+    } catch (err) {
+      setError(err instanceof Error ? err.message : 'Error');
+    } finally {
+      setLoading(false);
     }
+  }
+
+  useEffect(() => {
     fetchData();
-    const dataTimer = setInterval(fetchData, 10000);
     const timeTimer = setInterval(() => setCurrentTime(new Date()), 1000);
-    return () => { clearInterval(dataTimer); clearInterval(timeTimer); };
+    return () => { clearInterval(timeTimer); };
   }, []);
+
+  useEffect(() => {
+    fetchData();
+  }, [dateFrom, dateTo, eventTypeFilter, countryFilter, deviceFilter]);
+
+  const handleExport = (type: 'events' | 'users') => {
+    const query = buildQueryString();
+    const url = `/api/export?type=${type}${query ? `&${query}` : ''}`;
+    window.open(url, '_blank');
+  };
+
+  const clearFilters = () => {
+    setDateFrom('');
+    setDateTo('');
+    setEventTypeFilter('all');
+    setCountryFilter('all');
+    setDeviceFilter('all');
+  };
 
   const formatDateTime = (timestamp: string) => {
     const date = new Date(timestamp);
     return date.toLocaleDateString('en-US', { month: 'short', day: 'numeric', hour: '2-digit', minute: '2-digit' });
   };
+
+  const selectStyle = { background: '#0f172a', color: '#e2e8f0', border: '1px solid #334155', borderRadius: '6px', padding: '8px 12px', fontSize: '13px', cursor: 'pointer' };
+  const inputStyle = { background: '#0f172a', color: '#e2e8f0', border: '1px solid #334155', borderRadius: '6px', padding: '8px 12px', fontSize: '13px' };
+  const buttonStyle = { background: 'linear-gradient(135deg, #06b6d4, #3b82f6)', color: '#fff', border: 'none', borderRadius: '6px', padding: '8px 16px', fontSize: '13px', cursor: 'pointer', fontWeight: 500 };
+  const buttonSecondaryStyle = { background: '#334155', color: '#e2e8f0', border: 'none', borderRadius: '6px', padding: '8px 16px', fontSize: '13px', cursor: 'pointer' };
 
   if (loading) {
     return (
@@ -135,6 +183,53 @@ export default function Dashboard() {
       </header>
 
       <main style={{ maxWidth: '1400px', margin: '0 auto', padding: '24px' }}>
+        {/* Filters Section */}
+        <div style={{ background: '#1e293b', borderRadius: '12px', border: '1px solid #334155', padding: '18px', marginBottom: '24px' }}>
+          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '16px' }}>
+            <h2 style={{ margin: 0, fontSize: '15px', color: '#fff', fontWeight: 600 }}>🔍 Filters & Export</h2>
+            <div style={{ display: 'flex', gap: '8px' }}>
+              <button onClick={() => handleExport('events')} style={buttonStyle}>📥 Export Events CSV</button>
+              <button onClick={() => handleExport('users')} style={buttonSecondaryStyle}>📥 Export Users CSV</button>
+            </div>
+          </div>
+          <div style={{ display: 'flex', flexWrap: 'wrap', gap: '12px', alignItems: 'center' }}>
+            <div>
+              <label style={{ color: '#94a3b8', fontSize: '11px', display: 'block', marginBottom: '4px' }}>Date From</label>
+              <input type="date" value={dateFrom} onChange={(e) => setDateFrom(e.target.value)} style={inputStyle} />
+            </div>
+            <div>
+              <label style={{ color: '#94a3b8', fontSize: '11px', display: 'block', marginBottom: '4px' }}>Date To</label>
+              <input type="date" value={dateTo} onChange={(e) => setDateTo(e.target.value)} style={inputStyle} />
+            </div>
+            <div>
+              <label style={{ color: '#94a3b8', fontSize: '11px', display: 'block', marginBottom: '4px' }}>Event Type</label>
+              <select value={eventTypeFilter} onChange={(e) => setEventTypeFilter(e.target.value)} style={selectStyle}>
+                <option value="all">All Events</option>
+                {availableFilters.eventTypes.map(et => <option key={et} value={et}>{et}</option>)}
+              </select>
+            </div>
+            <div>
+              <label style={{ color: '#94a3b8', fontSize: '11px', display: 'block', marginBottom: '4px' }}>Country</label>
+              <select value={countryFilter} onChange={(e) => setCountryFilter(e.target.value)} style={selectStyle}>
+                <option value="all">All Countries</option>
+                {availableFilters.countries.map(c => <option key={c} value={c}>{c}</option>)}
+              </select>
+            </div>
+            <div>
+              <label style={{ color: '#94a3b8', fontSize: '11px', display: 'block', marginBottom: '4px' }}>Device</label>
+              <select value={deviceFilter} onChange={(e) => setDeviceFilter(e.target.value)} style={selectStyle}>
+                <option value="all">All Devices</option>
+                <option value="desktop">Desktop</option>
+                <option value="mobile">Mobile</option>
+                <option value="tablet">Tablet</option>
+              </select>
+            </div>
+            <div style={{ alignSelf: 'flex-end' }}>
+              <button onClick={clearFilters} style={{ ...buttonSecondaryStyle, background: '#ef4444' }}>Clear Filters</button>
+            </div>
+          </div>
+        </div>
+
         {/* Stats Row */}
         <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(180px, 1fr))', gap: '16px', marginBottom: '24px' }}>
           {[
@@ -154,7 +249,7 @@ export default function Dashboard() {
           ))}
         </div>
 
-        {/* Identified Users Section */}
+        {/* Identified Users */}
         <div style={{ background: '#1e293b', borderRadius: '12px', border: '1px solid #334155', overflow: 'hidden', marginBottom: '24px' }}>
           <div style={{ padding: '14px 18px', borderBottom: '1px solid #334155', display: 'flex', justifyContent: 'space-between', background: 'linear-gradient(135deg, #059669 0%, #10b981 100%)' }}>
             <h2 style={{ margin: 0, fontSize: '15px', color: '#fff', fontWeight: 600 }}>👤 Identified Users (Leads)</h2>
@@ -162,7 +257,7 @@ export default function Dashboard() {
           </div>
           <div style={{ maxHeight: '300px', overflowY: 'auto' }}>
             {identifiedUsers.length === 0 ? (
-              <p style={{ padding: '32px', textAlign: 'center', color: '#64748b', margin: 0 }}>No identified users yet. Users are identified when they submit forms with email/name.</p>
+              <p style={{ padding: '32px', textAlign: 'center', color: '#64748b', margin: 0 }}>No identified users yet</p>
             ) : (
               <table style={{ width: '100%', borderCollapse: 'collapse' }}>
                 <thead><tr style={{ background: '#0f172a' }}>
@@ -197,7 +292,7 @@ export default function Dashboard() {
             </div>
             <div style={{ maxHeight: '400px', overflowY: 'auto' }}>
               {recentEvents.length === 0 ? (
-                <p style={{ padding: '32px', textAlign: 'center', color: '#64748b', margin: 0 }}>No events yet</p>
+                <p style={{ padding: '32px', textAlign: 'center', color: '#64748b', margin: 0 }}>No events match filters</p>
               ) : (
                 <table style={{ width: '100%', borderCollapse: 'collapse' }}>
                   <thead><tr style={{ background: '#0f172a' }}>
@@ -207,7 +302,7 @@ export default function Dashboard() {
                     <th style={{ padding: '10px 14px', textAlign: 'left', color: '#64748b', fontSize: '11px' }}>TIME</th>
                   </tr></thead>
                   <tbody>
-                    {recentEvents.slice(0, 10).map((e) => (
+                    {recentEvents.slice(0, 15).map((e) => (
                       <tr key={e.id} style={{ borderTop: '1px solid #334155' }}>
                         <td style={{ padding: '10px 14px' }}><span style={{ background: `${eventColors[e.event_type] || '#64748b'}20`, color: eventColors[e.event_type] || '#94a3b8', padding: '3px 8px', borderRadius: '4px', fontSize: '11px' }}>{e.event_type}</span></td>
                         <td style={{ padding: '10px 14px' }}><div style={{ fontSize: '12px', color: '#cbd5e1' }}>{e.city || '-'}</div><div style={{ fontSize: '10px', color: '#64748b' }}>{e.country || '-'}</div></td>
@@ -224,7 +319,7 @@ export default function Dashboard() {
           <div style={{ background: '#1e293b', borderRadius: '12px', border: '1px solid #334155', padding: '18px' }}>
             <h2 style={{ margin: '0 0 16px', fontSize: '15px', color: '#fff', fontWeight: 600 }}>⚡ Event Breakdown</h2>
             <div style={{ display: 'flex', flexDirection: 'column', gap: '12px' }}>
-              {eventBreakdown.slice(0, 6).map((item, i) => {
+              {eventBreakdown.length === 0 ? <p style={{ color: '#64748b', fontSize: '13px', margin: 0 }}>No data</p> : eventBreakdown.slice(0, 6).map((item, i) => {
                 const type = item.event_type || 'unknown';
                 const count = Number(item.count);
                 return (
@@ -243,7 +338,7 @@ export default function Dashboard() {
           </div>
         </div>
 
-        {/* Location: Countries & Cities */}
+        {/* Location */}
         <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(300px, 1fr))', gap: '20px', marginBottom: '24px' }}>
           <div style={{ background: '#1e293b', borderRadius: '12px', border: '1px solid #334155', padding: '18px' }}>
             <h2 style={{ margin: '0 0 16px', fontSize: '15px', color: '#fff', fontWeight: 600 }}>🌍 Countries</h2>
@@ -252,7 +347,7 @@ export default function Dashboard() {
                 {countryBreakdown.slice(0, 5).map((item, i) => (
                   <div key={i}>
                     <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '4px' }}>
-                      <span style={{ color: '#e2e8f0', fontSize: '12px' }}>{item.country || 'Unknown'}</span>
+                      <span style={{ color: '#e2e8f0', fontSize: '12px' }}>{item.country}</span>
                       <span style={{ color: '#94a3b8', fontSize: '12px' }}>{Number(item.count)}</span>
                     </div>
                     <div style={{ height: '6px', background: '#0f172a', borderRadius: '3px' }}>
@@ -271,7 +366,7 @@ export default function Dashboard() {
                 {cityBreakdown.slice(0, 5).map((item, i) => (
                   <div key={i}>
                     <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '4px' }}>
-                      <span style={{ color: '#e2e8f0', fontSize: '12px' }}>{item.city || 'Unknown'}, {item.country || ''}</span>
+                      <span style={{ color: '#e2e8f0', fontSize: '12px' }}>{item.city}, {item.country}</span>
                       <span style={{ color: '#94a3b8', fontSize: '12px' }}>{Number(item.count)}</span>
                     </div>
                     <div style={{ height: '6px', background: '#0f172a', borderRadius: '3px' }}>
@@ -288,7 +383,7 @@ export default function Dashboard() {
         <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(250px, 1fr))', gap: '20px', marginBottom: '24px' }}>
           <div style={{ background: '#1e293b', borderRadius: '12px', border: '1px solid #334155', padding: '18px' }}>
             <h2 style={{ margin: '0 0 16px', fontSize: '15px', color: '#fff', fontWeight: 600 }}>🌐 Browsers</h2>
-            {browserBreakdown.length === 0 ? <p style={{ color: '#64748b', fontSize: '13px', margin: 0 }}>No data yet</p> : (
+            {browserBreakdown.length === 0 ? <p style={{ color: '#64748b', fontSize: '13px', margin: 0 }}>No data</p> : (
               <div style={{ display: 'flex', flexDirection: 'column', gap: '10px' }}>
                 {browserBreakdown.slice(0, 5).map((item, i) => (
                   <div key={i}>
@@ -307,7 +402,7 @@ export default function Dashboard() {
 
           <div style={{ background: '#1e293b', borderRadius: '12px', border: '1px solid #334155', padding: '18px' }}>
             <h2 style={{ margin: '0 0 16px', fontSize: '15px', color: '#fff', fontWeight: 600 }}>💻 Operating Systems</h2>
-            {osBreakdown.length === 0 ? <p style={{ color: '#64748b', fontSize: '13px', margin: 0 }}>No data yet</p> : (
+            {osBreakdown.length === 0 ? <p style={{ color: '#64748b', fontSize: '13px', margin: 0 }}>No data</p> : (
               <div style={{ display: 'flex', flexDirection: 'column', gap: '10px' }}>
                 {osBreakdown.slice(0, 5).map((item, i) => (
                   <div key={i}>
@@ -326,7 +421,7 @@ export default function Dashboard() {
 
           <div style={{ background: '#1e293b', borderRadius: '12px', border: '1px solid #334155', padding: '18px' }}>
             <h2 style={{ margin: '0 0 16px', fontSize: '15px', color: '#fff', fontWeight: 600 }}>📱 Devices</h2>
-            {deviceBreakdown.length === 0 ? <p style={{ color: '#64748b', fontSize: '13px', margin: 0 }}>No data yet</p> : (
+            {deviceBreakdown.length === 0 ? <p style={{ color: '#64748b', fontSize: '13px', margin: 0 }}>No data</p> : (
               <div style={{ display: 'flex', flexDirection: 'column', gap: '10px' }}>
                 {deviceBreakdown.map((item, i) => (
                   <div key={i}>
@@ -348,7 +443,7 @@ export default function Dashboard() {
         <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(300px, 1fr))', gap: '20px', marginBottom: '24px' }}>
           <div style={{ background: '#1e293b', borderRadius: '12px', border: '1px solid #334155', padding: '18px' }}>
             <h2 style={{ margin: '0 0 16px', fontSize: '15px', color: '#fff', fontWeight: 600 }}>📄 Top Pages</h2>
-            {topPages.length === 0 ? <p style={{ color: '#64748b', fontSize: '13px', margin: 0 }}>No data yet</p> : (
+            {topPages.length === 0 ? <p style={{ color: '#64748b', fontSize: '13px', margin: 0 }}>No data</p> : (
               <div style={{ display: 'flex', flexDirection: 'column', gap: '10px' }}>
                 {topPages.map((item, i) => (
                   <div key={i}>
@@ -367,7 +462,7 @@ export default function Dashboard() {
 
           <div style={{ background: '#1e293b', borderRadius: '12px', border: '1px solid #334155', padding: '18px' }}>
             <h2 style={{ margin: '0 0 16px', fontSize: '15px', color: '#fff', fontWeight: 600 }}>🔗 Traffic Sources</h2>
-            {trafficSources.length === 0 ? <p style={{ color: '#64748b', fontSize: '13px', margin: 0 }}>No data yet</p> : (
+            {trafficSources.length === 0 ? <p style={{ color: '#64748b', fontSize: '13px', margin: 0 }}>No data</p> : (
               <div style={{ display: 'flex', flexDirection: 'column', gap: '10px' }}>
                 {trafficSources.map((item, i) => (
                   <div key={i}>
