@@ -32,6 +32,16 @@ interface BreakdownItem {
   count: number | string;
 }
 
+interface IdentifiedUser {
+  id: string;
+  email: string;
+  name: string;
+  phone: string;
+  first_seen_at: string;
+  last_seen_at: string;
+  visit_count: number;
+}
+
 export default function Dashboard() {
   const [stats, setStats] = useState<Stats | null>(null);
   const [recentEvents, setRecentEvents] = useState<RecentEvent[]>([]);
@@ -43,6 +53,7 @@ export default function Dashboard() {
   const [trafficSources, setTrafficSources] = useState<BreakdownItem[]>([]);
   const [countryBreakdown, setCountryBreakdown] = useState<BreakdownItem[]>([]);
   const [cityBreakdown, setCityBreakdown] = useState<BreakdownItem[]>([]);
+  const [identifiedUsers, setIdentifiedUsers] = useState<IdentifiedUser[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [currentTime, setCurrentTime] = useState(new Date());
@@ -64,6 +75,7 @@ export default function Dashboard() {
         setTrafficSources(data.trafficSources || []);
         setCountryBreakdown(data.countryBreakdown || []);
         setCityBreakdown(data.cityBreakdown || []);
+        setIdentifiedUsers(data.identifiedUsers || []);
         setLastUpdated(new Date());
       } catch (err) {
         setError(err instanceof Error ? err.message : 'Error');
@@ -142,6 +154,40 @@ export default function Dashboard() {
           ))}
         </div>
 
+        {/* Identified Users Section */}
+        <div style={{ background: '#1e293b', borderRadius: '12px', border: '1px solid #334155', overflow: 'hidden', marginBottom: '24px' }}>
+          <div style={{ padding: '14px 18px', borderBottom: '1px solid #334155', display: 'flex', justifyContent: 'space-between', background: 'linear-gradient(135deg, #059669 0%, #10b981 100%)' }}>
+            <h2 style={{ margin: 0, fontSize: '15px', color: '#fff', fontWeight: 600 }}>👤 Identified Users (Leads)</h2>
+            <span style={{ color: '#d1fae5', fontSize: '12px' }}>{identifiedUsers.length} users</span>
+          </div>
+          <div style={{ maxHeight: '300px', overflowY: 'auto' }}>
+            {identifiedUsers.length === 0 ? (
+              <p style={{ padding: '32px', textAlign: 'center', color: '#64748b', margin: 0 }}>No identified users yet. Users are identified when they submit forms with email/name.</p>
+            ) : (
+              <table style={{ width: '100%', borderCollapse: 'collapse' }}>
+                <thead><tr style={{ background: '#0f172a' }}>
+                  <th style={{ padding: '10px 14px', textAlign: 'left', color: '#64748b', fontSize: '11px' }}>EMAIL</th>
+                  <th style={{ padding: '10px 14px', textAlign: 'left', color: '#64748b', fontSize: '11px' }}>NAME</th>
+                  <th style={{ padding: '10px 14px', textAlign: 'left', color: '#64748b', fontSize: '11px' }}>PHONE</th>
+                  <th style={{ padding: '10px 14px', textAlign: 'left', color: '#64748b', fontSize: '11px' }}>VISITS</th>
+                  <th style={{ padding: '10px 14px', textAlign: 'left', color: '#64748b', fontSize: '11px' }}>LAST SEEN</th>
+                </tr></thead>
+                <tbody>
+                  {identifiedUsers.map((user) => (
+                    <tr key={user.id} style={{ borderTop: '1px solid #334155' }}>
+                      <td style={{ padding: '10px 14px', color: '#22d3ee', fontSize: '12px' }}>{user.email || '-'}</td>
+                      <td style={{ padding: '10px 14px', color: '#e2e8f0', fontSize: '12px' }}>{user.name || '-'}</td>
+                      <td style={{ padding: '10px 14px', color: '#94a3b8', fontSize: '12px' }}>{user.phone || '-'}</td>
+                      <td style={{ padding: '10px 14px', color: '#f59e0b', fontSize: '12px', fontWeight: 600 }}>{user.visit_count}</td>
+                      <td style={{ padding: '10px 14px', color: '#64748b', fontSize: '11px' }}>{formatDateTime(user.last_seen_at)}</td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            )}
+          </div>
+        </div>
+
         {/* Recent Events & Event Breakdown */}
         <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(400px, 1fr))', gap: '20px', marginBottom: '24px' }}>
           <div style={{ background: '#1e293b', borderRadius: '12px', border: '1px solid #334155', overflow: 'hidden' }}>
@@ -164,7 +210,7 @@ export default function Dashboard() {
                     {recentEvents.slice(0, 10).map((e) => (
                       <tr key={e.id} style={{ borderTop: '1px solid #334155' }}>
                         <td style={{ padding: '10px 14px' }}><span style={{ background: `${eventColors[e.event_type] || '#64748b'}20`, color: eventColors[e.event_type] || '#94a3b8', padding: '3px 8px', borderRadius: '4px', fontSize: '11px' }}>{e.event_type}</span></td>
-                        <td style={{ padding: '10px 14px' }}><div style={{ fontSize: '12px', color: '#cbd5e1' }}>{e.city || 'Unknown'}</div><div style={{ fontSize: '10px', color: '#64748b' }}>{e.country || 'Unknown'}</div></td>
+                        <td style={{ padding: '10px 14px' }}><div style={{ fontSize: '12px', color: '#cbd5e1' }}>{e.city || '-'}</div><div style={{ fontSize: '10px', color: '#64748b' }}>{e.country || '-'}</div></td>
                         <td style={{ padding: '10px 14px' }}><div style={{ fontSize: '12px', color: '#cbd5e1' }}>{e.browser}</div><div style={{ fontSize: '10px', color: '#64748b' }}>{e.os} • {e.device_type}</div></td>
                         <td style={{ padding: '10px 14px', color: '#64748b', fontSize: '11px' }}>{formatDateTime(e.timestamp)}</td>
                       </tr>
