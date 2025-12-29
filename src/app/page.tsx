@@ -13,16 +13,12 @@ interface RecentEvent {
   id: string;
   event_type: string;
   page_path: string;
-  page_url: string;
   timestamp: string;
-  visitor_id: string;
   device_type: string;
   browser: string;
   os: string;
-  referrer: string;
-  utm_source: string;
-  email: string;
-  name: string;
+  country: string;
+  city: string;
 }
 
 interface BreakdownItem {
@@ -31,6 +27,8 @@ interface BreakdownItem {
   page_path?: string;
   event_type?: string;
   source?: string;
+  country?: string;
+  city?: string;
   count: number | string;
 }
 
@@ -43,6 +41,8 @@ export default function Dashboard() {
   const [topPages, setTopPages] = useState<BreakdownItem[]>([]);
   const [eventBreakdown, setEventBreakdown] = useState<BreakdownItem[]>([]);
   const [trafficSources, setTrafficSources] = useState<BreakdownItem[]>([]);
+  const [countryBreakdown, setCountryBreakdown] = useState<BreakdownItem[]>([]);
+  const [cityBreakdown, setCityBreakdown] = useState<BreakdownItem[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [currentTime, setCurrentTime] = useState(new Date());
@@ -62,6 +62,8 @@ export default function Dashboard() {
         setTopPages(data.topPages || []);
         setEventBreakdown(data.eventBreakdown || []);
         setTrafficSources(data.trafficSources || []);
+        setCountryBreakdown(data.countryBreakdown || []);
+        setCityBreakdown(data.cityBreakdown || []);
         setLastUpdated(new Date());
       } catch (err) {
         setError(err instanceof Error ? err.message : 'Error');
@@ -72,10 +74,7 @@ export default function Dashboard() {
     fetchData();
     const dataTimer = setInterval(fetchData, 10000);
     const timeTimer = setInterval(() => setCurrentTime(new Date()), 1000);
-    return () => {
-      clearInterval(dataTimer);
-      clearInterval(timeTimer);
-    };
+    return () => { clearInterval(dataTimer); clearInterval(timeTimer); };
   }, []);
 
   const formatDateTime = (timestamp: string) => {
@@ -124,6 +123,7 @@ export default function Dashboard() {
       </header>
 
       <main style={{ maxWidth: '1400px', margin: '0 auto', padding: '24px' }}>
+        {/* Stats Row */}
         <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(180px, 1fr))', gap: '16px', marginBottom: '24px' }}>
           {[
             { label: 'Total Visitors', value: stats?.totalVisitors || 0, icon: '👥' },
@@ -142,6 +142,7 @@ export default function Dashboard() {
           ))}
         </div>
 
+        {/* Recent Events & Event Breakdown */}
         <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(400px, 1fr))', gap: '20px', marginBottom: '24px' }}>
           <div style={{ background: '#1e293b', borderRadius: '12px', border: '1px solid #334155', overflow: 'hidden' }}>
             <div style={{ padding: '14px 18px', borderBottom: '1px solid #334155', display: 'flex', justifyContent: 'space-between' }}>
@@ -155,6 +156,7 @@ export default function Dashboard() {
                 <table style={{ width: '100%', borderCollapse: 'collapse' }}>
                   <thead><tr style={{ background: '#0f172a' }}>
                     <th style={{ padding: '10px 14px', textAlign: 'left', color: '#64748b', fontSize: '11px' }}>EVENT</th>
+                    <th style={{ padding: '10px 14px', textAlign: 'left', color: '#64748b', fontSize: '11px' }}>LOCATION</th>
                     <th style={{ padding: '10px 14px', textAlign: 'left', color: '#64748b', fontSize: '11px' }}>DEVICE</th>
                     <th style={{ padding: '10px 14px', textAlign: 'left', color: '#64748b', fontSize: '11px' }}>TIME</th>
                   </tr></thead>
@@ -162,6 +164,7 @@ export default function Dashboard() {
                     {recentEvents.slice(0, 10).map((e) => (
                       <tr key={e.id} style={{ borderTop: '1px solid #334155' }}>
                         <td style={{ padding: '10px 14px' }}><span style={{ background: `${eventColors[e.event_type] || '#64748b'}20`, color: eventColors[e.event_type] || '#94a3b8', padding: '3px 8px', borderRadius: '4px', fontSize: '11px' }}>{e.event_type}</span></td>
+                        <td style={{ padding: '10px 14px' }}><div style={{ fontSize: '12px', color: '#cbd5e1' }}>{e.city || 'Unknown'}</div><div style={{ fontSize: '10px', color: '#64748b' }}>{e.country || 'Unknown'}</div></td>
                         <td style={{ padding: '10px 14px' }}><div style={{ fontSize: '12px', color: '#cbd5e1' }}>{e.browser}</div><div style={{ fontSize: '10px', color: '#64748b' }}>{e.os} • {e.device_type}</div></td>
                         <td style={{ padding: '10px 14px', color: '#64748b', fontSize: '11px' }}>{formatDateTime(e.timestamp)}</td>
                       </tr>
@@ -194,6 +197,48 @@ export default function Dashboard() {
           </div>
         </div>
 
+        {/* Location: Countries & Cities */}
+        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(300px, 1fr))', gap: '20px', marginBottom: '24px' }}>
+          <div style={{ background: '#1e293b', borderRadius: '12px', border: '1px solid #334155', padding: '18px' }}>
+            <h2 style={{ margin: '0 0 16px', fontSize: '15px', color: '#fff', fontWeight: 600 }}>🌍 Countries</h2>
+            {countryBreakdown.length === 0 ? <p style={{ color: '#64748b', fontSize: '13px', margin: 0 }}>No data yet</p> : (
+              <div style={{ display: 'flex', flexDirection: 'column', gap: '10px' }}>
+                {countryBreakdown.slice(0, 5).map((item, i) => (
+                  <div key={i}>
+                    <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '4px' }}>
+                      <span style={{ color: '#e2e8f0', fontSize: '12px' }}>{item.country || 'Unknown'}</span>
+                      <span style={{ color: '#94a3b8', fontSize: '12px' }}>{Number(item.count)}</span>
+                    </div>
+                    <div style={{ height: '6px', background: '#0f172a', borderRadius: '3px' }}>
+                      <div style={{ height: '100%', width: `${(Number(item.count) / getMaxCount(countryBreakdown)) * 100}%`, background: '#f59e0b', borderRadius: '3px' }}></div>
+                    </div>
+                  </div>
+                ))}
+              </div>
+            )}
+          </div>
+
+          <div style={{ background: '#1e293b', borderRadius: '12px', border: '1px solid #334155', padding: '18px' }}>
+            <h2 style={{ margin: '0 0 16px', fontSize: '15px', color: '#fff', fontWeight: 600 }}>🏙️ Cities</h2>
+            {cityBreakdown.length === 0 ? <p style={{ color: '#64748b', fontSize: '13px', margin: 0 }}>No data yet</p> : (
+              <div style={{ display: 'flex', flexDirection: 'column', gap: '10px' }}>
+                {cityBreakdown.slice(0, 5).map((item, i) => (
+                  <div key={i}>
+                    <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '4px' }}>
+                      <span style={{ color: '#e2e8f0', fontSize: '12px' }}>{item.city || 'Unknown'}, {item.country || ''}</span>
+                      <span style={{ color: '#94a3b8', fontSize: '12px' }}>{Number(item.count)}</span>
+                    </div>
+                    <div style={{ height: '6px', background: '#0f172a', borderRadius: '3px' }}>
+                      <div style={{ height: '100%', width: `${(Number(item.count) / getMaxCount(cityBreakdown)) * 100}%`, background: '#ec4899', borderRadius: '3px' }}></div>
+                    </div>
+                  </div>
+                ))}
+              </div>
+            )}
+          </div>
+        </div>
+
+        {/* Browsers, OS, Devices */}
         <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(250px, 1fr))', gap: '20px', marginBottom: '24px' }}>
           <div style={{ background: '#1e293b', borderRadius: '12px', border: '1px solid #334155', padding: '18px' }}>
             <h2 style={{ margin: '0 0 16px', fontSize: '15px', color: '#fff', fontWeight: 600 }}>🌐 Browsers</h2>
@@ -253,6 +298,7 @@ export default function Dashboard() {
           </div>
         </div>
 
+        {/* Top Pages & Traffic Sources */}
         <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(300px, 1fr))', gap: '20px', marginBottom: '24px' }}>
           <div style={{ background: '#1e293b', borderRadius: '12px', border: '1px solid #334155', padding: '18px' }}>
             <h2 style={{ margin: '0 0 16px', fontSize: '15px', color: '#fff', fontWeight: 600 }}>📄 Top Pages</h2>
@@ -265,7 +311,7 @@ export default function Dashboard() {
                       <span style={{ color: '#94a3b8', fontSize: '12px' }}>{Number(item.count)}</span>
                     </div>
                     <div style={{ height: '6px', background: '#0f172a', borderRadius: '3px' }}>
-                      <div style={{ height: '100%', width: `${(Number(item.count) / getMaxCount(topPages)) * 100}%`, background: '#f59e0b', borderRadius: '3px' }}></div>
+                      <div style={{ height: '100%', width: `${(Number(item.count) / getMaxCount(topPages)) * 100}%`, background: '#06b6d4', borderRadius: '3px' }}></div>
                     </div>
                   </div>
                 ))}
@@ -284,7 +330,7 @@ export default function Dashboard() {
                       <span style={{ color: '#94a3b8', fontSize: '12px' }}>{Number(item.count)}</span>
                     </div>
                     <div style={{ height: '6px', background: '#0f172a', borderRadius: '3px' }}>
-                      <div style={{ height: '100%', width: `${(Number(item.count) / getMaxCount(trafficSources)) * 100}%`, background: '#ec4899', borderRadius: '3px' }}></div>
+                      <div style={{ height: '100%', width: `${(Number(item.count) / getMaxCount(trafficSources)) * 100}%`, background: '#ef4444', borderRadius: '3px' }}></div>
                     </div>
                   </div>
                 ))}
@@ -293,6 +339,7 @@ export default function Dashboard() {
           </div>
         </div>
 
+        {/* Install Pixel */}
         <div style={{ background: '#1e293b', borderRadius: '12px', border: '1px solid #334155', padding: '20px' }}>
           <h2 style={{ margin: '0 0 12px', fontSize: '15px', color: '#fff', fontWeight: 600 }}>🔧 Install Tracking Pixel</h2>
           <pre style={{ background: '#0f172a', padding: '16px', borderRadius: '8px', overflow: 'auto', color: '#e2e8f0', fontSize: '12px', margin: 0 }}>
