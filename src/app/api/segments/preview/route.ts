@@ -1,0 +1,124 @@
+import { sql } from '../../../../lib/db';
+import { NextRequest, NextResponse } from 'next/server';
+
+export const dynamic = 'force-dynamic';
+
+export async function POST(request: NextRequest) {
+  try {
+    const body = await request.json();
+    const { rules } = body;
+
+    const visitors = await sql`SELECT id, is_identified FROM visitors`;
+    const events = await sql`
+      SELECT visitor_id, event_type, page_path, device_type, country, city, utm_source, timestamp
+      FROM events
+    `;
+
+    const visitorEvents: Record<string, Record<string, unknown>[]> = {};
+    events.forEach((e: Record<string, unknown>) => {
+      const vid = e.visitor_id as string;
+      if (!visitorEvents[vid]) visitorEvents[vid] = [];
+      visitorEvents[vid].push(e);
+    });
+
+    let matchCount = 0;
+    for (const visitor of visitors) {
+      const vEvents = visitorEvents[visitor.id as string] || [];
+      if (matchesRules(vEvents, rules, visitor)) {
+        matchCount++;
+      }
+    }
+
+    return NextResponse.json({ count: matchCount });
+  } catch (error) {
+    console.error('Preview error:', error);
+    return NextResponse.json({ error: 'Preview failed' }, { status: 500 });
+  }
+}
+
+function matchesRules(events: Record<string, unknown>[], rules: object[], visitor: Record<string, unknown>): boolean {
+  if (!rules || rules.length === 0) return true;
+
+  for (const rule of rules as Record<string, unknown>[]) {
+    const { type, operator, value } = rule;
+
+    switch (type) {
+      case 'page_views':
+        const pageViewCount = events.filter(e => e.event_type === 'page_view').length;
+        if (!compareNumber(pageViewCount, operator as string, Number(value))) return false;
+        break;
+
+      case 'total_events':
+        if (!compareNumber(events.length, operator as string, Number(value))) return false;
+        break;
+
+      case 'visited_page':
+        const visitedPage = events.some(e => 
+          e.event_type === 'page_view' && 
+          (e.page_path as string || '').includes(value as string)
+        );
+        if (operator === 'contains' && !visitedPage) return false;
+        if (operator === 'not_contains' && visitedPage) return false;
+        break;
+
+      case 'country':
+        const countryMatch = events.some(e => e.country === value);
+        if (operator === 'equals' && !countryMatch) return false;
+        if (operator === 'not_equals' && countryMatch) return false;
+        break;
+
+      case 'city':
+        const cityMatch = events.some(e => e.city === value);
+        if (operator === 'equals' && !cityMatch) return false;
+        if (operator === 'not_equals' && cityMatch) return false;
+        break;
+
+      case 'device':
+        const deviceMatch = events.some(e => e.device_type === value);
+        if (operator === 'equals' && !deviceMatch) return false;
+        if (operator === 'not_equals' && deviceMatch) return false;
+        break;
+
+      case 'utm_source':
+        const utmMatch = events.some(e => e.utm_source === value);
+        if (operator === 'equals' && !utmMatch) return false;
+        if (operator === 'not_equals' && utmMatch) return false;
+        break;
+
+      case 'event_type':
+        const eventMatch = events.some(e => e.event_type === value);
+        if (operator === 'equals' && !eventMatch) return false;
+        if (operator === 'not_equals' && eventMatch) return false;
+        break;
+
+      case 'is_identified':
+        const isIdentified = Boolean(visitor.is_identified);
+        if (value === 'true' && !isIdentified) return false;
+        if (value === 'false' && isIdentified) return false;
+        break;
+
+      case 'last_seen_days':
+        const lastEvent = events.sort((a, b) => 
+          new Date(b.timestamp as string).getTime() - new Date(a.timestamp as string).getTime()
+        )[0];
+        if (lastEvent) {
+          const daysSince = (Date.now() - new Date(lastEvent.timestamp as string).getTime()) / (1000 * 60 * 60 * 24);
+          if (!compareNumber(daysSince, operator as string, Number(value))) return false;
+        }
+        break;
+    }
+  }
+
+  return true;
+}
+
+function compareNumber(actual: number, operator: string, expected: number): boolean {
+  switch (operator) {
+    case 'greater_than': return actual > expected;
+    case 'less_than': return actual < expected;
+    case 'equals': return actual === expected;
+    case 'greater_or_equal': return actual >= expected;
+    case 'less_or_equal': return actual <= expected;
+    default: return false;
+  }
+}
