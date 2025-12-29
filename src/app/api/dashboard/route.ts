@@ -1,5 +1,5 @@
 import { sql } from '../../../lib/db';
-import { NextResponse } from 'next/server';
+import { NextRequest, NextResponse } from 'next/server';
 
 export const dynamic = 'force-dynamic';
 export const revalidate = 0;
@@ -27,14 +27,32 @@ function parseUserAgent(ua: string) {
   return { browser, os };
 }
 
-export async function GET() {
+export async function GET(request: NextRequest) {
   try {
-    const visitorsResult = await sql`SELECT COUNT(*) as count FROM visitors`;
-    const pageViewsResult = await sql`SELECT COUNT(*) as count FROM events WHERE event_type = 'page_view'`;
-    const eventsResult = await sql`SELECT COUNT(*) as count FROM events`;
-    const identifiedResult = await sql`SELECT COUNT(*) as count FROM visitors WHERE is_identified = true`;
+    const searchParams = request.nextUrl.searchParams;
+    const dateFrom = searchParams.get('dateFrom');
+    const dateTo = searchParams.get('dateTo');
+    const eventType = searchParams.get('eventType');
+    const country = searchParams.get('country');
+    const device = searchParams.get('device');
+    const browser = searchParams.get('browser');
 
-    const recentEvents = await sql`
+    // Build dynamic WHERE clause
+    let whereConditions = [];
+    if (dateFrom) whereConditions.push(`e.timestamp >= '${dateFrom}'`);
+    if (dateTo) whereConditions.push(`e.timestamp <= '${dateTo}T23:59:59'`);
+    if (eventType && eventType !== 'all') whereConditions.push(`e.event_type = '${eventType}'`);
+    if (country && country !== 'all') whereConditions.push(`e.country = '${country}'`);
+    if (device && device !== 'all') whereConditions.push(`e.device_type = '${device}'`);
+    
+    const whereClause = whereConditions.length > 0 ? `WHERE ${whereConditions.join(' AND ')}` : '';
+
+    // Stats with filters
+    const visitorsResult = await sql`SELECT COUNT(DISTINCT visitor_id) as count FROM events e ${whereClause ? sql.unsafe(whereClause) : sql``}`;
+    const pageViewsResult = await sql`SELECT COUNT(*) as count FROM events e ${whereClause ? sql.unsafe(whereClause + (whereConditions.length > 0 ? " AND e.event_type = 'page_view'" : " WHERE e.event_type = 'page_view'")) : sql`WHERE event_type = 'page_view'`}`;
+    const eventsResult = await sql`SELECT COUNT(*) as count FROM events e ${whereClause ? sql.unsafe(whereClause) : sql``}`;
+    
+    const recentEvents = await sql.unsafe(`
       SELECT e.id, e.event_type, e.page_path, e.page_url, e.timestamp, e.visitor_id, 
              e.user_agent, e.device_type, e.ip_address, e.referrer,
              e.utm_source, e.utm_medium, e.utm_campaign,
@@ -42,52 +60,57 @@ export async function GET() {
              v.email, v.name
       FROM events e
       LEFT JOIN visitors v ON e.visitor_id = v.id
+      ${whereClause}
       ORDER BY e.timestamp DESC 
-      LIMIT 20
-    `;
+      LIMIT 100
+    `);
 
-    const deviceBreakdown = await sql`
+    const deviceBreakdown = await sql.unsafe(`
       SELECT device_type, COUNT(*) as count 
-      FROM events 
-      WHERE device_type IS NOT NULL
+      FROM events e
+      ${whereClause}
+      ${whereClause ? 'AND' : 'WHERE'} device_type IS NOT NULL
       GROUP BY device_type
-    `;
+    `);
 
-    const userAgents = await sql`
+    const userAgents = await sql.unsafe(`
       SELECT user_agent, COUNT(*) as count 
-      FROM events 
-      WHERE user_agent IS NOT NULL
+      FROM events e
+      ${whereClause}
+      ${whereClause ? 'AND' : 'WHERE'} user_agent IS NOT NULL
       GROUP BY user_agent
-    `;
+    `);
 
     const browserCounts: Record<string, number> = {};
     const osCounts: Record<string, number> = {};
     
     for (let i = 0; i < userAgents.length; i++) {
       const row = userAgents[i];
-      const { browser, os } = parseUserAgent(String(row.user_agent || ''));
+      const parsed = parseUserAgent(String(row.user_agent || ''));
       const count = parseInt(String(row.count)) || 0;
-      browserCounts[browser] = (browserCounts[browser] || 0) + count;
-      osCounts[os] = (osCounts[os] || 0) + count;
+      browserCounts[parsed.browser] = (browserCounts[parsed.browser] || 0) + count;
+      osCounts[parsed.os] = (osCounts[parsed.os] || 0) + count;
     }
 
-    const topPages = await sql`
+    const topPages = await sql.unsafe(`
       SELECT page_path, COUNT(*) as count 
-      FROM events 
-      WHERE event_type = 'page_view' AND page_path IS NOT NULL
+      FROM events e
+      ${whereClause}
+      ${whereClause ? 'AND' : 'WHERE'} event_type = 'page_view' AND page_path IS NOT NULL
       GROUP BY page_path
       ORDER BY count DESC
       LIMIT 5
-    `;
+    `);
 
-    const eventBreakdown = await sql`
+    const eventBreakdown = await sql.unsafe(`
       SELECT event_type, COUNT(*) as count 
-      FROM events 
+      FROM events e
+      ${whereClause}
       GROUP BY event_type
       ORDER BY count DESC
-    `;
+    `);
 
-    const trafficSources = await sql`
+    const trafficSources = await sql.unsafe(`
       SELECT 
         COALESCE(utm_source, 
           CASE 
@@ -100,29 +123,32 @@ export async function GET() {
           END
         ) as source,
         COUNT(*) as count
-      FROM events
+      FROM events e
+      ${whereClause}
       GROUP BY source
       ORDER BY count DESC
       LIMIT 5
-    `;
+    `);
 
-    const countryBreakdown = await sql`
+    const countryBreakdown = await sql.unsafe(`
       SELECT country, COUNT(*) as count 
-      FROM events 
-      WHERE country IS NOT NULL AND country != '' AND country != 'Unknown'
+      FROM events e
+      ${whereClause}
+      ${whereClause ? 'AND' : 'WHERE'} country IS NOT NULL AND country != '' AND country != 'Unknown'
       GROUP BY country
       ORDER BY count DESC
       LIMIT 10
-    `;
+    `);
 
-    const cityBreakdown = await sql`
+    const cityBreakdown = await sql.unsafe(`
       SELECT city, country, COUNT(*) as count 
-      FROM events 
-      WHERE city IS NOT NULL AND city != '' AND city != 'Unknown'
+      FROM events e
+      ${whereClause}
+      ${whereClause ? 'AND' : 'WHERE'} city IS NOT NULL AND city != '' AND city != 'Unknown'
       GROUP BY city, country
       ORDER BY count DESC
       LIMIT 10
-    `;
+    `);
 
     const identifiedUsers = await sql`
       SELECT id, email, name, phone, anonymous_id, first_seen_at, last_seen_at, visit_count
@@ -132,11 +158,15 @@ export async function GET() {
       LIMIT 20
     `;
 
+    // Get unique values for filter dropdowns
+    const uniqueCountries = await sql`SELECT DISTINCT country FROM events WHERE country IS NOT NULL AND country != '' AND country != 'Unknown' ORDER BY country`;
+    const uniqueEventTypes = await sql`SELECT DISTINCT event_type FROM events ORDER BY event_type`;
+
     const processedEvents = [];
     for (let i = 0; i < recentEvents.length; i++) {
       const event = recentEvents[i];
-      const { browser, os } = parseUserAgent(String(event.user_agent || ''));
-      processedEvents.push({ ...event, browser, os });
+      const parsed = parseUserAgent(String(event.user_agent || ''));
+      processedEvents.push({ ...event, browser: parsed.browser, os: parsed.os });
     }
 
     return NextResponse.json({
@@ -144,7 +174,7 @@ export async function GET() {
         totalVisitors: Number(visitorsResult[0].count),
         totalPageViews: Number(pageViewsResult[0].count),
         totalEvents: Number(eventsResult[0].count),
-        identifiedVisitors: Number(identifiedResult[0].count),
+        identifiedVisitors: Number(identifiedUsers.length),
       },
       recentEvents: processedEvents,
       deviceBreakdown,
@@ -156,6 +186,10 @@ export async function GET() {
       countryBreakdown,
       cityBreakdown,
       identifiedUsers,
+      filters: {
+        countries: uniqueCountries.map(c => c.country),
+        eventTypes: uniqueEventTypes.map(e => e.event_type),
+      },
     }, {
       headers: {
         'Cache-Control': 'no-store, no-cache, must-revalidate, proxy-revalidate',
