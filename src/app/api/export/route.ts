@@ -27,27 +27,18 @@ function parseUserAgent(ua: string) {
 export async function GET(request: NextRequest) {
   try {
     const searchParams = request.nextUrl.searchParams;
-    const dateFrom = searchParams.get('dateFrom');
-    const dateTo = searchParams.get('dateTo');
-    const eventType = searchParams.get('eventType');
-    const country = searchParams.get('country');
-    const device = searchParams.get('device');
+    const dateFrom = searchParams.get('dateFrom') || '2020-01-01';
+    const dateTo = searchParams.get('dateTo') || '2099-12-31';
+    const eventType = searchParams.get('eventType') || 'all';
+    const country = searchParams.get('country') || 'all';
+    const device = searchParams.get('device') || 'all';
     const exportType = searchParams.get('type') || 'events';
-
-    let whereConditions = [];
-    if (dateFrom) whereConditions.push(`e.timestamp >= '${dateFrom}'`);
-    if (dateTo) whereConditions.push(`e.timestamp <= '${dateTo}T23:59:59'`);
-    if (eventType && eventType !== 'all') whereConditions.push(`e.event_type = '${eventType}'`);
-    if (country && country !== 'all') whereConditions.push(`e.country = '${country}'`);
-    if (device && device !== 'all') whereConditions.push(`e.device_type = '${device}'`);
-    
-    const whereClause = whereConditions.length > 0 ? `WHERE ${whereConditions.join(' AND ')}` : '';
 
     let csv = '';
     let filename = '';
 
     if (exportType === 'events') {
-      const events = await sql.unsafe(`
+      const allEvents = await sql`
         SELECT e.id, e.event_type, e.page_path, e.page_url, e.timestamp, 
                e.device_type, e.user_agent, e.ip_address, e.referrer,
                e.utm_source, e.utm_medium, e.utm_campaign,
@@ -55,16 +46,42 @@ export async function GET(request: NextRequest) {
                v.email, v.name, v.phone
         FROM events e
         LEFT JOIN visitors v ON e.visitor_id = v.id
-        ${whereClause}
         ORDER BY e.timestamp DESC
-        LIMIT 10000
-      `);
+      `;
+
+      // Filter in JS
+      const events = allEvents.filter((e: Record<string, unknown>) => {
+        const eventDate = new Date(e.timestamp as string).toISOString().split('T')[0];
+        if (eventDate < dateFrom || eventDate > dateTo) return false;
+        if (eventType !== 'all' && e.event_type !== eventType) return false;
+        if (country !== 'all' && e.country !== country) return false;
+        if (device !== 'all' && e.device_type !== device) return false;
+        return true;
+      });
 
       csv = 'ID,Event Type,Page Path,Page URL,Timestamp,Device,Browser,OS,Country,City,UTM Source,UTM Medium,UTM Campaign,Email,Name,Phone\n';
       
       for (const event of events) {
         const { browser, os } = parseUserAgent(String(event.user_agent || ''));
-        csv += `"${event.id}","${event.event_type}","${event.page_path || ''}","${event.page_url || ''}","${event.timestamp}","${event.device_type || ''}","${browser}","${os}","${event.country || ''}","${event.city || ''}","${event.utm_source || ''}","${event.utm_medium || ''}","${event.utm_campaign || ''}","${event.email || ''}","${event.name || ''}","${event.phone || ''}"\n`;
+        const row = [
+          event.id,
+          event.event_type,
+          (event.page_path || '').toString().replace(/"/g, '""'),
+          (event.page_url || '').toString().replace(/"/g, '""'),
+          event.timestamp,
+          event.device_type || '',
+          browser,
+          os,
+          event.country || '',
+          event.city || '',
+          event.utm_source || '',
+          event.utm_medium || '',
+          event.utm_campaign || '',
+          event.email || '',
+          event.name || '',
+          event.phone || ''
+        ].map(v => `"${v}"`).join(',');
+        csv += row + '\n';
       }
       filename = `events_export_${new Date().toISOString().split('T')[0]}.csv`;
 
@@ -73,13 +90,23 @@ export async function GET(request: NextRequest) {
         SELECT id, email, name, phone, anonymous_id, first_seen_at, last_seen_at, visit_count, is_identified
         FROM visitors
         ORDER BY last_seen_at DESC
-        LIMIT 10000
       `;
 
       csv = 'ID,Email,Name,Phone,Anonymous ID,First Seen,Last Seen,Visit Count,Identified\n';
       
       for (const user of users) {
-        csv += `"${user.id}","${user.email || ''}","${user.name || ''}","${user.phone || ''}","${user.anonymous_id}","${user.first_seen_at}","${user.last_seen_at}","${user.visit_count}","${user.is_identified}"\n`;
+        const row = [
+          user.id,
+          user.email || '',
+          user.name || '',
+          user.phone || '',
+          user.anonymous_id,
+          user.first_seen_at,
+          user.last_seen_at,
+          user.visit_count,
+          user.is_identified
+        ].map(v => `"${v}"`).join(',');
+        csv += row + '\n';
       }
       filename = `users_export_${new Date().toISOString().split('T')[0]}.csv`;
     }
