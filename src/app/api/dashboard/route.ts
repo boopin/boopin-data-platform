@@ -36,7 +36,6 @@ export async function GET(request: NextRequest) {
     const country = searchParams.get('country') || 'all';
     const device = searchParams.get('device') || 'all';
 
-    // Get all events first, then filter in JS (simpler than dynamic SQL)
     const allEvents = await sql`
       SELECT e.id, e.event_type, e.page_path, e.page_url, e.timestamp, e.visitor_id, 
              e.user_agent, e.device_type, e.ip_address, e.referrer,
@@ -48,7 +47,6 @@ export async function GET(request: NextRequest) {
       ORDER BY e.timestamp DESC
     `;
 
-    // Apply filters
     let filteredEvents = allEvents.filter((e: Record<string, unknown>) => {
       const eventDate = new Date(e.timestamp as string).toISOString().split('T')[0];
       if (eventDate < dateFrom || eventDate > dateTo) return false;
@@ -58,18 +56,15 @@ export async function GET(request: NextRequest) {
       return true;
     });
 
-    // Calculate stats from filtered events
     const uniqueVisitors = new Set(filteredEvents.map((e: Record<string, unknown>) => e.visitor_id));
     const pageViews = filteredEvents.filter((e: Record<string, unknown>) => e.event_type === 'page_view');
 
-    // Device breakdown
     const deviceCounts: Record<string, number> = {};
     filteredEvents.forEach((e: Record<string, unknown>) => {
       const d = (e.device_type as string) || 'unknown';
       deviceCounts[d] = (deviceCounts[d] || 0) + 1;
     });
 
-    // Browser and OS breakdown
     const browserCounts: Record<string, number> = {};
     const osCounts: Record<string, number> = {};
     filteredEvents.forEach((e: Record<string, unknown>) => {
@@ -78,14 +73,12 @@ export async function GET(request: NextRequest) {
       osCounts[os] = (osCounts[os] || 0) + 1;
     });
 
-    // Event type breakdown
     const eventCounts: Record<string, number> = {};
     filteredEvents.forEach((e: Record<string, unknown>) => {
       const t = e.event_type as string;
       eventCounts[t] = (eventCounts[t] || 0) + 1;
     });
 
-    // Country breakdown
     const countryCounts: Record<string, number> = {};
     filteredEvents.forEach((e: Record<string, unknown>) => {
       const c = (e.country as string) || '';
@@ -94,25 +87,22 @@ export async function GET(request: NextRequest) {
       }
     });
 
-    // City breakdown
     const cityCounts: Record<string, { count: number; country: string }> = {};
     filteredEvents.forEach((e: Record<string, unknown>) => {
       const city = (e.city as string) || '';
-      const country = (e.country as string) || '';
+      const ctry = (e.country as string) || '';
       if (city && city !== 'Unknown') {
-        if (!cityCounts[city]) cityCounts[city] = { count: 0, country };
+        if (!cityCounts[city]) cityCounts[city] = { count: 0, country: ctry };
         cityCounts[city].count += 1;
       }
     });
 
-    // Top pages
     const pageCounts: Record<string, number> = {};
     pageViews.forEach((e: Record<string, unknown>) => {
       const p = (e.page_path as string) || '/';
       pageCounts[p] = (pageCounts[p] || 0) + 1;
     });
 
-    // Traffic sources
     const sourceCounts: Record<string, number> = {};
     filteredEvents.forEach((e: Record<string, unknown>) => {
       let source = (e.utm_source as string) || '';
@@ -128,7 +118,6 @@ export async function GET(request: NextRequest) {
       sourceCounts[source] = (sourceCounts[source] || 0) + 1;
     });
 
-    // Identified users
     const identifiedUsers = await sql`
       SELECT id, email, name, phone, anonymous_id, first_seen_at, last_seen_at, visit_count
       FROM visitors
@@ -137,11 +126,18 @@ export async function GET(request: NextRequest) {
       LIMIT 20
     `;
 
-    // Get unique values for filters
-    const uniqueCountries = [...new Set(allEvents.map((e: Record<string, unknown>) => e.country).filter((c): c is string => !!c && c !== 'Unknown'))].sort();
-    const uniqueEventTypes = [...new Set(allEvents.map((e: Record<string, unknown>) => e.event_type).filter((t): t is string => !!t))].sort();
+    // Get unique values for filters (without spread operator on Set)
+    const countrySet: Record<string, boolean> = {};
+    const eventTypeSet: Record<string, boolean> = {};
+    allEvents.forEach((e: Record<string, unknown>) => {
+      const c = e.country as string;
+      const t = e.event_type as string;
+      if (c && c !== 'Unknown') countrySet[c] = true;
+      if (t) eventTypeSet[t] = true;
+    });
+    const uniqueCountries = Object.keys(countrySet).sort();
+    const uniqueEventTypes = Object.keys(eventTypeSet).sort();
 
-    // Process events for display
     const processedEvents = filteredEvents.slice(0, 100).map((event: Record<string, unknown>) => {
       const { browser, os } = parseUserAgent(String(event.user_agent || ''));
       return { ...event, browser, os };
