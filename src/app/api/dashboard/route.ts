@@ -106,7 +106,7 @@ export async function GET() {
     const countryBreakdown = await sql`
       SELECT country, COUNT(*) as count 
       FROM events 
-      WHERE country IS NOT NULL AND country != ''
+      WHERE country IS NOT NULL AND country != '' AND country != 'Unknown'
       GROUP BY country
       ORDER BY count DESC
       LIMIT 10
@@ -115,10 +115,18 @@ export async function GET() {
     const cityBreakdown = await sql`
       SELECT city, country, COUNT(*) as count 
       FROM events 
-      WHERE city IS NOT NULL AND city != ''
+      WHERE city IS NOT NULL AND city != '' AND city != 'Unknown'
       GROUP BY city, country
       ORDER BY count DESC
       LIMIT 10
+    `;
+
+    const identifiedUsers = await sql`
+      SELECT id, email, name, phone, anonymous_id, first_seen_at, last_seen_at, visit_count
+      FROM visitors
+      WHERE is_identified = true
+      ORDER BY last_seen_at DESC
+      LIMIT 20
     `;
 
     const processedEvents = [];
@@ -144,6 +152,7 @@ export async function GET() {
       trafficSources,
       countryBreakdown,
       cityBreakdown,
+      identifiedUsers,
     });
   } catch (error) {
     console.error('Dashboard error:', error);
