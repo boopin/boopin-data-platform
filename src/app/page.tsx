@@ -167,17 +167,25 @@ export default function Dashboard() {
       <header style={{ borderBottom: '1px solid #334155', background: 'rgba(15,23,42,0.95)', padding: '16px 24px', position: 'sticky', top: 0, zIndex: 100 }}>
         <div style={{ maxWidth: '1400px', margin: '0 auto', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
           <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
-            <div style={{ width: '40px', height: '40px', background: 'linear-gradient(135deg, #06b6d4, #3b82f6)', borderRadius: '10px', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
-              <svg width="22" height="22" fill="none" stroke="white" strokeWidth="2" viewBox="0 0 24 24"><path d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z" /></svg>
-            </div>
-            <div>
-              <h1 style={{ margin: 0, fontSize: '20px', color: '#fff', fontWeight: 700 }}>Boopin Data Platform</h1>
-              <p style={{ margin: 0, fontSize: '13px', color: '#64748b' }}>1st Party Analytics Dashboard</p>
-            </div>
+            <a href="/" style={{ textDecoration: 'none', display: 'flex', alignItems: 'center', gap: '12px' }}>
+              <div style={{ width: '40px', height: '40px', background: 'linear-gradient(135deg, #06b6d4, #3b82f6)', borderRadius: '10px', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+                <svg width="22" height="22" fill="none" stroke="white" strokeWidth="2" viewBox="0 0 24 24"><path d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z" /></svg>
+              </div>
+              <div>
+                <h1 style={{ margin: 0, fontSize: '20px', color: '#fff', fontWeight: 700 }}>Boopin Data Platform</h1>
+                <p style={{ margin: 0, fontSize: '13px', color: '#64748b' }}>1st Party Customer Data Platform</p>
+              </div>
+            </a>
           </div>
-          <div style={{ textAlign: 'right' }}>
-            <p style={{ color: '#e2e8f0', margin: 0, fontSize: '14px', fontWeight: 500 }}>{currentTime.toLocaleTimeString()}</p>
-            <p style={{ color: '#22d3ee', margin: '2px 0 0', fontSize: '11px' }}>● Live • Updated {Math.round((currentTime.getTime() - lastUpdated.getTime()) / 1000)}s ago</p>
+          <div style={{ display: 'flex', alignItems: 'center', gap: '24px' }}>
+            <nav style={{ display: 'flex', gap: '16px' }}>
+              <a href="/" style={{ color: '#22d3ee', textDecoration: 'none', fontSize: '14px', fontWeight: 600 }}>Dashboard</a>
+              <a href="/visitors" style={{ color: '#94a3b8', textDecoration: 'none', fontSize: '14px' }}>Visitors</a>
+            </nav>
+            <div style={{ textAlign: 'right' }}>
+              <p style={{ color: '#e2e8f0', margin: 0, fontSize: '14px', fontWeight: 500 }}>{currentTime.toLocaleTimeString()}</p>
+              <p style={{ color: '#22d3ee', margin: '2px 0 0', fontSize: '11px' }}>● Live • Updated {Math.round((currentTime.getTime() - lastUpdated.getTime()) / 1000)}s ago</p>
+            </div>
           </div>
         </div>
       </header>
@@ -251,9 +259,9 @@ export default function Dashboard() {
 
         {/* Identified Users */}
         <div style={{ background: '#1e293b', borderRadius: '12px', border: '1px solid #334155', overflow: 'hidden', marginBottom: '24px' }}>
-          <div style={{ padding: '14px 18px', borderBottom: '1px solid #334155', display: 'flex', justifyContent: 'space-between', background: 'linear-gradient(135deg, #059669 0%, #10b981 100%)' }}>
+          <div style={{ padding: '14px 18px', borderBottom: '1px solid #334155', display: 'flex', justifyContent: 'space-between', alignItems: 'center', background: 'linear-gradient(135deg, #059669 0%, #10b981 100%)' }}>
             <h2 style={{ margin: 0, fontSize: '15px', color: '#fff', fontWeight: 600 }}>👤 Identified Users (Leads)</h2>
-            <span style={{ color: '#d1fae5', fontSize: '12px' }}>{identifiedUsers.length} users</span>
+            <a href="/visitors" style={{ color: '#d1fae5', fontSize: '12px', textDecoration: 'none' }}>View All →</a>
           </div>
           <div style={{ maxHeight: '300px', overflowY: 'auto' }}>
             {identifiedUsers.length === 0 ? (
