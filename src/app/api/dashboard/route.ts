@@ -35,6 +35,7 @@ export async function GET() {
       SELECT e.id, e.event_type, e.page_path, e.page_url, e.timestamp, e.visitor_id, 
              e.user_agent, e.device_type, e.ip_address, e.referrer,
              e.utm_source, e.utm_medium, e.utm_campaign,
+             e.country, e.city, e.region,
              v.email, v.name
       FROM events e
       LEFT JOIN visitors v ON e.visitor_id = v.id
@@ -102,6 +103,24 @@ export async function GET() {
       LIMIT 5
     `;
 
+    const countryBreakdown = await sql`
+      SELECT country, COUNT(*) as count 
+      FROM events 
+      WHERE country IS NOT NULL AND country != ''
+      GROUP BY country
+      ORDER BY count DESC
+      LIMIT 10
+    `;
+
+    const cityBreakdown = await sql`
+      SELECT city, country, COUNT(*) as count 
+      FROM events 
+      WHERE city IS NOT NULL AND city != ''
+      GROUP BY city, country
+      ORDER BY count DESC
+      LIMIT 10
+    `;
+
     const processedEvents = [];
     for (let i = 0; i < recentEvents.length; i++) {
       const event = recentEvents[i];
@@ -123,6 +142,8 @@ export async function GET() {
       topPages,
       eventBreakdown,
       trafficSources,
+      countryBreakdown,
+      cityBreakdown,
     });
   } catch (error) {
     console.error('Dashboard error:', error);
