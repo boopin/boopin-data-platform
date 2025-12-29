@@ -39,9 +39,23 @@ export default function Dashboard() {
       }
     }
     fetchData();
-    const timer = setInterval(() => setCurrentTime(new Date()), 60000);
-    return () => clearInterval(timer);
+    const dataTimer = setInterval(fetchData, 10000);
+    const timeTimer = setInterval(() => setCurrentTime(new Date()), 60000);
+    return () => {
+      clearInterval(dataTimer);
+      clearInterval(timeTimer);
+    };
   }, []);
+
+  const formatDateTime = (timestamp: string) => {
+    const date = new Date(timestamp);
+    return date.toLocaleDateString('en-US', { 
+      month: 'short', 
+      day: 'numeric',
+      hour: '2-digit',
+      minute: '2-digit'
+    });
+  };
 
   if (loading) {
     return (
@@ -69,7 +83,10 @@ export default function Dashboard() {
             <h1 style={{ margin: 0, fontSize: '20px', color: '#fff' }}>Boopin Data Platform</h1>
             <p style={{ margin: 0, fontSize: '14px', color: '#94a3b8' }}>1st Party Analytics</p>
           </div>
-          <p style={{ color: '#94a3b8', margin: 0 }}>{currentTime.toLocaleString()}</p>
+          <div style={{ textAlign: 'right' }}>
+            <p style={{ color: '#94a3b8', margin: 0, fontSize: '14px' }}>{currentTime.toLocaleString()}</p>
+            <p style={{ color: '#22d3ee', margin: '4px 0 0', fontSize: '12px' }}>● Live - Auto-refresh 10s</p>
+          </div>
         </div>
       </header>
 
@@ -106,7 +123,7 @@ export default function Dashboard() {
                 <tr>
                   <th style={{ padding: '12px 20px', textAlign: 'left', color: '#94a3b8', fontSize: '12px', fontWeight: 500 }}>EVENT</th>
                   <th style={{ padding: '12px 20px', textAlign: 'left', color: '#94a3b8', fontSize: '12px', fontWeight: 500 }}>PAGE</th>
-                  <th style={{ padding: '12px 20px', textAlign: 'left', color: '#94a3b8', fontSize: '12px', fontWeight: 500 }}>TIME</th>
+                  <th style={{ padding: '12px 20px', textAlign: 'left', color: '#94a3b8', fontSize: '12px', fontWeight: 500 }}>DATE & TIME</th>
                 </tr>
               </thead>
               <tbody>
@@ -116,7 +133,7 @@ export default function Dashboard() {
                       <span style={{ background: '#3b82f620', color: '#60a5fa', padding: '4px 8px', borderRadius: '4px', fontSize: '12px' }}>{e.event_type}</span>
                     </td>
                     <td style={{ padding: '12px 20px', color: '#cbd5e1', fontSize: '13px' }}>{e.page_path?.split('/').pop() || '-'}</td>
-                    <td style={{ padding: '12px 20px', color: '#64748b', fontSize: '13px' }}>{new Date(e.timestamp).toLocaleTimeString()}</td>
+                    <td style={{ padding: '12px 20px', color: '#64748b', fontSize: '13px' }}>{formatDateTime(e.timestamp)}</td>
                   </tr>
                 ))}
               </tbody>
