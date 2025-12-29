@@ -59,9 +59,10 @@ export async function GET() {
     const browserCounts: Record<string, number> = {};
     const osCounts: Record<string, number> = {};
     
-    for (const row of userAgents) {
-      const { browser, os } = parseUserAgent(row.user_agent as string);
-      const count = parseInt(String(row.count));
+    for (let i = 0; i < userAgents.length; i++) {
+      const row = userAgents[i];
+      const { browser, os } = parseUserAgent(String(row.user_agent || ''));
+      const count = parseInt(String(row.count)) || 0;
       browserCounts[browser] = (browserCounts[browser] || 0) + count;
       osCounts[os] = (osCounts[os] || 0) + count;
     }
@@ -101,10 +102,12 @@ export async function GET() {
       LIMIT 5
     `;
 
-    const processedEvents = recentEvents.map((event) => {
-      const { browser, os } = parseUserAgent(event.user_agent as string);
-      return { ...event, browser, os };
-    });
+    const processedEvents = [];
+    for (let i = 0; i < recentEvents.length; i++) {
+      const event = recentEvents[i];
+      const { browser, os } = parseUserAgent(String(event.user_agent || ''));
+      processedEvents.push({ ...event, browser, os });
+    }
 
     return NextResponse.json({
       stats: {
