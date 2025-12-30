@@ -160,8 +160,36 @@ export default function Dashboard() {
 
   const conversionRate = stats && stats.totalVisitors > 0 ? ((stats.identifiedVisitors / stats.totalVisitors) * 100).toFixed(1) : '0';
   const getMaxCount = (items: BreakdownItem[]) => Math.max(...items.map(i => Number(i.count) || 0), 1);
-  const eventColors: Record<string, string> = { page_view: '#3b82f6', click: '#10b981', button_click: '#06b6d4', form_submit: '#8b5cf6', identify: '#f59e0b', page_leave: '#ef4444' };
-
+const eventColors: Record<string, string> = { 
+  page_view: '#3b82f6', 
+  click: '#10b981', 
+  button_click: '#06b6d4', 
+  form_submit: '#8b5cf6', 
+  identify: '#f59e0b', 
+  page_leave: '#ef4444',
+  scroll_depth: '#a855f7',
+  time_on_page: '#ec4899',
+  form_start: '#14b8a6',
+  form_abandon: '#f97316',
+  outbound_click: '#06b6d4',
+  product_view: '#8b5cf6',
+  add_to_cart: '#22c55e',
+  remove_from_cart: '#ef4444',
+  cart_view: '#3b82f6',
+  begin_checkout: '#f59e0b',
+  purchase: '#10b981',
+  cart_abandon: '#ef4444',
+  lead_form: '#8b5cf6',
+  video_start: '#6366f1',
+  video_progress: '#a855f7',
+  video_complete: '#22c55e',
+  file_download: '#06b6d4',
+  search: '#f59e0b',
+  share: '#ec4899',
+  sign_up: '#10b981',
+  login: '#3b82f6',
+  logout: '#64748b'
+};
   return (
     <div style={{ minHeight: '100vh', background: 'linear-gradient(135deg, #0f172a 0%, #1e293b 50%, #0f172a 100%)', fontFamily: 'system-ui, sans-serif' }}>
       <header style={{ borderBottom: '1px solid #334155', background: 'rgba(15,23,42,0.95)', padding: '16px 24px', position: 'sticky', top: 0, zIndex: 100 }}>
