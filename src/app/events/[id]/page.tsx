@@ -105,8 +105,12 @@ export default function EventDetailPage() {
     <div style={{ minHeight: '100vh', background: 'linear-gradient(135deg, #0f172a 0%, #1e293b 100%)', padding: '24px' }}>
       {/* Header */}
       <header style={{ marginBottom: '24px' }}>
-        <a href="/" style={{ color: '#94a3b8', textDecoration: 'none', fontSize: '14px' }}>← Back to Dashboard</a>
-        <div style={{ display: 'flex', alignItems: 'center', gap: '16px', marginTop: '16px' }}>
+        <nav style={{ display: 'flex', gap: '8px', alignItems: 'center', marginBottom: '16px' }}>
+          <a href="/" style={{ color: '#94a3b8', textDecoration: 'none', fontSize: '14px' }}>Dashboard</a>
+          <span style={{ color: '#475569' }}>/</span>
+          <span style={{ color: '#e2e8f0', fontSize: '14px' }}>Event Details</span>
+        </nav>
+        <div style={{ display: 'flex', alignItems: 'center', gap: '16px' }}>
           <span style={{ fontSize: '48px' }}>{eventIcons[event.event_type] || '📌'}</span>
           <div>
             <h1 style={{ margin: 0, fontSize: '28px', fontWeight: 700, color: '#f8fafc' }}>
@@ -128,7 +132,7 @@ export default function EventDetailPage() {
         </div>
       </header>
 
-      <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '24px' }}>
+      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(400px, 1fr))', gap: '24px' }}>
         {/* Basic Info */}
         <div style={{ background: '#1e293b', borderRadius: '12px', padding: '24px', border: '1px solid #334155' }}>
           <h2 style={{ color: '#f8fafc', fontSize: '16px', margin: '0 0 20px', display: 'flex', alignItems: 'center', gap: '8px' }}>
@@ -138,7 +142,7 @@ export default function EventDetailPage() {
           <div style={{ display: 'grid', gap: '12px' }}>
             <div style={{ display: 'flex', justifyContent: 'space-between', padding: '12px', background: '#0f172a', borderRadius: '8px' }}>
               <span style={{ color: '#94a3b8' }}>Event ID</span>
-              <span style={{ color: '#64748b', fontSize: '12px' }}>{event.id}</span>
+              <span style={{ color: '#64748b', fontSize: '11px', fontFamily: 'monospace' }}>{event.id}</span>
             </div>
             
             <div style={{ display: 'flex', justifyContent: 'space-between', padding: '12px', background: '#0f172a', borderRadius: '8px' }}>
@@ -146,22 +150,22 @@ export default function EventDetailPage() {
               <span style={{ color: '#e2e8f0' }}>{new Date(event.timestamp).toLocaleString()}</span>
             </div>
             
-            <div style={{ display: 'flex', justifyContent: 'space-between', padding: '12px', background: '#0f172a', borderRadius: '8px' }}>
-              <span style={{ color: '#94a3b8' }}>Page URL</span>
-              <span style={{ color: '#22d3ee', fontSize: '12px', maxWidth: '250px', overflow: 'hidden', textOverflow: 'ellipsis' }}>
-                {event.page_url?.replace('file:///Users/boopin/Downloads/', '') || 'N/A'}
+            <div style={{ padding: '12px', background: '#0f172a', borderRadius: '8px' }}>
+              <span style={{ color: '#94a3b8', display: 'block', marginBottom: '8px' }}>Page URL</span>
+              <span style={{ color: '#22d3ee', fontSize: '12px', wordBreak: 'break-all' }}>
+                {event.page_url || 'N/A'}
               </span>
             </div>
             
             <div style={{ display: 'flex', justifyContent: 'space-between', padding: '12px', background: '#0f172a', borderRadius: '8px' }}>
               <span style={{ color: '#94a3b8' }}>Page Path</span>
-              <span style={{ color: '#e2e8f0', fontSize: '12px' }}>{event.page_path?.replace('/Users/boopin/Downloads/', '') || 'N/A'}</span>
+              <span style={{ color: '#e2e8f0', fontSize: '12px' }}>{event.page_path || 'N/A'}</span>
             </div>
             
             {event.referrer && (
-              <div style={{ display: 'flex', justifyContent: 'space-between', padding: '12px', background: '#0f172a', borderRadius: '8px' }}>
-                <span style={{ color: '#94a3b8' }}>Referrer</span>
-                <span style={{ color: '#e2e8f0', fontSize: '12px' }}>{event.referrer}</span>
+              <div style={{ padding: '12px', background: '#0f172a', borderRadius: '8px' }}>
+                <span style={{ color: '#94a3b8', display: 'block', marginBottom: '8px' }}>Referrer</span>
+                <span style={{ color: '#e2e8f0', fontSize: '12px', wordBreak: 'break-all' }}>{event.referrer}</span>
               </div>
             )}
           </div>
@@ -195,14 +199,20 @@ export default function EventDetailPage() {
               </div>
             )}
             
+            {!event.visitor_name && !event.visitor_email && (
+              <p style={{ color: '#64748b', fontSize: '13px', margin: 0, padding: '12px', background: '#0f172a', borderRadius: '8px' }}>
+                Anonymous visitor (not yet identified)
+              </p>
+            )}
+            
             <div style={{ display: 'flex', justifyContent: 'space-between', padding: '12px', background: '#0f172a', borderRadius: '8px' }}>
               <span style={{ color: '#94a3b8' }}>Visitor ID</span>
-              <span style={{ color: '#64748b', fontSize: '11px' }}>{event.visitor_id}</span>
+              <span style={{ color: '#64748b', fontSize: '10px', fontFamily: 'monospace' }}>{event.visitor_id}</span>
             </div>
             
             <div style={{ display: 'flex', justifyContent: 'space-between', padding: '12px', background: '#0f172a', borderRadius: '8px' }}>
               <span style={{ color: '#94a3b8' }}>Session ID</span>
-              <span style={{ color: '#64748b', fontSize: '11px' }}>{event.session_id || 'N/A'}</span>
+              <span style={{ color: '#64748b', fontSize: '10px', fontFamily: 'monospace' }}>{event.session_id || 'N/A'}</span>
             </div>
             
             <a 
@@ -248,7 +258,7 @@ export default function EventDetailPage() {
             
             <div style={{ display: 'flex', justifyContent: 'space-between', padding: '12px', background: '#0f172a', borderRadius: '8px' }}>
               <span style={{ color: '#94a3b8' }}>Device</span>
-              <span style={{ color: '#e2e8f0' }}>{event.device_type || 'Unknown'}</span>
+              <span style={{ color: '#e2e8f0' }}>{event.device_type || 'Unknown'} {event.device_type === 'mobile' ? '📱' : '💻'}</span>
             </div>
             
             <div style={{ display: 'flex', justifyContent: 'space-between', padding: '12px', background: '#0f172a', borderRadius: '8px' }}>
@@ -257,13 +267,13 @@ export default function EventDetailPage() {
             </div>
             
             <div style={{ display: 'flex', justifyContent: 'space-between', padding: '12px', background: '#0f172a', borderRadius: '8px' }}>
-              <span style={{ color: '#94a3b8' }}>OS</span>
+              <span style={{ color: '#94a3b8' }}>Operating System</span>
               <span style={{ color: '#e2e8f0' }}>{event.os || 'Unknown'}</span>
             </div>
             
             <div style={{ display: 'flex', justifyContent: 'space-between', padding: '12px', background: '#0f172a', borderRadius: '8px' }}>
               <span style={{ color: '#94a3b8' }}>IP Address</span>
-              <span style={{ color: '#64748b', fontSize: '12px' }}>{event.ip_address || 'Unknown'}</span>
+              <span style={{ color: '#64748b', fontSize: '12px', fontFamily: 'monospace' }}>{event.ip_address || 'Unknown'}</span>
             </div>
           </div>
         </div>
@@ -296,8 +306,24 @@ export default function EventDetailPage() {
               </div>
             )}
             
+            {event.utm_term && (
+              <div style={{ display: 'flex', justifyContent: 'space-between', padding: '12px', background: '#0f172a', borderRadius: '8px' }}>
+                <span style={{ color: '#94a3b8' }}>UTM Term</span>
+                <span style={{ color: '#e2e8f0' }}>{event.utm_term}</span>
+              </div>
+            )}
+            
+            {event.utm_content && (
+              <div style={{ display: 'flex', justifyContent: 'space-between', padding: '12px', background: '#0f172a', borderRadius: '8px' }}>
+                <span style={{ color: '#94a3b8' }}>UTM Content</span>
+                <span style={{ color: '#e2e8f0' }}>{event.utm_content}</span>
+              </div>
+            )}
+            
             {!event.utm_source && !event.utm_medium && !event.utm_campaign && (
-              <p style={{ color: '#64748b', fontSize: '13px', margin: 0 }}>No UTM parameters</p>
+              <p style={{ color: '#64748b', fontSize: '13px', margin: 0, padding: '12px', background: '#0f172a', borderRadius: '8px' }}>
+                No UTM parameters tracked
+              </p>
             )}
             
             {event.properties && Object.keys(event.properties).length > 0 && (
@@ -310,7 +336,8 @@ export default function EventDetailPage() {
                   color: '#22d3ee',
                   fontSize: '11px',
                   overflow: 'auto',
-                  maxHeight: '200px'
+                  maxHeight: '200px',
+                  margin: 0
                 }}>
                   {JSON.stringify(event.properties, null, 2)}
                 </pre>
@@ -319,6 +346,21 @@ export default function EventDetailPage() {
           </div>
         </div>
       </div>
+
+      {/* User Agent */}
+      {event.user_agent && (
+        <div style={{ marginTop: '24px', background: '#1e293b', borderRadius: '12px', padding: '24px', border: '1px solid #334155' }}>
+          <h2 style={{ color: '#f8fafc', fontSize: '16px', margin: '0 0 16px', display: 'flex', alignItems: 'center', gap: '8px' }}>
+            <span>🔧</span> Technical Details
+          </h2>
+          <div style={{ padding: '12px', background: '#0f172a', borderRadius: '8px' }}>
+            <span style={{ color: '#94a3b8', display: 'block', marginBottom: '8px' }}>User Agent</span>
+            <span style={{ color: '#64748b', fontSize: '11px', wordBreak: 'break-all', fontFamily: 'monospace' }}>
+              {event.user_agent}
+            </span>
+          </div>
+        </div>
+      )}
     </div>
   );
 }
