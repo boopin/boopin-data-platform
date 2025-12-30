@@ -37,9 +37,12 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ error: 'Name and rules are required' }, { status: 400 });
     }
 
+    // Convert rules array to JSON string for JSONB column
+    const rulesJson = JSON.stringify(rules);
+
     const result = await sql`
       INSERT INTO segments (name, description, rules)
-      VALUES (${name}, ${description || ''}, ${JSON.stringify(rules)})
+      VALUES (${name}, ${description || ''}, ${rulesJson}::jsonb)
       RETURNING id, name, description, rules, created_at
     `;
 
@@ -52,7 +55,7 @@ export async function POST(request: NextRequest) {
 
 async function getSegmentUserCount(rules: object[]): Promise<number> {
   try {
-    const visitors = await sql`SELECT id FROM visitors`;
+    const visitors = await sql`SELECT id, is_identified FROM visitors`;
     const events = await sql`
       SELECT visitor_id, event_type, page_path, device_type, country, city, 
              utm_source, timestamp
@@ -71,7 +74,7 @@ async function getSegmentUserCount(rules: object[]): Promise<number> {
     let matchCount = 0;
     for (const visitor of visitors) {
       const vEvents = visitorEvents[visitor.id as string] || [];
-      if (matchesRules(vEvents, rules, visitor)) {
+      if (matchesRules(vEvents, rules, visitor as Record<string, unknown>)) {
         matchCount++;
       }
     }
