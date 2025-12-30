@@ -499,7 +499,7 @@ export default function Dashboard() {
   var f=d.getElementsByTagName(s)[0],j=d.createElement(s);
   j.async=true;j.src=u;f.parentNode.insertBefore(j,f);
 })(window,document,'script',
-'https://boopin-data-platform.vercel.app/pixel.js','YOUR_API_KEY');
+'https://pulse-analytics-data-platform.vercel.app/pixel.js','YOUR_API_KEY');
 </script>`}
           </pre>
           <p style={{ color: '#64748b', fontSize: '12px', margin: '12px 0 0' }}>Your API Key: <code style={{ background: '#0f172a', padding: '2px 6px', borderRadius: '4px', color: '#22d3ee' }}>b64b1ae188e43c8be236ae5ab4c3e4f84899349717f8a2c2c215dda814918403</code></p>
