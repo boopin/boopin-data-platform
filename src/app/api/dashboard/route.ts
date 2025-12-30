@@ -4,166 +4,195 @@ import { NextRequest, NextResponse } from 'next/server';
 export const dynamic = 'force-dynamic';
 export const revalidate = 0;
 
-function parseUserAgent(ua: string) {
-  if (!ua) return { browser: 'Unknown', os: 'Unknown' };
-  
-  let browser = 'Unknown';
-  let os = 'Unknown';
-  
-  if (ua.includes('Firefox/')) browser = 'Firefox';
-  else if (ua.includes('Edg/')) browser = 'Edge';
-  else if (ua.includes('Chrome/')) browser = 'Chrome';
-  else if (ua.includes('Safari/') && !ua.includes('Chrome')) browser = 'Safari';
-  else if (ua.includes('Opera') || ua.includes('OPR/')) browser = 'Opera';
-  else if (ua.includes('MSIE') || ua.includes('Trident/')) browser = 'IE';
-  
-  if (ua.includes('Windows NT 10')) os = 'Windows 10';
-  else if (ua.includes('Windows')) os = 'Windows';
-  else if (ua.includes('Mac OS X')) os = 'macOS';
-  else if (ua.includes('iPhone') || ua.includes('iPad')) os = 'iOS';
-  else if (ua.includes('Android')) os = 'Android';
-  else if (ua.includes('Linux')) os = 'Linux';
-  
-  return { browser, os };
-}
-
 export async function GET(request: NextRequest) {
   try {
-    const searchParams = request.nextUrl.searchParams;
-    const dateFrom = searchParams.get('dateFrom') || '2020-01-01';
-    const dateTo = searchParams.get('dateTo') || '2099-12-31';
-    const eventType = searchParams.get('eventType') || 'all';
-    const country = searchParams.get('country') || 'all';
-    const device = searchParams.get('device') || 'all';
+    const { searchParams } = new URL(request.url);
+    const country = searchParams.get('country');
+    const eventType = searchParams.get('eventType');
+    const dateFrom = searchParams.get('dateFrom');
+    const dateTo = searchParams.get('dateTo');
 
-    const allEvents = await sql`
-      SELECT e.id, e.event_type, e.page_path, e.page_url, e.timestamp, e.visitor_id, 
-             e.user_agent, e.device_type, e.ip_address, e.referrer,
-             e.utm_source, e.utm_medium, e.utm_campaign,
-             e.country, e.city, e.region,
-             v.email, v.name
-      FROM events e
-      LEFT JOIN visitors v ON e.visitor_id = v.id
-      ORDER BY e.timestamp DESC
+    // Build filter conditions
+    let countryFilter = country ? sql`AND e.country = ${country}` : sql``;
+    let eventTypeFilter = eventType ? sql`AND e.event_type = ${eventType}` : sql``;
+    let dateFilter = sql``;
+    
+    if (dateFrom && dateTo) {
+      dateFilter = sql`AND e.timestamp >= ${dateFrom}::timestamp AND e.timestamp <= ${dateTo}::timestamp`;
+    } else if (dateFrom) {
+      dateFilter = sql`AND e.timestamp >= ${dateFrom}::timestamp`;
+    } else if (dateTo) {
+      dateFilter = sql`AND e.timestamp <= ${dateTo}::timestamp`;
+    }
+
+    // Stats
+    const statsResult = await sql`
+      SELECT 
+        COUNT(DISTINCT v.id) as total_visitors,
+        COUNT(CASE WHEN e.event_type = 'page_view' THEN 1 END) as total_page_views,
+        COUNT(e.id) as total_events,
+        COUNT(DISTINCT CASE WHEN v.is_identified = true THEN v.id END) as identified_visitors
+      FROM visitors v
+      LEFT JOIN events e ON v.id = e.visitor_id
+      WHERE 1=1 ${countryFilter} ${eventTypeFilter} ${dateFilter}
     `;
 
-    let filteredEvents = allEvents.filter((e: Record<string, unknown>) => {
-      const eventDate = new Date(e.timestamp as string).toISOString().split('T')[0];
-      if (eventDate < dateFrom || eventDate > dateTo) return false;
-      if (eventType !== 'all' && e.event_type !== eventType) return false;
-      if (country !== 'all' && e.country !== country) return false;
-      if (device !== 'all' && e.device_type !== device) return false;
-      return true;
-    });
+    // Recent events with visitor info
+    const recentEvents = await sql`
+      SELECT 
+        e.id,
+        e.event_type,
+        e.page_path,
+        e.page_url,
+        e.timestamp,
+        e.visitor_id,
+        e.user_agent,
+        e.device_type,
+        e.ip_address,
+        e.referrer,
+        e.utm_source,
+        e.utm_medium,
+        e.utm_campaign,
+        e.country,
+        e.city,
+        e.region,
+        v.email,
+        v.name,
+        e.browser,
+        e.os
+      FROM events e
+      LEFT JOIN visitors v ON e.visitor_id = v.id
+      WHERE 1=1 ${countryFilter} ${eventTypeFilter} ${dateFilter}
+      ORDER BY e.timestamp DESC
+      LIMIT 100
+    `;
 
-    const uniqueVisitors = new Set(filteredEvents.map((e: Record<string, unknown>) => e.visitor_id));
-    const pageViews = filteredEvents.filter((e: Record<string, unknown>) => e.event_type === 'page_view');
+    // Device breakdown
+    const deviceBreakdown = await sql`
+      SELECT device_type, COUNT(*) as count
+      FROM events e
+      WHERE device_type IS NOT NULL ${countryFilter} ${eventTypeFilter} ${dateFilter}
+      GROUP BY device_type
+      ORDER BY count DESC
+    `;
 
-    const deviceCounts: Record<string, number> = {};
-    filteredEvents.forEach((e: Record<string, unknown>) => {
-      const d = (e.device_type as string) || 'unknown';
-      deviceCounts[d] = (deviceCounts[d] || 0) + 1;
-    });
+    // Browser breakdown
+    const browserBreakdown = await sql`
+      SELECT browser as name, COUNT(*) as count
+      FROM events e
+      WHERE browser IS NOT NULL ${countryFilter} ${eventTypeFilter} ${dateFilter}
+      GROUP BY browser
+      ORDER BY count DESC
+      LIMIT 10
+    `;
 
-    const browserCounts: Record<string, number> = {};
-    const osCounts: Record<string, number> = {};
-    filteredEvents.forEach((e: Record<string, unknown>) => {
-      const { browser, os } = parseUserAgent(String(e.user_agent || ''));
-      browserCounts[browser] = (browserCounts[browser] || 0) + 1;
-      osCounts[os] = (osCounts[os] || 0) + 1;
-    });
+    // OS breakdown
+    const osBreakdown = await sql`
+      SELECT os as name, COUNT(*) as count
+      FROM events e
+      WHERE os IS NOT NULL ${countryFilter} ${eventTypeFilter} ${dateFilter}
+      GROUP BY os
+      ORDER BY count DESC
+      LIMIT 10
+    `;
 
-    const eventCounts: Record<string, number> = {};
-    filteredEvents.forEach((e: Record<string, unknown>) => {
-      const t = e.event_type as string;
-      eventCounts[t] = (eventCounts[t] || 0) + 1;
-    });
+    // Top pages
+    const topPages = await sql`
+      SELECT page_path, COUNT(*) as count
+      FROM events e
+      WHERE event_type = 'page_view' AND page_path IS NOT NULL ${countryFilter} ${dateFilter}
+      GROUP BY page_path
+      ORDER BY count DESC
+      LIMIT 10
+    `;
 
-    const countryCounts: Record<string, number> = {};
-    filteredEvents.forEach((e: Record<string, unknown>) => {
-      const c = (e.country as string) || '';
-      if (c && c !== 'Unknown') {
-        countryCounts[c] = (countryCounts[c] || 0) + 1;
-      }
-    });
+    // Event breakdown
+    const eventBreakdown = await sql`
+      SELECT event_type, COUNT(*) as count
+      FROM events e
+      WHERE 1=1 ${countryFilter} ${dateFilter}
+      GROUP BY event_type
+      ORDER BY count DESC
+    `;
 
-    const cityCounts: Record<string, { count: number; country: string }> = {};
-    filteredEvents.forEach((e: Record<string, unknown>) => {
-      const city = (e.city as string) || '';
-      const ctry = (e.country as string) || '';
-      if (city && city !== 'Unknown') {
-        if (!cityCounts[city]) cityCounts[city] = { count: 0, country: ctry };
-        cityCounts[city].count += 1;
-      }
-    });
+    // Traffic sources
+    const trafficSources = await sql`
+      SELECT 
+        COALESCE(utm_source, 'Direct') as source,
+        COUNT(*) as count
+      FROM events e
+      WHERE event_type = 'page_view' ${countryFilter} ${dateFilter}
+      GROUP BY COALESCE(utm_source, 'Direct')
+      ORDER BY count DESC
+      LIMIT 10
+    `;
 
-    const pageCounts: Record<string, number> = {};
-    pageViews.forEach((e: Record<string, unknown>) => {
-      const p = (e.page_path as string) || '/';
-      pageCounts[p] = (pageCounts[p] || 0) + 1;
-    });
-
-    const sourceCounts: Record<string, number> = {};
-    filteredEvents.forEach((e: Record<string, unknown>) => {
-      let source = (e.utm_source as string) || '';
-      if (!source) {
-        const ref = (e.referrer as string) || '';
-        if (!ref) source = 'Direct';
-        else if (ref.includes('google')) source = 'Google';
-        else if (ref.includes('facebook')) source = 'Facebook';
-        else if (ref.includes('twitter') || ref.includes('t.co')) source = 'Twitter';
-        else if (ref.includes('linkedin')) source = 'LinkedIn';
-        else source = 'Other';
-      }
-      sourceCounts[source] = (sourceCounts[source] || 0) + 1;
-    });
-
-    const identifiedUsers = await sql`
-      SELECT id, email, name, phone, anonymous_id, first_seen_at, last_seen_at, visit_count
-      FROM visitors
-      WHERE is_identified = true
-      ORDER BY last_seen_at DESC
+    // Country breakdown
+    const countryBreakdown = await sql`
+      SELECT country, COUNT(*) as count
+      FROM events e
+      WHERE country IS NOT NULL ${eventTypeFilter} ${dateFilter}
+      GROUP BY country
+      ORDER BY count DESC
       LIMIT 20
     `;
 
-    // Get unique values for filters (without spread operator on Set)
-    const countrySet: Record<string, boolean> = {};
-    const eventTypeSet: Record<string, boolean> = {};
-    allEvents.forEach((e: Record<string, unknown>) => {
-      const c = e.country as string;
-      const t = e.event_type as string;
-      if (c && c !== 'Unknown') countrySet[c] = true;
-      if (t) eventTypeSet[t] = true;
-    });
-    const uniqueCountries = Object.keys(countrySet).sort();
-    const uniqueEventTypes = Object.keys(eventTypeSet).sort();
+    // City breakdown
+    const cityBreakdown = await sql`
+      SELECT city, country, COUNT(*) as count
+      FROM events e
+      WHERE city IS NOT NULL ${countryFilter} ${eventTypeFilter} ${dateFilter}
+      GROUP BY city, country
+      ORDER BY count DESC
+      LIMIT 20
+    `;
 
-    const processedEvents = filteredEvents.slice(0, 100).map((event: Record<string, unknown>) => {
-      const { browser, os } = parseUserAgent(String(event.user_agent || ''));
-      return { ...event, browser, os };
-    });
+    // Identified users
+    const identifiedUsers = await sql`
+      SELECT 
+        v.id,
+        v.email,
+        v.name,
+        v.phone,
+        v.anonymous_id,
+        v.first_seen_at,
+        v.last_seen_at,
+        v.visit_count
+      FROM visitors v
+      WHERE v.is_identified = true
+      ORDER BY v.last_seen_at DESC
+      LIMIT 50
+    `;
+
+    // Get filter options
+    const countries = await sql`
+      SELECT DISTINCT country FROM events WHERE country IS NOT NULL ORDER BY country
+    `;
+    const eventTypes = await sql`
+      SELECT DISTINCT event_type FROM events ORDER BY event_type
+    `;
 
     return NextResponse.json({
       stats: {
-        totalVisitors: uniqueVisitors.size,
-        totalPageViews: pageViews.length,
-        totalEvents: filteredEvents.length,
-        identifiedVisitors: identifiedUsers.length,
+        totalVisitors: parseInt(statsResult[0].total_visitors) || 0,
+        totalPageViews: parseInt(statsResult[0].total_page_views) || 0,
+        totalEvents: parseInt(statsResult[0].total_events) || 0,
+        identifiedVisitors: parseInt(statsResult[0].identified_visitors) || 0,
       },
-      recentEvents: processedEvents,
-      deviceBreakdown: Object.entries(deviceCounts).map(([device_type, count]) => ({ device_type, count })).sort((a, b) => b.count - a.count),
-      browserBreakdown: Object.entries(browserCounts).map(([name, count]) => ({ name, count })).sort((a, b) => b.count - a.count),
-      osBreakdown: Object.entries(osCounts).map(([name, count]) => ({ name, count })).sort((a, b) => b.count - a.count),
-      topPages: Object.entries(pageCounts).map(([page_path, count]) => ({ page_path, count })).sort((a, b) => b.count - a.count).slice(0, 5),
-      eventBreakdown: Object.entries(eventCounts).map(([event_type, count]) => ({ event_type, count })).sort((a, b) => b.count - a.count),
-      trafficSources: Object.entries(sourceCounts).map(([source, count]) => ({ source, count })).sort((a, b) => b.count - a.count).slice(0, 5),
-      countryBreakdown: Object.entries(countryCounts).map(([country, count]) => ({ country, count })).sort((a, b) => b.count - a.count).slice(0, 10),
-      cityBreakdown: Object.entries(cityCounts).map(([city, data]) => ({ city, country: data.country, count: data.count })).sort((a, b) => b.count - a.count).slice(0, 10),
+      recentEvents,
+      deviceBreakdown,
+      browserBreakdown,
+      osBreakdown,
+      topPages,
+      eventBreakdown,
+      trafficSources,
+      countryBreakdown,
+      cityBreakdown,
       identifiedUsers,
       filters: {
-        countries: uniqueCountries,
-        eventTypes: uniqueEventTypes,
-      },
+        countries: countries.map(c => c.country),
+        eventTypes: eventTypes.map(e => e.event_type),
+      }
     }, {
       headers: {
         'Cache-Control': 'no-store, no-cache, must-revalidate, proxy-revalidate',
