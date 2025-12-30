@@ -468,14 +468,14 @@ export default function VisitorProfilePage() {
                       {event.event_type === 'identify' && event.properties && (
                         <div style={{ marginTop: '8px', padding: '8px', background: '#0f172a', borderRadius: '6px' }}>
                           <p style={{ color: '#f59e0b', fontSize: '11px', margin: 0 }}>
-                            Identified as: {(event.properties as Record<string, unknown>).name || (event.properties as Record<string, unknown>).email || 'Unknown'}
+                            Identified as: {String((event.properties as Record<string, unknown>).name || (event.properties as Record<string, unknown>).email || 'Unknown')}
                           </p>
                         </div>
                       )}
                       {event.event_type === 'purchase' && event.properties && (
                         <div style={{ marginTop: '8px', padding: '8px', background: '#0f172a', borderRadius: '6px' }}>
                           <p style={{ color: '#10b981', fontSize: '11px', margin: 0 }}>
-                            💰 Order: {(event.properties as Record<string, unknown>).order_id} - {(event.properties as Record<string, unknown>).currency} {(event.properties as Record<string, unknown>).total}
+                            💰 Order: {String((event.properties as Record<string, unknown>).order_id || '')} - {String((event.properties as Record<string, unknown>).currency || '')} {String((event.properties as Record<string, unknown>).total || '')}
                           </p>
                         </div>
                       )}
