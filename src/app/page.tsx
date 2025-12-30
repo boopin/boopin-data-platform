@@ -58,9 +58,6 @@ export default function Dashboard() {
   const [dateRange, setDateRange] = useState('all');
   const [countryFilter, setCountryFilter] = useState('');
   const [eventTypeFilter, setEventTypeFilter] = useState('');
-  
-  // Event detail modal
-  const [selectedEvent, setSelectedEvent] = useState<DashboardData['recentEvents'][0] | null>(null);
 
   const fetchData = async () => {
     try {
@@ -298,126 +295,6 @@ export default function Dashboard() {
 
   return (
     <div style={{ minHeight: '100vh', background: 'linear-gradient(135deg, #0f172a 0%, #1e293b 100%)', padding: '24px' }}>
-      {/* Event Detail Modal */}
-      {selectedEvent && (
-        <div 
-          style={{ 
-            position: 'fixed', 
-            top: 0, 
-            left: 0, 
-            right: 0, 
-            bottom: 0, 
-            background: 'rgba(0,0,0,0.8)', 
-            display: 'flex', 
-            alignItems: 'center', 
-            justifyContent: 'center',
-            zIndex: 1000,
-            padding: '20px'
-          }}
-          onClick={() => setSelectedEvent(null)}
-        >
-          <div 
-            style={{ 
-              background: '#1e293b', 
-              borderRadius: '16px', 
-              padding: '24px', 
-              maxWidth: '600px', 
-              width: '100%',
-              maxHeight: '80vh',
-              overflow: 'auto',
-              border: '1px solid #334155'
-            }}
-            onClick={e => e.stopPropagation()}
-          >
-            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '20px' }}>
-              <h2 style={{ margin: 0, color: '#f8fafc', display: 'flex', alignItems: 'center', gap: '8px' }}>
-                <span>{eventIcons[selectedEvent.event_type] || '📌'}</span>
-                Event Details
-              </h2>
-              <button 
-                onClick={() => setSelectedEvent(null)}
-                style={{ background: 'none', border: 'none', color: '#94a3b8', fontSize: '24px', cursor: 'pointer' }}
-              >
-                ×
-              </button>
-            </div>
-            
-            <div style={{ display: 'grid', gap: '12px' }}>
-              <div style={{ display: 'flex', justifyContent: 'space-between', padding: '12px', background: '#0f172a', borderRadius: '8px' }}>
-                <span style={{ color: '#94a3b8' }}>Event Type</span>
-                <span style={{ 
-                  background: eventColors[selectedEvent.event_type] || '#64748b', 
-                  color: 'white', 
-                  padding: '2px 10px', 
-                  borderRadius: '4px',
-                  fontWeight: 600
-                }}>
-                  {selectedEvent.event_type}
-                </span>
-              </div>
-              
-              <div style={{ display: 'flex', justifyContent: 'space-between', padding: '12px', background: '#0f172a', borderRadius: '8px' }}>
-                <span style={{ color: '#94a3b8' }}>Timestamp</span>
-                <span style={{ color: '#e2e8f0' }}>{new Date(selectedEvent.timestamp).toLocaleString()}</span>
-              </div>
-              
-              {selectedEvent.name && (
-                <div style={{ display: 'flex', justifyContent: 'space-between', padding: '12px', background: '#0f172a', borderRadius: '8px' }}>
-                  <span style={{ color: '#94a3b8' }}>User</span>
-                  <span style={{ color: '#22d3ee' }}>{selectedEvent.name}</span>
-                </div>
-              )}
-              
-              {selectedEvent.email && (
-                <div style={{ display: 'flex', justifyContent: 'space-between', padding: '12px', background: '#0f172a', borderRadius: '8px' }}>
-                  <span style={{ color: '#94a3b8' }}>Email</span>
-                  <span style={{ color: '#e2e8f0' }}>{selectedEvent.email}</span>
-                </div>
-              )}
-              
-              <div style={{ display: 'flex', justifyContent: 'space-between', padding: '12px', background: '#0f172a', borderRadius: '8px' }}>
-                <span style={{ color: '#94a3b8' }}>Page</span>
-                <span style={{ color: '#e2e8f0', maxWidth: '300px', overflow: 'hidden', textOverflow: 'ellipsis' }}>
-                  {selectedEvent.page_path?.replace('/Users/boopin/Downloads/', '') || 'N/A'}
-                </span>
-              </div>
-              
-              <div style={{ display: 'flex', justifyContent: 'space-between', padding: '12px', background: '#0f172a', borderRadius: '8px' }}>
-                <span style={{ color: '#94a3b8' }}>Location</span>
-                <span style={{ color: '#e2e8f0' }}>{selectedEvent.city}, {selectedEvent.country}</span>
-              </div>
-              
-              <div style={{ display: 'flex', justifyContent: 'space-between', padding: '12px', background: '#0f172a', borderRadius: '8px' }}>
-                <span style={{ color: '#94a3b8' }}>Device</span>
-                <span style={{ color: '#e2e8f0' }}>{selectedEvent.device_type} • {selectedEvent.browser} • {selectedEvent.os}</span>
-              </div>
-              
-              <div style={{ display: 'flex', justifyContent: 'space-between', padding: '12px', background: '#0f172a', borderRadius: '8px' }}>
-                <span style={{ color: '#94a3b8' }}>Visitor ID</span>
-                <span style={{ color: '#64748b', fontSize: '11px' }}>{selectedEvent.visitor_id}</span>
-              </div>
-              
-              <a 
-                href={`/visitors/${selectedEvent.visitor_id}`}
-                style={{ 
-                  display: 'block',
-                  textAlign: 'center',
-                  padding: '12px',
-                  background: '#3b82f6',
-                  color: 'white',
-                  borderRadius: '8px',
-                  textDecoration: 'none',
-                  fontWeight: 500,
-                  marginTop: '8px'
-                }}
-              >
-                View Full Visitor Profile →
-              </a>
-            </div>
-          </div>
-        </div>
-      )}
-
       {/* Header */}
       <header style={{ marginBottom: '24px', display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: '16px' }}>
         <div>
@@ -539,9 +416,9 @@ export default function Dashboard() {
           </h2>
           <div style={{ maxHeight: '500px', overflowY: 'auto' }}>
             {data?.recentEvents.slice(0, 50).map((event, i) => (
-              <div 
-                key={i} 
-                onClick={() => setSelectedEvent(event)}
+              <a 
+                key={i}
+                href={`/events/${event.id}`}
                 style={{ 
                   display: 'flex', 
                   alignItems: 'center', 
@@ -549,6 +426,7 @@ export default function Dashboard() {
                   padding: '12px', 
                   borderBottom: '1px solid #334155',
                   cursor: 'pointer',
+                  textDecoration: 'none',
                   transition: 'background 0.2s'
                 }}
                 onMouseEnter={e => (e.currentTarget.style.background = '#334155')}
@@ -574,7 +452,7 @@ export default function Dashboard() {
                     )}
                   </div>
                   <p style={{ color: '#94a3b8', fontSize: '12px', margin: '4px 0 0', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
-                    {event.page_path?.replace('/Users/boopin/Downloads/', '') || 'N/A'}
+                    {event.page_path || 'N/A'}
                   </p>
                 </div>
                 <div style={{ textAlign: 'right', flexShrink: 0 }}>
@@ -585,7 +463,7 @@ export default function Dashboard() {
                     {event.country || ''} {event.device_type === 'mobile' ? '📱' : '💻'}
                   </p>
                 </div>
-              </div>
+              </a>
             ))}
           </div>
         </div>
@@ -703,14 +581,19 @@ export default function Dashboard() {
           color: '#22d3ee',
           border: '1px solid #334155'
         }}>
-{`<script>
-(function(w,d,s,u,k){
-  w._bp=w._bp||[];w._bp.push(['init',k]);
-  var f=d.getElementsByTagName(s)[0],j=d.createElement(s);
-  j.async=true;j.src=u;f.parentNode.insertBefore(j,f);
-})(window,document,'script',
-'https://pulse-analytics-data-platform.vercel.app/pixel.js',
-'YOUR_API_KEY');
+{`<script src="https://pulse-analytics-data-platform.vercel.app/pixel.js"></script>
+<script>
+  // Pixel auto-initializes and tracks page views automatically
+  
+  // Optional: Identify users when they log in or submit forms
+  pulseAnalytics.identify('user@email.com', {
+    name: 'John Doe',
+    phone: '+1234567890'
+  });
+  
+  // Optional: Track e-commerce events
+  pulseAnalytics.addToCart({ id: 'SKU123', name: 'Product', price: 99.99 });
+  pulseAnalytics.purchase({ orderId: 'ORD-001', total: 99.99, currency: 'USD' });
 </script>`}
         </pre>
       </div>
