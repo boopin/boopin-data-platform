@@ -1,286 +1,555 @@
 'use client';
-
 import { useEffect, useState } from 'react';
-import Link from 'next/link';
 import { useParams } from 'next/navigation';
 
-interface Visitor {
-  id: string;
-  anonymous_id: string;
-  email: string;
-  name: string;
-  phone: string;
-  first_seen_at: string;
-  last_seen_at: string;
-  visit_count: number;
-  is_identified: boolean;
+interface VisitorData {
+  visitor: {
+    id: string;
+    email: string;
+    name: string;
+    phone: string;
+    anonymous_id: string;
+    first_seen_at: string;
+    last_seen_at: string;
+    visit_count: number;
+    is_identified: boolean;
+  };
+  events: Array<{
+    id: string;
+    event_type: string;
+    page_path: string;
+    page_url: string;
+    timestamp: string;
+    device_type: string;
+    browser: string;
+    os: string;
+    country: string;
+    city: string;
+    properties: Record<string, unknown>;
+  }>;
+  stats: {
+    totalEvents: number;
+    pageViews: number;
+    formSubmits: number;
+    purchases: number;
+  };
 }
 
-interface Event {
-  id: string;
-  event_type: string;
-  page_path: string;
-  page_url: string;
+interface IdentityRecord {
+  name?: string;
+  email?: string;
+  phone?: string;
   timestamp: string;
-  device_type: string;
-  browser: string;
-  os: string;
-  country: string;
-  city: string;
-  referrer: string;
-  utm_source: string;
-  utm_medium: string;
-  utm_campaign: string;
-  properties: string;
+  properties: Record<string, unknown>;
 }
 
 export default function VisitorProfilePage() {
   const params = useParams();
-  const visitorId = params.id as string;
-  
-  const [visitor, setVisitor] = useState<Visitor | null>(null);
-  const [events, setEvents] = useState<Event[]>([]);
+  const [data, setData] = useState<VisitorData | null>(null);
   const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
+  const [activeTab, setActiveTab] = useState<'timeline' | 'identity'>('timeline');
 
   useEffect(() => {
-    async function fetchProfile() {
+    const fetchVisitor = async () => {
       try {
-        const res = await fetch(`/api/visitors/${visitorId}`);
-        const data = await res.json();
-        setVisitor(data.visitor);
-        setEvents(data.events || []);
+        const response = await fetch(`/api/visitors/${params.id}`);
+        if (!response.ok) throw new Error('Visitor not found');
+        const result = await response.json();
+        setData(result);
       } catch (err) {
+        setError('Failed to load visitor');
         console.error(err);
       } finally {
         setLoading(false);
       }
-    }
-    if (visitorId) fetchProfile();
-  }, [visitorId]);
+    };
 
-  const formatDate = (timestamp: string) => {
-    return new Date(timestamp).toLocaleDateString('en-US', { 
-      month: 'short', day: 'numeric', year: 'numeric', hour: '2-digit', minute: '2-digit', second: '2-digit'
-    });
+    if (params.id) {
+      fetchVisitor();
+    }
+  }, [params.id]);
+
+  // Extract all identity events and build history
+  const getIdentityHistory = (): IdentityRecord[] => {
+    if (!data) return [];
+    
+    const identityEvents = data.events
+      .filter(e => e.event_type === 'identify')
+      .map(e => ({
+        name: e.properties?.name as string | undefined,
+        email: e.properties?.email as string | undefined,
+        phone: e.properties?.phone as string | undefined,
+        timestamp: e.timestamp,
+        properties: e.properties
+      }))
+      .sort((a, b) => new Date(a.timestamp).getTime() - new Date(b.timestamp).getTime());
+    
+    return identityEvents;
   };
 
-  const eventColors: Record<string, string> = {
-    page_view: '#3b82f6',
-    click: '#10b981',
-    button_click: '#06b6d4',
-    form_submit: '#8b5cf6',
-    identify: '#f59e0b',
-    page_leave: '#ef4444',
+  // Get unique identities (deduplicated)
+  const getUniqueIdentities = () => {
+    const history = getIdentityHistory();
+    const uniqueEmails = new Set<string>();
+    const uniqueNames = new Set<string>();
+    const uniquePhones = new Set<string>();
+    
+    history.forEach(record => {
+      if (record.email) uniqueEmails.add(record.email.toLowerCase());
+      if (record.name) uniqueNames.add(record.name);
+      if (record.phone) uniquePhones.add(record.phone);
+    });
+    
+    return {
+      emails: Array.from(uniqueEmails),
+      names: Array.from(uniqueNames),
+      phones: Array.from(uniquePhones),
+      hasConflict: uniqueEmails.size > 1 || uniqueNames.size > 1
+    };
+  };
+
+  const identityHistory = getIdentityHistory();
+  const uniqueIdentities = getUniqueIdentities();
+
+  const eventColors: Record<string, string> = { 
+    page_view: '#3b82f6', click: '#10b981', button_click: '#06b6d4', 
+    form_submit: '#8b5cf6', identify: '#f59e0b', page_leave: '#ef4444',
+    scroll_depth: '#a855f7', time_on_page: '#ec4899', form_start: '#14b8a6',
+    form_abandon: '#f97316', outbound_click: '#06b6d4', product_view: '#8b5cf6',
+    add_to_cart: '#22c55e', remove_from_cart: '#ef4444', cart_view: '#3b82f6',
+    begin_checkout: '#f59e0b', purchase: '#10b981', cart_abandon: '#ef4444',
+    lead_form: '#8b5cf6', video_start: '#6366f1', video_progress: '#a855f7',
+    video_complete: '#22c55e', file_download: '#06b6d4', search: '#f59e0b',
+    share: '#ec4899', sign_up: '#10b981', login: '#3b82f6', logout: '#64748b'
   };
 
   const eventIcons: Record<string, string> = {
-    page_view: '👁️',
-    click: '👆',
-    button_click: '🔘',
-    form_submit: '📝',
-    identify: '🎯',
-    page_leave: '👋',
+    page_view: '👁️', click: '👆', button_click: '🔘', form_submit: '📝',
+    identify: '👤', page_leave: '🚪', scroll_depth: '📜', time_on_page: '⏱️',
+    form_start: '✏️', form_abandon: '❌', outbound_click: '🔗', product_view: '🛍️',
+    add_to_cart: '🛒', remove_from_cart: '🗑️', cart_view: '🛒', begin_checkout: '💳',
+    purchase: '✅', cart_abandon: '🛒', lead_form: '📋', video_start: '▶️',
+    video_progress: '⏩', video_complete: '🎬', file_download: '📥', search: '🔍',
+    share: '📤', sign_up: '🆕', login: '🔑', logout: '🚶'
   };
 
   if (loading) {
     return (
       <div style={{ minHeight: '100vh', background: 'linear-gradient(135deg, #0f172a 0%, #1e293b 100%)', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
-        <p style={{ color: '#94a3b8' }}>Loading...</p>
+        <div style={{ textAlign: 'center', color: '#e2e8f0' }}>
+          <div style={{ fontSize: '48px', marginBottom: '16px' }}>👤</div>
+          <p>Loading visitor profile...</p>
+        </div>
       </div>
     );
   }
 
-  if (!visitor) {
+  if (error || !data) {
     return (
-      <div style={{ minHeight: '100vh', background: '#0f172a', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
-        <p style={{ color: '#f87171' }}>Visitor not found</p>
+      <div style={{ minHeight: '100vh', background: 'linear-gradient(135deg, #0f172a 0%, #1e293b 100%)', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+        <div style={{ textAlign: 'center', color: '#ef4444' }}>
+          <div style={{ fontSize: '48px', marginBottom: '16px' }}>⚠️</div>
+          <p>{error || 'Visitor not found'}</p>
+          <a href="/visitors" style={{ color: '#22d3ee', marginTop: '16px', display: 'inline-block' }}>← Back to Visitors</a>
+        </div>
       </div>
     );
   }
 
-  // Group events by date
-  const eventsByDate: Record<string, Event[]> = {};
-  events.forEach(event => {
-    const date = new Date(event.timestamp).toLocaleDateString('en-US', { month: 'long', day: 'numeric', year: 'numeric' });
-    if (!eventsByDate[date]) eventsByDate[date] = [];
-    eventsByDate[date].push(event);
-  });
+  const { visitor, events, stats } = data;
 
   return (
-    <div style={{ minHeight: '100vh', background: 'linear-gradient(135deg, #0f172a 0%, #1e293b 50%, #0f172a 100%)', fontFamily: 'system-ui, sans-serif' }}>
-      <header style={{ borderBottom: '1px solid #334155', background: 'rgba(15,23,42,0.95)', padding: '16px 24px', position: 'sticky', top: 0, zIndex: 100 }}>
-        <div style={{ maxWidth: '1400px', margin: '0 auto', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-          <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
-            <Link href="/" style={{ textDecoration: 'none', display: 'flex', alignItems: 'center', gap: '12px' }}>
-              <div style={{ width: '40px', height: '40px', background: 'linear-gradient(135deg, #06b6d4, #3b82f6)', borderRadius: '10px', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
-                <svg width="22" height="22" fill="none" stroke="white" strokeWidth="2" viewBox="0 0 24 24"><path d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z" /></svg>
-              </div>
-              <div>
-                <h1 style={{ margin: 0, fontSize: '20px', color: '#fff', fontWeight: 700 }}>Boopin Data Platform</h1>
-                <p style={{ margin: 0, fontSize: '13px', color: '#64748b' }}>Customer Profile</p>
-              </div>
-            </Link>
-          </div>
-          <nav style={{ display: 'flex', gap: '16px' }}>
-            <Link href="/" style={{ color: '#94a3b8', textDecoration: 'none', fontSize: '14px' }}>Dashboard</Link>
-            <Link href="/visitors" style={{ color: '#94a3b8', textDecoration: 'none', fontSize: '14px' }}>Visitors</Link>
-          </nav>
-        </div>
+    <div style={{ minHeight: '100vh', background: 'linear-gradient(135deg, #0f172a 0%, #1e293b 100%)', padding: '24px' }}>
+      {/* Header */}
+      <header style={{ marginBottom: '24px' }}>
+        <nav style={{ display: 'flex', gap: '8px', alignItems: 'center', marginBottom: '16px' }}>
+          <a href="/" style={{ color: '#94a3b8', textDecoration: 'none', fontSize: '14px' }}>Dashboard</a>
+          <span style={{ color: '#475569' }}>/</span>
+          <a href="/visitors" style={{ color: '#94a3b8', textDecoration: 'none', fontSize: '14px' }}>Visitors</a>
+          <span style={{ color: '#475569' }}>/</span>
+          <span style={{ color: '#e2e8f0', fontSize: '14px' }}>Profile</span>
+        </nav>
       </header>
 
-      <main style={{ maxWidth: '1400px', margin: '0 auto', padding: '24px' }}>
-        {/* Back Button */}
-        <Link href="/visitors" style={{ color: '#94a3b8', textDecoration: 'none', fontSize: '13px', display: 'inline-flex', alignItems: 'center', gap: '4px', marginBottom: '16px' }}>
-          ← Back to Visitors
-        </Link>
-
-        <div style={{ display: 'grid', gridTemplateColumns: '350px 1fr', gap: '24px' }}>
-          {/* Profile Card */}
-          <div>
-            <div style={{ background: '#1e293b', borderRadius: '12px', border: '1px solid #334155', padding: '24px', marginBottom: '16px' }}>
-              <div style={{ display: 'flex', alignItems: 'center', gap: '16px', marginBottom: '20px' }}>
-                <div style={{ width: '64px', height: '64px', background: visitor.is_identified ? 'linear-gradient(135deg, #10b981, #059669)' : 'linear-gradient(135deg, #f59e0b, #d97706)', borderRadius: '50%', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: '24px' }}>
-                  {visitor.is_identified ? '👤' : '❓'}
-                </div>
-                <div>
-                  <h2 style={{ margin: 0, fontSize: '20px', color: '#fff', fontWeight: 700 }}>{visitor.name || 'Anonymous Visitor'}</h2>
-                  <span style={{ 
-                    background: visitor.is_identified ? '#10b98120' : '#f59e0b20', 
-                    color: visitor.is_identified ? '#10b981' : '#f59e0b', 
-                    padding: '4px 10px', 
-                    borderRadius: '12px', 
-                    fontSize: '11px', 
-                    fontWeight: 500 
-                  }}>
-                    {visitor.is_identified ? 'Identified' : 'Anonymous'}
-                  </span>
-                </div>
+      <div style={{ display: 'grid', gridTemplateColumns: '350px 1fr', gap: '24px' }}>
+        {/* Left Sidebar - Profile Info */}
+        <div style={{ display: 'flex', flexDirection: 'column', gap: '16px' }}>
+          {/* Primary Identity Card */}
+          <div style={{ background: '#1e293b', borderRadius: '12px', padding: '24px', border: '1px solid #334155' }}>
+            <div style={{ display: 'flex', alignItems: 'center', gap: '16px', marginBottom: '20px' }}>
+              <div style={{ 
+                width: '64px', 
+                height: '64px', 
+                borderRadius: '50%', 
+                background: 'linear-gradient(135deg, #3b82f6, #8b5cf6)', 
+                display: 'flex', 
+                alignItems: 'center', 
+                justifyContent: 'center',
+                color: 'white',
+                fontWeight: 700,
+                fontSize: '24px'
+              }}>
+                {(visitor.name || visitor.email || '?')[0].toUpperCase()}
               </div>
-
-              <div style={{ display: 'flex', flexDirection: 'column', gap: '12px' }}>
-                <div>
-                  <p style={{ color: '#64748b', margin: 0, fontSize: '11px', textTransform: 'uppercase' }}>Email</p>
-                  <p style={{ color: '#22d3ee', margin: '4px 0 0', fontSize: '14px' }}>{visitor.email || '-'}</p>
-                </div>
-                <div>
-                  <p style={{ color: '#64748b', margin: 0, fontSize: '11px', textTransform: 'uppercase' }}>Phone</p>
-                  <p style={{ color: '#e2e8f0', margin: '4px 0 0', fontSize: '14px' }}>{visitor.phone || '-'}</p>
-                </div>
-                <div>
-                  <p style={{ color: '#64748b', margin: 0, fontSize: '11px', textTransform: 'uppercase' }}>Visitor ID</p>
-                  <p style={{ color: '#94a3b8', margin: '4px 0 0', fontSize: '12px', fontFamily: 'monospace', wordBreak: 'break-all' }}>{visitor.anonymous_id}</p>
-                </div>
+              <div>
+                <h1 style={{ margin: 0, fontSize: '20px', fontWeight: 700, color: '#f8fafc' }}>
+                  {visitor.name || 'Anonymous'}
+                </h1>
+                <p style={{ margin: '4px 0 0', color: '#94a3b8', fontSize: '13px' }}>
+                  {visitor.is_identified ? '✓ Identified' : 'Anonymous Visitor'}
+                </p>
               </div>
             </div>
 
-            {/* Stats Card */}
-            <div style={{ background: '#1e293b', borderRadius: '12px', border: '1px solid #334155', padding: '20px' }}>
-              <h3 style={{ margin: '0 0 16px', fontSize: '14px', color: '#fff', fontWeight: 600 }}>📊 Activity Summary</h3>
-              <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '12px' }}>
-                <div style={{ background: '#0f172a', borderRadius: '8px', padding: '12px', textAlign: 'center' }}>
-                  <p style={{ color: '#3b82f6', margin: 0, fontSize: '24px', fontWeight: 700 }}>{visitor.visit_count}</p>
-                  <p style={{ color: '#64748b', margin: '4px 0 0', fontSize: '11px' }}>Total Visits</p>
+            {/* Identity Conflict Warning */}
+            {uniqueIdentities.hasConflict && (
+              <div style={{ 
+                background: '#fef3c7', 
+                border: '1px solid #f59e0b', 
+                borderRadius: '8px', 
+                padding: '12px', 
+                marginBottom: '16px'
+              }}>
+                <div style={{ display: 'flex', alignItems: 'center', gap: '8px', marginBottom: '8px' }}>
+                  <span style={{ fontSize: '16px' }}>⚠️</span>
+                  <span style={{ color: '#92400e', fontWeight: 600, fontSize: '13px' }}>Multiple Identities Detected</span>
                 </div>
-                <div style={{ background: '#0f172a', borderRadius: '8px', padding: '12px', textAlign: 'center' }}>
-                  <p style={{ color: '#8b5cf6', margin: 0, fontSize: '24px', fontWeight: 700 }}>{events.length}</p>
-                  <p style={{ color: '#64748b', margin: '4px 0 0', fontSize: '11px' }}>Total Events</p>
-                </div>
-                <div style={{ background: '#0f172a', borderRadius: '8px', padding: '12px', textAlign: 'center' }}>
-                  <p style={{ color: '#10b981', margin: 0, fontSize: '24px', fontWeight: 700 }}>{events.filter(e => e.event_type === 'page_view').length}</p>
-                  <p style={{ color: '#64748b', margin: '4px 0 0', fontSize: '11px' }}>Page Views</p>
-                </div>
-                <div style={{ background: '#0f172a', borderRadius: '8px', padding: '12px', textAlign: 'center' }}>
-                  <p style={{ color: '#f59e0b', margin: 0, fontSize: '24px', fontWeight: 700 }}>{Object.keys(eventsByDate).length}</p>
-                  <p style={{ color: '#64748b', margin: '4px 0 0', fontSize: '11px' }}>Days Active</p>
+                <p style={{ color: '#a16207', fontSize: '12px', margin: 0 }}>
+                  This visitor has identified with {uniqueIdentities.emails.length} different email(s) 
+                  {uniqueIdentities.names.length > 1 ? ` and ${uniqueIdentities.names.length} different name(s)` : ''}.
+                  This could indicate a shared device or test data.
+                </p>
+              </div>
+            )}
+
+            {/* Primary Contact Info */}
+            <div style={{ display: 'grid', gap: '12px' }}>
+              <div style={{ display: 'flex', alignItems: 'center', gap: '12px', padding: '12px', background: '#0f172a', borderRadius: '8px' }}>
+                <span style={{ fontSize: '16px' }}>📧</span>
+                <div>
+                  <p style={{ color: '#64748b', fontSize: '10px', margin: 0, textTransform: 'uppercase' }}>Primary Email</p>
+                  <p style={{ color: '#22d3ee', fontSize: '13px', margin: '2px 0 0', fontWeight: 500 }}>{visitor.email || 'Not provided'}</p>
                 </div>
               </div>
 
-              <div style={{ marginTop: '16px', paddingTop: '16px', borderTop: '1px solid #334155' }}>
-                <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '8px' }}>
-                  <span style={{ color: '#64748b', fontSize: '12px' }}>First Seen</span>
-                  <span style={{ color: '#e2e8f0', fontSize: '12px' }}>{formatDate(visitor.first_seen_at)}</span>
+              {visitor.phone && (
+                <div style={{ display: 'flex', alignItems: 'center', gap: '12px', padding: '12px', background: '#0f172a', borderRadius: '8px' }}>
+                  <span style={{ fontSize: '16px' }}>📱</span>
+                  <div>
+                    <p style={{ color: '#64748b', fontSize: '10px', margin: 0, textTransform: 'uppercase' }}>Phone</p>
+                    <p style={{ color: '#e2e8f0', fontSize: '13px', margin: '2px 0 0' }}>{visitor.phone}</p>
+                  </div>
                 </div>
-                <div style={{ display: 'flex', justifyContent: 'space-between' }}>
-                  <span style={{ color: '#64748b', fontSize: '12px' }}>Last Seen</span>
-                  <span style={{ color: '#e2e8f0', fontSize: '12px' }}>{formatDate(visitor.last_seen_at)}</span>
+              )}
+
+              <div style={{ display: 'flex', alignItems: 'center', gap: '12px', padding: '12px', background: '#0f172a', borderRadius: '8px' }}>
+                <span style={{ fontSize: '16px' }}>🕐</span>
+                <div>
+                  <p style={{ color: '#64748b', fontSize: '10px', margin: 0, textTransform: 'uppercase' }}>First Seen</p>
+                  <p style={{ color: '#e2e8f0', fontSize: '13px', margin: '2px 0 0' }}>{new Date(visitor.first_seen_at).toLocaleDateString()}</p>
+                </div>
+              </div>
+
+              <div style={{ display: 'flex', alignItems: 'center', gap: '12px', padding: '12px', background: '#0f172a', borderRadius: '8px' }}>
+                <span style={{ fontSize: '16px' }}>📅</span>
+                <div>
+                  <p style={{ color: '#64748b', fontSize: '10px', margin: 0, textTransform: 'uppercase' }}>Last Active</p>
+                  <p style={{ color: '#e2e8f0', fontSize: '13px', margin: '2px 0 0' }}>{new Date(visitor.last_seen_at).toLocaleString()}</p>
                 </div>
               </div>
             </div>
           </div>
 
-          {/* Timeline */}
-          <div style={{ background: '#1e293b', borderRadius: '12px', border: '1px solid #334155', overflow: 'hidden' }}>
-            <div style={{ padding: '16px 20px', borderBottom: '1px solid #334155', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-              <h2 style={{ margin: 0, fontSize: '16px', color: '#fff', fontWeight: 600 }}>🕐 Activity Timeline</h2>
-              <span style={{ color: '#64748b', fontSize: '12px' }}>{events.length} events</span>
+          {/* Stats Card */}
+          <div style={{ background: '#1e293b', borderRadius: '12px', padding: '20px', border: '1px solid #334155' }}>
+            <h2 style={{ color: '#f8fafc', fontSize: '14px', margin: '0 0 16px', display: 'flex', alignItems: 'center', gap: '8px' }}>
+              <span>📊</span> Engagement Stats
+            </h2>
+            <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '12px' }}>
+              {[
+                { label: 'Total Events', value: stats.totalEvents, color: '#3b82f6' },
+                { label: 'Page Views', value: stats.pageViews, color: '#10b981' },
+                { label: 'Form Submits', value: stats.formSubmits, color: '#8b5cf6' },
+                { label: 'Purchases', value: stats.purchases, color: '#f59e0b' },
+              ].map((stat, i) => (
+                <div key={i} style={{ background: '#0f172a', borderRadius: '8px', padding: '12px', textAlign: 'center' }}>
+                  <p style={{ color: stat.color, fontSize: '24px', fontWeight: 700, margin: 0 }}>{stat.value}</p>
+                  <p style={{ color: '#64748b', fontSize: '10px', margin: '4px 0 0', textTransform: 'uppercase' }}>{stat.label}</p>
+                </div>
+              ))}
             </div>
-            <div style={{ maxHeight: '600px', overflowY: 'auto', padding: '20px' }}>
-              {Object.entries(eventsByDate).map(([date, dateEvents]) => (
-                <div key={date} style={{ marginBottom: '24px' }}>
-                  <div style={{ color: '#94a3b8', fontSize: '12px', fontWeight: 600, marginBottom: '12px', background: '#0f172a', padding: '8px 12px', borderRadius: '6px' }}>
-                    📅 {date}
-                  </div>
-                  <div style={{ borderLeft: '2px solid #334155', marginLeft: '8px', paddingLeft: '20px' }}>
-                    {dateEvents.map((event, i) => (
-                      <div key={event.id} style={{ marginBottom: i < dateEvents.length - 1 ? '16px' : 0, position: 'relative' }}>
-                        <div style={{ 
-                          position: 'absolute', 
-                          left: '-26px', 
-                          top: '4px',
-                          width: '12px', 
-                          height: '12px', 
-                          background: eventColors[event.event_type] || '#64748b', 
-                          borderRadius: '50%',
-                          border: '2px solid #1e293b'
-                        }}></div>
-                        <div style={{ background: '#0f172a', borderRadius: '8px', padding: '12px' }}>
-                          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: '8px' }}>
-                            <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
-                              <span style={{ fontSize: '16px' }}>{eventIcons[event.event_type] || '📌'}</span>
-                              <span style={{ 
-                                background: `${eventColors[event.event_type] || '#64748b'}20`, 
-                                color: eventColors[event.event_type] || '#94a3b8', 
-                                padding: '4px 10px', 
-                                borderRadius: '6px', 
-                                fontSize: '12px',
-                                fontWeight: 500
-                              }}>
-                                {event.event_type.replace('_', ' ')}
-                              </span>
-                            </div>
-                            <span style={{ color: '#64748b', fontSize: '11px' }}>
-                              {new Date(event.timestamp).toLocaleTimeString()}
-                            </span>
-                          </div>
-                          {event.page_path && (
-                            <div style={{ fontSize: '12px', color: '#94a3b8', marginBottom: '4px' }}>
-                              <span style={{ color: '#64748b' }}>Page:</span> {event.page_path}
-                            </div>
-                          )}
-                          <div style={{ display: 'flex', gap: '12px', flexWrap: 'wrap', fontSize: '11px', color: '#64748b' }}>
-                            {event.browser && <span>🌐 {event.browser}</span>}
-                            {event.os && <span>💻 {event.os}</span>}
-                            {event.device_type && <span>📱 {event.device_type}</span>}
-                            {event.country && event.country !== 'Unknown' && <span>📍 {event.city || ''}{event.city && event.country ? ', ' : ''}{event.country}</span>}
-                          </div>
-                          {event.utm_source && (
-                            <div style={{ marginTop: '8px', fontSize: '11px', color: '#64748b' }}>
-                              <span style={{ color: '#f59e0b' }}>UTM:</span> {event.utm_source}{event.utm_medium ? ` / ${event.utm_medium}` : ''}{event.utm_campaign ? ` / ${event.utm_campaign}` : ''}
-                            </div>
-                          )}
-                        </div>
-                      </div>
+          </div>
+
+          {/* All Known Identities */}
+          {uniqueIdentities.emails.length > 0 && (
+            <div style={{ background: '#1e293b', borderRadius: '12px', padding: '20px', border: '1px solid #334155' }}>
+              <h2 style={{ color: '#f8fafc', fontSize: '14px', margin: '0 0 16px', display: 'flex', alignItems: 'center', gap: '8px' }}>
+                <span>🏷️</span> All Known Identities
+              </h2>
+              
+              {uniqueIdentities.emails.length > 0 && (
+                <div style={{ marginBottom: '12px' }}>
+                  <p style={{ color: '#64748b', fontSize: '10px', margin: '0 0 8px', textTransform: 'uppercase' }}>Emails ({uniqueIdentities.emails.length})</p>
+                  <div style={{ display: 'flex', flexWrap: 'wrap', gap: '6px' }}>
+                    {uniqueIdentities.emails.map((email, i) => (
+                      <span key={i} style={{ 
+                        background: email === visitor.email?.toLowerCase() ? '#3b82f6' : '#334155', 
+                        color: 'white', 
+                        padding: '4px 10px', 
+                        borderRadius: '6px', 
+                        fontSize: '11px' 
+                      }}>
+                        {email} {email === visitor.email?.toLowerCase() && '(primary)'}
+                      </span>
                     ))}
                   </div>
                 </div>
-              ))}
-              {events.length === 0 && (
-                <p style={{ color: '#64748b', textAlign: 'center', padding: '32px' }}>No events recorded yet</p>
               )}
+
+              {uniqueIdentities.names.length > 0 && (
+                <div style={{ marginBottom: '12px' }}>
+                  <p style={{ color: '#64748b', fontSize: '10px', margin: '0 0 8px', textTransform: 'uppercase' }}>Names ({uniqueIdentities.names.length})</p>
+                  <div style={{ display: 'flex', flexWrap: 'wrap', gap: '6px' }}>
+                    {uniqueIdentities.names.map((name, i) => (
+                      <span key={i} style={{ 
+                        background: name === visitor.name ? '#8b5cf6' : '#334155', 
+                        color: 'white', 
+                        padding: '4px 10px', 
+                        borderRadius: '6px', 
+                        fontSize: '11px' 
+                      }}>
+                        {name} {name === visitor.name && '(primary)'}
+                      </span>
+                    ))}
+                  </div>
+                </div>
+              )}
+
+              {uniqueIdentities.phones.length > 0 && (
+                <div>
+                  <p style={{ color: '#64748b', fontSize: '10px', margin: '0 0 8px', textTransform: 'uppercase' }}>Phones ({uniqueIdentities.phones.length})</p>
+                  <div style={{ display: 'flex', flexWrap: 'wrap', gap: '6px' }}>
+                    {uniqueIdentities.phones.map((phone, i) => (
+                      <span key={i} style={{ 
+                        background: phone === visitor.phone ? '#10b981' : '#334155', 
+                        color: 'white', 
+                        padding: '4px 10px', 
+                        borderRadius: '6px', 
+                        fontSize: '11px' 
+                      }}>
+                        {phone} {phone === visitor.phone && '(primary)'}
+                      </span>
+                    ))}
+                  </div>
+                </div>
+              )}
+            </div>
+          )}
+
+          {/* Technical Info */}
+          <div style={{ background: '#1e293b', borderRadius: '12px', padding: '20px', border: '1px solid #334155' }}>
+            <h2 style={{ color: '#f8fafc', fontSize: '14px', margin: '0 0 16px', display: 'flex', alignItems: 'center', gap: '8px' }}>
+              <span>🔧</span> Technical Info
+            </h2>
+            <div style={{ display: 'grid', gap: '8px' }}>
+              <div style={{ padding: '10px', background: '#0f172a', borderRadius: '6px' }}>
+                <p style={{ color: '#64748b', fontSize: '10px', margin: 0, textTransform: 'uppercase' }}>Visitor ID</p>
+                <p style={{ color: '#94a3b8', fontSize: '10px', margin: '4px 0 0', fontFamily: 'monospace', wordBreak: 'break-all' }}>{visitor.id}</p>
+              </div>
+              <div style={{ padding: '10px', background: '#0f172a', borderRadius: '6px' }}>
+                <p style={{ color: '#64748b', fontSize: '10px', margin: 0, textTransform: 'uppercase' }}>Anonymous ID</p>
+                <p style={{ color: '#94a3b8', fontSize: '10px', margin: '4px 0 0', fontFamily: 'monospace', wordBreak: 'break-all' }}>{visitor.anonymous_id}</p>
+              </div>
+              <div style={{ padding: '10px', background: '#0f172a', borderRadius: '6px' }}>
+                <p style={{ color: '#64748b', fontSize: '10px', margin: 0, textTransform: 'uppercase' }}>Total Visits</p>
+                <p style={{ color: '#22d3ee', fontSize: '14px', margin: '4px 0 0', fontWeight: 600 }}>{visitor.visit_count}</p>
+              </div>
             </div>
           </div>
         </div>
-      </main>
+
+        {/* Right Side - Activity */}
+        <div style={{ background: '#1e293b', borderRadius: '12px', border: '1px solid #334155', overflow: 'hidden' }}>
+          {/* Tabs */}
+          <div style={{ display: 'flex', borderBottom: '1px solid #334155' }}>
+            <button 
+              onClick={() => setActiveTab('timeline')}
+              style={{ 
+                flex: 1, 
+                padding: '16px', 
+                background: activeTab === 'timeline' ? '#334155' : 'transparent',
+                border: 'none',
+                color: activeTab === 'timeline' ? '#f8fafc' : '#94a3b8',
+                fontSize: '14px',
+                fontWeight: 600,
+                cursor: 'pointer',
+                display: 'flex',
+                alignItems: 'center',
+                justifyContent: 'center',
+                gap: '8px'
+              }}
+            >
+              <span>📜</span> Event Timeline ({events.length})
+            </button>
+            <button 
+              onClick={() => setActiveTab('identity')}
+              style={{ 
+                flex: 1, 
+                padding: '16px', 
+                background: activeTab === 'identity' ? '#334155' : 'transparent',
+                border: 'none',
+                color: activeTab === 'identity' ? '#f8fafc' : '#94a3b8',
+                fontSize: '14px',
+                fontWeight: 600,
+                cursor: 'pointer',
+                display: 'flex',
+                alignItems: 'center',
+                justifyContent: 'center',
+                gap: '8px'
+              }}
+            >
+              <span>👤</span> Identity History ({identityHistory.length})
+            </button>
+          </div>
+
+          {/* Tab Content */}
+          <div style={{ padding: '20px', maxHeight: '700px', overflowY: 'auto' }}>
+            {activeTab === 'timeline' ? (
+              /* Event Timeline */
+              <div>
+                {events.map((event, i) => (
+                  <a 
+                    key={i}
+                    href={`/events/${event.id}`}
+                    style={{ 
+                      display: 'flex', 
+                      gap: '16px', 
+                      padding: '16px', 
+                      borderBottom: '1px solid #334155',
+                      textDecoration: 'none',
+                      transition: 'background 0.2s'
+                    }}
+                    onMouseEnter={e => (e.currentTarget.style.background = '#334155')}
+                    onMouseLeave={e => (e.currentTarget.style.background = 'transparent')}
+                  >
+                    <div style={{ 
+                      width: '40px', 
+                      height: '40px', 
+                      borderRadius: '50%', 
+                      background: eventColors[event.event_type] || '#64748b',
+                      display: 'flex',
+                      alignItems: 'center',
+                      justifyContent: 'center',
+                      fontSize: '18px',
+                      flexShrink: 0
+                    }}>
+                      {eventIcons[event.event_type] || '📌'}
+                    </div>
+                    <div style={{ flex: 1, minWidth: 0 }}>
+                      <div style={{ display: 'flex', alignItems: 'center', gap: '8px', marginBottom: '4px' }}>
+                        <span style={{ 
+                          background: eventColors[event.event_type] || '#64748b', 
+                          color: 'white', 
+                          padding: '2px 8px', 
+                          borderRadius: '4px', 
+                          fontSize: '11px',
+                          fontWeight: 600
+                        }}>
+                          {event.event_type}
+                        </span>
+                        <span style={{ color: '#64748b', fontSize: '11px' }}>
+                          {new Date(event.timestamp).toLocaleString()}
+                        </span>
+                      </div>
+                      <p style={{ color: '#94a3b8', fontSize: '12px', margin: '4px 0 0', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
+                        {event.page_path || 'N/A'}
+                      </p>
+                      {event.event_type === 'identify' && event.properties && (
+                        <div style={{ marginTop: '8px', padding: '8px', background: '#0f172a', borderRadius: '6px' }}>
+                          <p style={{ color: '#f59e0b', fontSize: '11px', margin: 0 }}>
+                            Identified as: {(event.properties as Record<string, unknown>).name || (event.properties as Record<string, unknown>).email || 'Unknown'}
+                          </p>
+                        </div>
+                      )}
+                      {event.event_type === 'purchase' && event.properties && (
+                        <div style={{ marginTop: '8px', padding: '8px', background: '#0f172a', borderRadius: '6px' }}>
+                          <p style={{ color: '#10b981', fontSize: '11px', margin: 0 }}>
+                            💰 Order: {(event.properties as Record<string, unknown>).order_id} - {(event.properties as Record<string, unknown>).currency} {(event.properties as Record<string, unknown>).total}
+                          </p>
+                        </div>
+                      )}
+                    </div>
+                    <div style={{ color: '#475569', fontSize: '10px', textAlign: 'right', flexShrink: 0 }}>
+                      {event.country && <p style={{ margin: 0 }}>{event.city}, {event.country}</p>}
+                      <p style={{ margin: '4px 0 0' }}>{event.device_type} {event.device_type === 'mobile' ? '📱' : '💻'}</p>
+                    </div>
+                  </a>
+                ))}
+              </div>
+            ) : (
+              /* Identity History */
+              <div>
+                <p style={{ color: '#94a3b8', fontSize: '13px', marginBottom: '20px' }}>
+                  Chronological history of all identity events for this visitor. The primary identity is determined by the most recent complete identification.
+                </p>
+                {identityHistory.length === 0 ? (
+                  <p style={{ color: '#64748b', textAlign: 'center', padding: '40px' }}>No identify events found</p>
+                ) : (
+                  identityHistory.map((record, i) => (
+                    <div 
+                      key={i}
+                      style={{ 
+                        padding: '16px', 
+                        background: '#0f172a', 
+                        borderRadius: '8px',
+                        marginBottom: '12px',
+                        border: '1px solid #334155'
+                      }}
+                    >
+                      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: '12px' }}>
+                        <span style={{ 
+                          background: '#f59e0b', 
+                          color: 'white', 
+                          padding: '2px 8px', 
+                          borderRadius: '4px', 
+                          fontSize: '10px',
+                          fontWeight: 600
+                        }}>
+                          IDENTIFY #{i + 1}
+                        </span>
+                        <span style={{ color: '#64748b', fontSize: '11px' }}>
+                          {new Date(record.timestamp).toLocaleString()}
+                        </span>
+                      </div>
+                      <div style={{ display: 'grid', gap: '8px' }}>
+                        {record.name && (
+                          <div style={{ display: 'flex', gap: '8px' }}>
+                            <span style={{ color: '#64748b', fontSize: '12px', width: '60px' }}>Name:</span>
+                            <span style={{ color: '#f8fafc', fontSize: '12px', fontWeight: 500 }}>{record.name}</span>
+                          </div>
+                        )}
+                        {record.email && (
+                          <div style={{ display: 'flex', gap: '8px' }}>
+                            <span style={{ color: '#64748b', fontSize: '12px', width: '60px' }}>Email:</span>
+                            <span style={{ color: '#22d3ee', fontSize: '12px' }}>{record.email}</span>
+                          </div>
+                        )}
+                        {record.phone && (
+                          <div style={{ display: 'flex', gap: '8px' }}>
+                            <span style={{ color: '#64748b', fontSize: '12px', width: '60px' }}>Phone:</span>
+                            <span style={{ color: '#e2e8f0', fontSize: '12px' }}>{record.phone}</span>
+                          </div>
+                        )}
+                      </div>
+                    </div>
+                  ))
+                )}
+              </div>
+            )}
+          </div>
+        </div>
+      </div>
     </div>
   );
 }
