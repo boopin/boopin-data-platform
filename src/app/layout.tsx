@@ -1,8 +1,27 @@
 import type { Metadata } from "next";
+import { Geist, Geist_Mono } from "next/font/google";
+import "./globals.css";
+
+const geistSans = Geist({
+  variable: "--font-geist-sans",
+  subsets: ["latin"],
+});
+
+const geistMono = Geist_Mono({
+  variable: "--font-geist-mono",
+  subsets: ["latin"],
+});
 
 export const metadata: Metadata = {
-  title: "Boopin Data Platform TEST 123",
-  description: "1st Party Data Collection & Analytics",
+  title: "Pulse Analytics | Customer Data Platform",
+  description: "Real-time visitor tracking, audience segmentation, and customer intelligence platform. Track user behavior, build custom audiences, and drive conversions.",
+  keywords: "analytics, CDP, customer data platform, visitor tracking, audience segmentation, marketing analytics",
+  authors: [{ name: "Pulse Analytics" }],
+  openGraph: {
+    title: "Pulse Analytics | Customer Data Platform",
+    description: "Real-time visitor tracking, audience segmentation, and customer intelligence platform.",
+    type: "website",
+  },
 };
 
 export default function RootLayout({
@@ -12,7 +31,11 @@ export default function RootLayout({
 }>) {
   return (
     <html lang="en">
-      <body style={{ margin: 0, padding: 0, background: '#0f172a', minHeight: '100vh' }}>{children}</body>
+      <body
+        className={`${geistSans.variable} ${geistMono.variable} antialiased`}
+      >
+        {children}
+      </body>
     </html>
   );
 }
