@@ -22,6 +22,7 @@ interface DashboardData {
     os: string;
     country?: string;
     city?: string;
+    properties?: Record<string, unknown>;
   }>;
   deviceBreakdown: Array<{ device_type: string; count: number }>;
   browserBreakdown: Array<{ name: string; count: number }>;
@@ -52,10 +53,43 @@ export default function Dashboard() {
   const [error, setError] = useState<string | null>(null);
   const [lastUpdated, setLastUpdated] = useState(new Date());
   const [currentTime, setCurrentTime] = useState(new Date());
+  
+  // Filters
+  const [dateRange, setDateRange] = useState('all');
+  const [countryFilter, setCountryFilter] = useState('');
+  const [eventTypeFilter, setEventTypeFilter] = useState('');
+  
+  // Event detail modal
+  const [selectedEvent, setSelectedEvent] = useState<DashboardData['recentEvents'][0] | null>(null);
 
   const fetchData = async () => {
     try {
-      const response = await fetch('/api/dashboard');
+      const params = new URLSearchParams();
+      if (countryFilter) params.append('country', countryFilter);
+      if (eventTypeFilter) params.append('eventType', eventTypeFilter);
+      
+      // Date range filter
+      if (dateRange !== 'all') {
+        const now = new Date();
+        let dateFrom: Date;
+        switch (dateRange) {
+          case 'today':
+            dateFrom = new Date(now.getFullYear(), now.getMonth(), now.getDate());
+            break;
+          case '7days':
+            dateFrom = new Date(now.getTime() - 7 * 24 * 60 * 60 * 1000);
+            break;
+          case '30days':
+            dateFrom = new Date(now.getTime() - 30 * 24 * 60 * 60 * 1000);
+            break;
+          default:
+            dateFrom = new Date(0);
+        }
+        params.append('dateFrom', dateFrom.toISOString());
+      }
+      
+      const url = `/api/dashboard${params.toString() ? '?' + params.toString() : ''}`;
+      const response = await fetch(url);
       if (!response.ok) throw new Error('Failed to fetch');
       const result = await response.json();
       setData(result);
@@ -73,12 +107,39 @@ export default function Dashboard() {
     fetchData();
     const interval = setInterval(fetchData, 30000);
     return () => clearInterval(interval);
-  }, []);
+  }, [dateRange, countryFilter, eventTypeFilter]);
 
   useEffect(() => {
     const timer = setInterval(() => setCurrentTime(new Date()), 1000);
     return () => clearInterval(timer);
   }, []);
+
+  // Export to CSV
+  const exportToCSV = () => {
+    if (!data) return;
+    
+    const headers = ['Timestamp', 'Event Type', 'User', 'Email', 'Page', 'Country', 'City', 'Device', 'Browser', 'OS'];
+    const rows = data.recentEvents.map(e => [
+      new Date(e.timestamp).toLocaleString(),
+      e.event_type,
+      e.name || '',
+      e.email || '',
+      e.page_path || '',
+      e.country || '',
+      e.city || '',
+      e.device_type || '',
+      e.browser || '',
+      e.os || ''
+    ]);
+    
+    const csv = [headers, ...rows].map(row => row.map(cell => `"${cell}"`).join(',')).join('\n');
+    const blob = new Blob([csv], { type: 'text/csv' });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = `pulse-analytics-export-${new Date().toISOString().split('T')[0]}.csv`;
+    a.click();
+  };
 
   // Event colors for all event types
   const eventColors: Record<string, string> = { 
@@ -133,7 +194,7 @@ export default function Dashboard() {
     cart_view: '🛒',
     begin_checkout: '💳',
     purchase: '✅',
-    cart_abandon: '🛒❌',
+    cart_abandon: '🛒',
     lead_form: '📋',
     video_start: '▶️',
     video_progress: '⏩',
@@ -150,7 +211,7 @@ export default function Dashboard() {
 
   // Calculate e-commerce metrics
   const getEcommerceMetrics = () => {
-    if (!data) return { purchases: 0, revenue: 0, cartAbandonment: 0, avgOrderValue: 0, addToCarts: 0, checkouts: 0 };
+    if (!data) return { purchases: 0, cartAbandonment: 0, addToCarts: 0, checkouts: 0 };
     
     const purchases = data.eventBreakdown.find(e => e.event_type === 'purchase')?.count || 0;
     const cartAbandons = data.eventBreakdown.find(e => e.event_type === 'cart_abandon')?.count || 0;
@@ -172,7 +233,6 @@ export default function Dashboard() {
     
     const formStarts = data.eventBreakdown.find(e => e.event_type === 'form_start')?.count || 0;
     const formSubmits = data.eventBreakdown.find(e => e.event_type === 'form_submit')?.count || 0;
-    const formAbandons = data.eventBreakdown.find(e => e.event_type === 'form_abandon')?.count || 0;
     const scrollEvents = data.eventBreakdown.find(e => e.event_type === 'scroll_depth')?.count || 0;
     
     const conversionRate = formStarts > 0 ? Math.round((formSubmits / formStarts) * 100) : 0;
@@ -180,7 +240,6 @@ export default function Dashboard() {
     return {
       formStarts,
       formSubmits,
-      formAbandons,
       conversionRate,
       scrollEvents
     };
@@ -188,6 +247,29 @@ export default function Dashboard() {
 
   const ecomMetrics = getEcommerceMetrics();
   const engagementMetrics = getEngagementMetrics();
+
+  // Styles
+  const selectStyle = {
+    padding: '8px 12px',
+    borderRadius: '8px',
+    border: '1px solid #334155',
+    background: '#0f172a',
+    color: '#e2e8f0',
+    fontSize: '13px',
+    cursor: 'pointer',
+    outline: 'none'
+  };
+
+  const buttonStyle = {
+    padding: '8px 16px',
+    borderRadius: '8px',
+    border: 'none',
+    background: '#3b82f6',
+    color: 'white',
+    fontSize: '13px',
+    cursor: 'pointer',
+    fontWeight: 500
+  };
 
   if (loading) {
     return (
@@ -206,7 +288,7 @@ export default function Dashboard() {
         <div style={{ textAlign: 'center', color: '#ef4444' }}>
           <div style={{ fontSize: '48px', marginBottom: '16px' }}>⚠️</div>
           <p>{error}</p>
-          <button onClick={fetchData} style={{ marginTop: '16px', padding: '8px 16px', background: '#3b82f6', color: 'white', border: 'none', borderRadius: '8px', cursor: 'pointer' }}>
+          <button onClick={fetchData} style={{ marginTop: '16px', ...buttonStyle }}>
             Retry
           </button>
         </div>
@@ -216,8 +298,128 @@ export default function Dashboard() {
 
   return (
     <div style={{ minHeight: '100vh', background: 'linear-gradient(135deg, #0f172a 0%, #1e293b 100%)', padding: '24px' }}>
+      {/* Event Detail Modal */}
+      {selectedEvent && (
+        <div 
+          style={{ 
+            position: 'fixed', 
+            top: 0, 
+            left: 0, 
+            right: 0, 
+            bottom: 0, 
+            background: 'rgba(0,0,0,0.8)', 
+            display: 'flex', 
+            alignItems: 'center', 
+            justifyContent: 'center',
+            zIndex: 1000,
+            padding: '20px'
+          }}
+          onClick={() => setSelectedEvent(null)}
+        >
+          <div 
+            style={{ 
+              background: '#1e293b', 
+              borderRadius: '16px', 
+              padding: '24px', 
+              maxWidth: '600px', 
+              width: '100%',
+              maxHeight: '80vh',
+              overflow: 'auto',
+              border: '1px solid #334155'
+            }}
+            onClick={e => e.stopPropagation()}
+          >
+            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '20px' }}>
+              <h2 style={{ margin: 0, color: '#f8fafc', display: 'flex', alignItems: 'center', gap: '8px' }}>
+                <span>{eventIcons[selectedEvent.event_type] || '📌'}</span>
+                Event Details
+              </h2>
+              <button 
+                onClick={() => setSelectedEvent(null)}
+                style={{ background: 'none', border: 'none', color: '#94a3b8', fontSize: '24px', cursor: 'pointer' }}
+              >
+                ×
+              </button>
+            </div>
+            
+            <div style={{ display: 'grid', gap: '12px' }}>
+              <div style={{ display: 'flex', justifyContent: 'space-between', padding: '12px', background: '#0f172a', borderRadius: '8px' }}>
+                <span style={{ color: '#94a3b8' }}>Event Type</span>
+                <span style={{ 
+                  background: eventColors[selectedEvent.event_type] || '#64748b', 
+                  color: 'white', 
+                  padding: '2px 10px', 
+                  borderRadius: '4px',
+                  fontWeight: 600
+                }}>
+                  {selectedEvent.event_type}
+                </span>
+              </div>
+              
+              <div style={{ display: 'flex', justifyContent: 'space-between', padding: '12px', background: '#0f172a', borderRadius: '8px' }}>
+                <span style={{ color: '#94a3b8' }}>Timestamp</span>
+                <span style={{ color: '#e2e8f0' }}>{new Date(selectedEvent.timestamp).toLocaleString()}</span>
+              </div>
+              
+              {selectedEvent.name && (
+                <div style={{ display: 'flex', justifyContent: 'space-between', padding: '12px', background: '#0f172a', borderRadius: '8px' }}>
+                  <span style={{ color: '#94a3b8' }}>User</span>
+                  <span style={{ color: '#22d3ee' }}>{selectedEvent.name}</span>
+                </div>
+              )}
+              
+              {selectedEvent.email && (
+                <div style={{ display: 'flex', justifyContent: 'space-between', padding: '12px', background: '#0f172a', borderRadius: '8px' }}>
+                  <span style={{ color: '#94a3b8' }}>Email</span>
+                  <span style={{ color: '#e2e8f0' }}>{selectedEvent.email}</span>
+                </div>
+              )}
+              
+              <div style={{ display: 'flex', justifyContent: 'space-between', padding: '12px', background: '#0f172a', borderRadius: '8px' }}>
+                <span style={{ color: '#94a3b8' }}>Page</span>
+                <span style={{ color: '#e2e8f0', maxWidth: '300px', overflow: 'hidden', textOverflow: 'ellipsis' }}>
+                  {selectedEvent.page_path?.replace('/Users/boopin/Downloads/', '') || 'N/A'}
+                </span>
+              </div>
+              
+              <div style={{ display: 'flex', justifyContent: 'space-between', padding: '12px', background: '#0f172a', borderRadius: '8px' }}>
+                <span style={{ color: '#94a3b8' }}>Location</span>
+                <span style={{ color: '#e2e8f0' }}>{selectedEvent.city}, {selectedEvent.country}</span>
+              </div>
+              
+              <div style={{ display: 'flex', justifyContent: 'space-between', padding: '12px', background: '#0f172a', borderRadius: '8px' }}>
+                <span style={{ color: '#94a3b8' }}>Device</span>
+                <span style={{ color: '#e2e8f0' }}>{selectedEvent.device_type} • {selectedEvent.browser} • {selectedEvent.os}</span>
+              </div>
+              
+              <div style={{ display: 'flex', justifyContent: 'space-between', padding: '12px', background: '#0f172a', borderRadius: '8px' }}>
+                <span style={{ color: '#94a3b8' }}>Visitor ID</span>
+                <span style={{ color: '#64748b', fontSize: '11px' }}>{selectedEvent.visitor_id}</span>
+              </div>
+              
+              <a 
+                href={`/visitors/${selectedEvent.visitor_id}`}
+                style={{ 
+                  display: 'block',
+                  textAlign: 'center',
+                  padding: '12px',
+                  background: '#3b82f6',
+                  color: 'white',
+                  borderRadius: '8px',
+                  textDecoration: 'none',
+                  fontWeight: 500,
+                  marginTop: '8px'
+                }}
+              >
+                View Full Visitor Profile →
+              </a>
+            </div>
+          </div>
+        </div>
+      )}
+
       {/* Header */}
-      <header style={{ marginBottom: '32px', display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: '16px' }}>
+      <header style={{ marginBottom: '24px', display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: '16px' }}>
         <div>
           <h1 style={{ margin: 0, fontSize: '28px', fontWeight: 700, color: '#f8fafc' }}>
             📊 Pulse Analytics
@@ -236,6 +438,50 @@ export default function Dashboard() {
           </div>
         </div>
       </header>
+
+      {/* Filters Row */}
+      <div style={{ 
+        display: 'flex', 
+        gap: '12px', 
+        marginBottom: '24px', 
+        flexWrap: 'wrap',
+        alignItems: 'center',
+        background: '#1e293b',
+        padding: '16px',
+        borderRadius: '12px',
+        border: '1px solid #334155'
+      }}>
+        <select value={dateRange} onChange={e => setDateRange(e.target.value)} style={selectStyle}>
+          <option value="all">All Time</option>
+          <option value="today">Today</option>
+          <option value="7days">Last 7 Days</option>
+          <option value="30days">Last 30 Days</option>
+        </select>
+        
+        <select value={countryFilter} onChange={e => setCountryFilter(e.target.value)} style={selectStyle}>
+          <option value="">All Countries</option>
+          {data?.filters.countries.map(c => (
+            <option key={c} value={c}>{c}</option>
+          ))}
+        </select>
+        
+        <select value={eventTypeFilter} onChange={e => setEventTypeFilter(e.target.value)} style={selectStyle}>
+          <option value="">All Events</option>
+          {data?.filters.eventTypes.map(e => (
+            <option key={e} value={e}>{e}</option>
+          ))}
+        </select>
+        
+        <div style={{ flex: 1 }} />
+        
+        <button onClick={() => { setDateRange('all'); setCountryFilter(''); setEventTypeFilter(''); }} style={{ ...buttonStyle, background: '#334155' }}>
+          Clear Filters
+        </button>
+        
+        <button onClick={exportToCSV} style={buttonStyle}>
+          📥 Export CSV
+        </button>
+      </div>
 
       {/* Main Stats */}
       <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(200px, 1fr))', gap: '16px', marginBottom: '24px' }}>
@@ -258,7 +504,7 @@ export default function Dashboard() {
       </div>
 
       {/* E-commerce & Engagement Stats */}
-      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(180px, 1fr))', gap: '12px', marginBottom: '24px' }}>
+      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(150px, 1fr))', gap: '12px', marginBottom: '24px' }}>
         {[
           { label: 'Purchases', value: ecomMetrics.purchases, icon: '✅', color: '#10b981' },
           { label: 'Add to Cart', value: ecomMetrics.addToCarts, icon: '🛒', color: '#22c55e' },
@@ -269,13 +515,13 @@ export default function Dashboard() {
           { label: 'Form Conversion', value: `${engagementMetrics.conversionRate}%`, icon: '📊', color: '#3b82f6' },
           { label: 'Scroll Events', value: engagementMetrics.scrollEvents, icon: '📜', color: '#a855f7' },
         ].map((stat, i) => (
-          <div key={i} style={{ background: '#1e293b', borderRadius: '10px', padding: '16px', border: '1px solid #334155' }}>
+          <div key={i} style={{ background: '#1e293b', borderRadius: '10px', padding: '14px', border: '1px solid #334155' }}>
             <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
               <div>
-                <p style={{ color: '#64748b', fontSize: '11px', margin: 0, textTransform: 'uppercase' }}>{stat.label}</p>
-                <p style={{ color: stat.color, fontSize: '24px', fontWeight: 700, margin: '4px 0 0' }}>{stat.value}</p>
+                <p style={{ color: '#64748b', fontSize: '10px', margin: 0, textTransform: 'uppercase' }}>{stat.label}</p>
+                <p style={{ color: stat.color, fontSize: '22px', fontWeight: 700, margin: '4px 0 0' }}>{stat.value}</p>
               </div>
-              <span style={{ fontSize: '20px' }}>{stat.icon}</span>
+              <span style={{ fontSize: '18px' }}>{stat.icon}</span>
             </div>
           </div>
         ))}
@@ -287,17 +533,27 @@ export default function Dashboard() {
         <div style={{ background: '#1e293b', borderRadius: '12px', padding: '20px', border: '1px solid #334155' }}>
           <h2 style={{ color: '#f8fafc', fontSize: '16px', margin: '0 0 16px', display: 'flex', alignItems: 'center', gap: '8px' }}>
             <span>⚡</span> Recent Events
+            <span style={{ fontSize: '12px', color: '#64748b', fontWeight: 400 }}>
+              (click to view details)
+            </span>
           </h2>
           <div style={{ maxHeight: '500px', overflowY: 'auto' }}>
             {data?.recentEvents.slice(0, 50).map((event, i) => (
-              <div key={i} style={{ 
-                display: 'flex', 
-                alignItems: 'center', 
-                gap: '12px', 
-                padding: '12px', 
-                borderBottom: '1px solid #334155',
-                transition: 'background 0.2s'
-              }}>
+              <div 
+                key={i} 
+                onClick={() => setSelectedEvent(event)}
+                style={{ 
+                  display: 'flex', 
+                  alignItems: 'center', 
+                  gap: '12px', 
+                  padding: '12px', 
+                  borderBottom: '1px solid #334155',
+                  cursor: 'pointer',
+                  transition: 'background 0.2s'
+                }}
+                onMouseEnter={e => (e.currentTarget.style.background = '#334155')}
+                onMouseLeave={e => (e.currentTarget.style.background = 'transparent')}
+              >
                 <span style={{ fontSize: '18px' }}>{eventIcons[event.event_type] || '📌'}</span>
                 <div style={{ flex: 1, minWidth: 0 }}>
                   <div style={{ display: 'flex', alignItems: 'center', gap: '8px', flexWrap: 'wrap' }}>
@@ -383,8 +639,7 @@ export default function Dashboard() {
                     gap: '12px', 
                     padding: '10px', 
                     borderBottom: '1px solid #334155',
-                    textDecoration: 'none',
-                    transition: 'background 0.2s'
+                    textDecoration: 'none'
                   }}
                 >
                   <div style={{ 
