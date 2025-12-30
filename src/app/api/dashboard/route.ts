@@ -6,12 +6,6 @@ export const revalidate = 0;
 
 export async function GET(request: NextRequest) {
   try {
-    const { searchParams } = new URL(request.url);
-    const country = searchParams.get('country');
-    const eventType = searchParams.get('eventType');
-    const dateFrom = searchParams.get('dateFrom');
-    const dateTo = searchParams.get('dateTo');
-
     // Stats - simplified query
     const statsResult = await sql`
       SELECT 
@@ -172,8 +166,8 @@ export async function GET(request: NextRequest) {
       cityBreakdown,
       identifiedUsers,
       filters: {
-        countries: countries.map((c: { country: string }) => c.country),
-        eventTypes: eventTypes.map((e: { event_type: string }) => e.event_type),
+        countries: countries.map((c) => c.country),
+        eventTypes: eventTypes.map((e) => e.event_type),
       }
     }, {
       headers: {
