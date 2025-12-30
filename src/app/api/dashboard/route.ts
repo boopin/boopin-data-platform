@@ -11,31 +11,23 @@ export async function GET(request: NextRequest) {
     const eventType = searchParams.get('eventType');
     const dateFrom = searchParams.get('dateFrom');
 
-    // Build WHERE conditions
-    let conditions = [];
-    let eventConditions = [];
-    
-    if (country) {
-      conditions.push(`country = '${country}'`);
-      eventConditions.push(`e.country = '${country}'`);
-    }
-    if (eventType) {
-      conditions.push(`event_type = '${eventType}'`);
-      eventConditions.push(`e.event_type = '${eventType}'`);
-    }
-    if (dateFrom) {
-      conditions.push(`timestamp >= '${dateFrom}'`);
-      eventConditions.push(`e.timestamp >= '${dateFrom}'`);
-    }
+    // Build dynamic queries based on filters
+    let statsQuery = '';
+    let eventsQuery = '';
+    let conditions: string[] = [];
+
+    if (country) conditions.push(`country = '${country.replace(/'/g, "''")}'`);
+    if (eventType) conditions.push(`event_type = '${eventType.replace(/'/g, "''")}'`);
+    if (dateFrom) conditions.push(`timestamp >= '${dateFrom}'`);
 
     const whereClause = conditions.length > 0 ? `WHERE ${conditions.join(' AND ')}` : '';
-    const eventWhereClause = eventConditions.length > 0 ? `WHERE ${eventConditions.join(' AND ')}` : '';
+    const andClause = conditions.length > 0 ? `AND ${conditions.join(' AND ')}` : '';
 
-    // Stats
+    // Stats - use dynamic query for filtered results
     const statsResult = await sql.unsafe(`
       SELECT 
         (SELECT COUNT(*) FROM visitors) as total_visitors,
-        (SELECT COUNT(*) FROM events ${whereClause.replace('timestamp', 'timestamp').replace('country', 'country').replace('event_type', 'event_type')} ${conditions.length > 0 && !conditions.some(c => c.includes('event_type')) ? (whereClause ? ' AND' : 'WHERE') + " event_type = 'page_view'" : conditions.length > 0 ? '' : "WHERE event_type = 'page_view'"}) as total_page_views,
+        (SELECT COUNT(*) FROM events WHERE event_type = 'page_view' ${andClause.replace('event_type = ', 'AND event_type = ').replace(/AND AND/g, 'AND')}) as total_page_views,
         (SELECT COUNT(*) FROM events ${whereClause}) as total_events,
         (SELECT COUNT(*) FROM visitors WHERE is_identified = true) as identified_visitors
     `);
@@ -66,7 +58,7 @@ export async function GET(request: NextRequest) {
         e.os
       FROM events e
       LEFT JOIN visitors v ON e.visitor_id = v.id
-      ${eventWhereClause}
+      ${whereClause.replace('country', 'e.country').replace('event_type', 'e.event_type').replace('timestamp', 'e.timestamp')}
       ORDER BY e.timestamp DESC
       LIMIT 100
     `);
@@ -75,7 +67,7 @@ export async function GET(request: NextRequest) {
     const deviceBreakdown = await sql.unsafe(`
       SELECT device_type, COUNT(*) as count
       FROM events
-      ${whereClause ? whereClause + ' AND' : 'WHERE'} device_type IS NOT NULL
+      WHERE device_type IS NOT NULL ${andClause}
       GROUP BY device_type
       ORDER BY count DESC
     `);
@@ -84,7 +76,7 @@ export async function GET(request: NextRequest) {
     const browserBreakdown = await sql.unsafe(`
       SELECT browser as name, COUNT(*) as count
       FROM events
-      ${whereClause ? whereClause + ' AND' : 'WHERE'} browser IS NOT NULL
+      WHERE browser IS NOT NULL ${andClause}
       GROUP BY browser
       ORDER BY count DESC
       LIMIT 10
@@ -94,17 +86,21 @@ export async function GET(request: NextRequest) {
     const osBreakdown = await sql.unsafe(`
       SELECT os as name, COUNT(*) as count
       FROM events
-      ${whereClause ? whereClause + ' AND' : 'WHERE'} os IS NOT NULL
+      WHERE os IS NOT NULL ${andClause}
       GROUP BY os
       ORDER BY count DESC
       LIMIT 10
     `);
 
     // Top pages
+    const topPagesConditions = ['event_type = \'page_view\'', 'page_path IS NOT NULL'];
+    if (country) topPagesConditions.push(`country = '${country.replace(/'/g, "''")}'`);
+    if (dateFrom) topPagesConditions.push(`timestamp >= '${dateFrom}'`);
+    
     const topPages = await sql.unsafe(`
       SELECT page_path, COUNT(*) as count
       FROM events
-      ${whereClause ? whereClause + ' AND' : 'WHERE'} event_type = 'page_view' AND page_path IS NOT NULL
+      WHERE ${topPagesConditions.join(' AND ')}
       GROUP BY page_path
       ORDER BY count DESC
       LIMIT 10
@@ -114,38 +110,51 @@ export async function GET(request: NextRequest) {
     const eventBreakdown = await sql.unsafe(`
       SELECT event_type, COUNT(*) as count
       FROM events
-      ${whereClause}
+      ${whereClause.replace('event_type', 'event_type_filter')}
       GROUP BY event_type
       ORDER BY count DESC
-    `);
+    `.replace('event_type_filter', 'event_type'));
 
     // Traffic sources
+    const trafficConditions = ['event_type = \'page_view\''];
+    if (country) trafficConditions.push(`country = '${country.replace(/'/g, "''")}'`);
+    if (dateFrom) trafficConditions.push(`timestamp >= '${dateFrom}'`);
+
     const trafficSources = await sql.unsafe(`
       SELECT 
         COALESCE(utm_source, 'Direct') as source,
         COUNT(*) as count
       FROM events
-      ${whereClause ? whereClause + ' AND' : 'WHERE'} event_type = 'page_view'
+      WHERE ${trafficConditions.join(' AND ')}
       GROUP BY COALESCE(utm_source, 'Direct')
       ORDER BY count DESC
       LIMIT 10
     `);
 
     // Country breakdown
+    const countryConditions = ['country IS NOT NULL'];
+    if (eventType) countryConditions.push(`event_type = '${eventType.replace(/'/g, "''")}'`);
+    if (dateFrom) countryConditions.push(`timestamp >= '${dateFrom}'`);
+
     const countryBreakdown = await sql.unsafe(`
       SELECT country, COUNT(*) as count
       FROM events
-      ${whereClause ? whereClause + ' AND' : 'WHERE'} country IS NOT NULL
+      WHERE ${countryConditions.join(' AND ')}
       GROUP BY country
       ORDER BY count DESC
       LIMIT 20
     `);
 
     // City breakdown
+    const cityConditions = ['city IS NOT NULL'];
+    if (country) cityConditions.push(`country = '${country.replace(/'/g, "''")}'`);
+    if (eventType) cityConditions.push(`event_type = '${eventType.replace(/'/g, "''")}'`);
+    if (dateFrom) cityConditions.push(`timestamp >= '${dateFrom}'`);
+
     const cityBreakdown = await sql.unsafe(`
       SELECT city, country, COUNT(*) as count
       FROM events
-      ${whereClause ? whereClause + ' AND' : 'WHERE'} city IS NOT NULL
+      WHERE ${cityConditions.join(' AND ')}
       GROUP BY city, country
       ORDER BY count DESC
       LIMIT 20
