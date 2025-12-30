@@ -65,7 +65,7 @@
 
   function sendEvent(eventType, properties) {
     if (!initialized || !apiKey || !endpoint) {
-      console.warn('[Boopin] Pixel not initialized');
+      console.warn('[PulseAnalytics] Pixel not initialized');
       return;
     }
 
@@ -97,10 +97,10 @@
       mode: 'cors'
     }).then(function(response) {
       if (!response.ok) {
-        console.error('[Boopin] Track failed:', response.status);
+        console.error('[PulseAnalytics] Track failed:', response.status);
       }
     }).catch(function(err) {
-      console.error('[Boopin] Failed to send event:', err);
+      console.error('[PulseAnalytics] Failed to send event:', err);
     });
   }
 
@@ -147,7 +147,7 @@
     });
   }
 
-  window.boopin = {
+  window.pulseAnalytics = {
     track: function(eventType, properties) {
       sendEvent(eventType, properties);
     },
@@ -173,13 +173,13 @@
               var url = new URL(scripts[j].src);
               endpoint = url.origin + '/api/track';
             } catch (e) {
-              endpoint = 'https://boopin-data-platform.vercel.app/api/track';
+              endpoint = 'https://pulse-analytics-data-platform.vercel.app/api/track';
             }
             break;
           }
         }
         if (!endpoint) {
-          endpoint = 'https://boopin-data-platform.vercel.app/api/track';
+          endpoint = 'https://pulse-analytics-data-platform.vercel.app/api/track';
         }
         
         anonymousId = getAnonymousId();
@@ -192,7 +192,7 @@
       } else if (cmd === 'track') {
         sendEvent(args[1], args[2]);
       } else if (cmd === 'identify') {
-        window.boopin.identify(args[1], args[2]);
+        window.pulseAnalytics.identify(args[1], args[2]);
       }
     }
   }
