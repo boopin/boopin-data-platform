@@ -27,7 +27,7 @@ interface VisitorData {
     city: string;
     properties: Record<string, unknown>;
   }>;
-  stats: {
+  stats?: {
     totalEvents: number;
     pageViews: number;
     formSubmits: number;
@@ -112,6 +112,14 @@ export default function VisitorProfilePage() {
   const identityHistory = getIdentityHistory();
   const uniqueIdentities = getUniqueIdentities();
 
+  // Default stats if not provided by API
+  const stats = data?.stats || {
+    totalEvents: data?.events?.length || 0,
+    pageViews: data?.events?.filter(e => e.event_type === 'page_view').length || 0,
+    formSubmits: data?.events?.filter(e => e.event_type === 'form_submit').length || 0,
+    purchases: data?.events?.filter(e => e.event_type === 'purchase').length || 0
+  };
+
   const eventColors: Record<string, string> = { 
     page_view: '#3b82f6', click: '#10b981', button_click: '#06b6d4', 
     form_submit: '#8b5cf6', identify: '#f59e0b', page_leave: '#ef4444',
@@ -157,7 +165,7 @@ export default function VisitorProfilePage() {
     );
   }
 
-  const { visitor, events, stats } = data;
+  const { visitor, events } = data;
 
   return (
     <div style={{ minHeight: '100vh', background: 'linear-gradient(135deg, #0f172a 0%, #1e293b 100%)', padding: '24px' }}>
