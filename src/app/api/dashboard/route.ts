@@ -12,29 +12,13 @@ export async function GET(request: NextRequest) {
     const dateFrom = searchParams.get('dateFrom');
     const dateTo = searchParams.get('dateTo');
 
-    // Build filter conditions
-    let countryFilter = country ? sql`AND e.country = ${country}` : sql``;
-    let eventTypeFilter = eventType ? sql`AND e.event_type = ${eventType}` : sql``;
-    let dateFilter = sql``;
-    
-    if (dateFrom && dateTo) {
-      dateFilter = sql`AND e.timestamp >= ${dateFrom}::timestamp AND e.timestamp <= ${dateTo}::timestamp`;
-    } else if (dateFrom) {
-      dateFilter = sql`AND e.timestamp >= ${dateFrom}::timestamp`;
-    } else if (dateTo) {
-      dateFilter = sql`AND e.timestamp <= ${dateTo}::timestamp`;
-    }
-
-    // Stats
+    // Stats - simplified query
     const statsResult = await sql`
       SELECT 
-        COUNT(DISTINCT v.id) as total_visitors,
-        COUNT(CASE WHEN e.event_type = 'page_view' THEN 1 END) as total_page_views,
-        COUNT(e.id) as total_events,
-        COUNT(DISTINCT CASE WHEN v.is_identified = true THEN v.id END) as identified_visitors
-      FROM visitors v
-      LEFT JOIN events e ON v.id = e.visitor_id
-      WHERE 1=1 ${countryFilter} ${eventTypeFilter} ${dateFilter}
+        (SELECT COUNT(*) FROM visitors) as total_visitors,
+        (SELECT COUNT(*) FROM events WHERE event_type = 'page_view') as total_page_views,
+        (SELECT COUNT(*) FROM events) as total_events,
+        (SELECT COUNT(*) FROM visitors WHERE is_identified = true) as identified_visitors
     `;
 
     // Recent events with visitor info
@@ -62,7 +46,6 @@ export async function GET(request: NextRequest) {
         e.os
       FROM events e
       LEFT JOIN visitors v ON e.visitor_id = v.id
-      WHERE 1=1 ${countryFilter} ${eventTypeFilter} ${dateFilter}
       ORDER BY e.timestamp DESC
       LIMIT 100
     `;
@@ -70,8 +53,8 @@ export async function GET(request: NextRequest) {
     // Device breakdown
     const deviceBreakdown = await sql`
       SELECT device_type, COUNT(*) as count
-      FROM events e
-      WHERE device_type IS NOT NULL ${countryFilter} ${eventTypeFilter} ${dateFilter}
+      FROM events
+      WHERE device_type IS NOT NULL
       GROUP BY device_type
       ORDER BY count DESC
     `;
@@ -79,8 +62,8 @@ export async function GET(request: NextRequest) {
     // Browser breakdown
     const browserBreakdown = await sql`
       SELECT browser as name, COUNT(*) as count
-      FROM events e
-      WHERE browser IS NOT NULL ${countryFilter} ${eventTypeFilter} ${dateFilter}
+      FROM events
+      WHERE browser IS NOT NULL
       GROUP BY browser
       ORDER BY count DESC
       LIMIT 10
@@ -89,8 +72,8 @@ export async function GET(request: NextRequest) {
     // OS breakdown
     const osBreakdown = await sql`
       SELECT os as name, COUNT(*) as count
-      FROM events e
-      WHERE os IS NOT NULL ${countryFilter} ${eventTypeFilter} ${dateFilter}
+      FROM events
+      WHERE os IS NOT NULL
       GROUP BY os
       ORDER BY count DESC
       LIMIT 10
@@ -99,8 +82,8 @@ export async function GET(request: NextRequest) {
     // Top pages
     const topPages = await sql`
       SELECT page_path, COUNT(*) as count
-      FROM events e
-      WHERE event_type = 'page_view' AND page_path IS NOT NULL ${countryFilter} ${dateFilter}
+      FROM events
+      WHERE event_type = 'page_view' AND page_path IS NOT NULL
       GROUP BY page_path
       ORDER BY count DESC
       LIMIT 10
@@ -109,8 +92,7 @@ export async function GET(request: NextRequest) {
     // Event breakdown
     const eventBreakdown = await sql`
       SELECT event_type, COUNT(*) as count
-      FROM events e
-      WHERE 1=1 ${countryFilter} ${dateFilter}
+      FROM events
       GROUP BY event_type
       ORDER BY count DESC
     `;
@@ -120,8 +102,8 @@ export async function GET(request: NextRequest) {
       SELECT 
         COALESCE(utm_source, 'Direct') as source,
         COUNT(*) as count
-      FROM events e
-      WHERE event_type = 'page_view' ${countryFilter} ${dateFilter}
+      FROM events
+      WHERE event_type = 'page_view'
       GROUP BY COALESCE(utm_source, 'Direct')
       ORDER BY count DESC
       LIMIT 10
@@ -130,8 +112,8 @@ export async function GET(request: NextRequest) {
     // Country breakdown
     const countryBreakdown = await sql`
       SELECT country, COUNT(*) as count
-      FROM events e
-      WHERE country IS NOT NULL ${eventTypeFilter} ${dateFilter}
+      FROM events
+      WHERE country IS NOT NULL
       GROUP BY country
       ORDER BY count DESC
       LIMIT 20
@@ -140,8 +122,8 @@ export async function GET(request: NextRequest) {
     // City breakdown
     const cityBreakdown = await sql`
       SELECT city, country, COUNT(*) as count
-      FROM events e
-      WHERE city IS NOT NULL ${countryFilter} ${eventTypeFilter} ${dateFilter}
+      FROM events
+      WHERE city IS NOT NULL
       GROUP BY city, country
       ORDER BY count DESC
       LIMIT 20
@@ -190,8 +172,8 @@ export async function GET(request: NextRequest) {
       cityBreakdown,
       identifiedUsers,
       filters: {
-        countries: countries.map(c => c.country),
-        eventTypes: eventTypes.map(e => e.event_type),
+        countries: countries.map((c: { country: string }) => c.country),
+        eventTypes: eventTypes.map((e: { event_type: string }) => e.event_type),
       }
     }, {
       headers: {
