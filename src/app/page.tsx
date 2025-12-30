@@ -1,538 +1,464 @@
 'use client';
-
 import { useEffect, useState } from 'react';
 
-interface Stats {
-  totalVisitors: number;
-  totalPageViews: number;
-  totalEvents: number;
-  identifiedVisitors: number;
-}
-
-interface RecentEvent {
-  id: string;
-  event_type: string;
-  page_path: string;
-  timestamp: string;
-  device_type: string;
-  browser: string;
-  os: string;
-  country: string;
-  city: string;
-}
-
-interface BreakdownItem {
-  name?: string;
-  device_type?: string;
-  page_path?: string;
-  event_type?: string;
-  source?: string;
-  country?: string;
-  city?: string;
-  count: number | string;
-}
-
-interface IdentifiedUser {
-  id: string;
-  email: string;
-  name: string;
-  phone: string;
-  first_seen_at: string;
-  last_seen_at: string;
-  visit_count: number;
-}
-
-interface Filters {
-  countries: string[];
-  eventTypes: string[];
+interface DashboardData {
+  stats: {
+    totalVisitors: number;
+    totalPageViews: number;
+    totalEvents: number;
+    identifiedVisitors: number;
+  };
+  recentEvents: Array<{
+    id: string;
+    event_type: string;
+    page_path: string;
+    page_url: string;
+    timestamp: string;
+    visitor_id: string;
+    email?: string;
+    name?: string;
+    device_type: string;
+    browser: string;
+    os: string;
+    country?: string;
+    city?: string;
+  }>;
+  deviceBreakdown: Array<{ device_type: string; count: number }>;
+  browserBreakdown: Array<{ name: string; count: number }>;
+  osBreakdown: Array<{ name: string; count: number }>;
+  topPages: Array<{ page_path: string; count: number }>;
+  eventBreakdown: Array<{ event_type: string; count: number }>;
+  trafficSources: Array<{ source: string; count: number }>;
+  countryBreakdown: Array<{ country: string; count: number }>;
+  cityBreakdown: Array<{ city: string; country: string; count: number }>;
+  identifiedUsers: Array<{
+    id: string;
+    email: string;
+    name: string;
+    phone?: string;
+    first_seen_at: string;
+    last_seen_at: string;
+    visit_count: number;
+  }>;
+  filters: {
+    countries: string[];
+    eventTypes: string[];
+  };
 }
 
 export default function Dashboard() {
-  const [stats, setStats] = useState<Stats | null>(null);
-  const [recentEvents, setRecentEvents] = useState<RecentEvent[]>([]);
-  const [deviceBreakdown, setDeviceBreakdown] = useState<BreakdownItem[]>([]);
-  const [browserBreakdown, setBrowserBreakdown] = useState<BreakdownItem[]>([]);
-  const [osBreakdown, setOsBreakdown] = useState<BreakdownItem[]>([]);
-  const [topPages, setTopPages] = useState<BreakdownItem[]>([]);
-  const [eventBreakdown, setEventBreakdown] = useState<BreakdownItem[]>([]);
-  const [trafficSources, setTrafficSources] = useState<BreakdownItem[]>([]);
-  const [countryBreakdown, setCountryBreakdown] = useState<BreakdownItem[]>([]);
-  const [cityBreakdown, setCityBreakdown] = useState<BreakdownItem[]>([]);
-  const [identifiedUsers, setIdentifiedUsers] = useState<IdentifiedUser[]>([]);
-  const [availableFilters, setAvailableFilters] = useState<Filters>({ countries: [], eventTypes: [] });
+  const [data, setData] = useState<DashboardData | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
-  const [currentTime, setCurrentTime] = useState(new Date());
   const [lastUpdated, setLastUpdated] = useState(new Date());
+  const [currentTime, setCurrentTime] = useState(new Date());
 
-  // Filter states
-  const [dateFrom, setDateFrom] = useState('');
-  const [dateTo, setDateTo] = useState('');
-  const [eventTypeFilter, setEventTypeFilter] = useState('all');
-  const [countryFilter, setCountryFilter] = useState('all');
-  const [deviceFilter, setDeviceFilter] = useState('all');
-
-  const buildQueryString = () => {
-    const params = new URLSearchParams();
-    if (dateFrom) params.set('dateFrom', dateFrom);
-    if (dateTo) params.set('dateTo', dateTo);
-    if (eventTypeFilter !== 'all') params.set('eventType', eventTypeFilter);
-    if (countryFilter !== 'all') params.set('country', countryFilter);
-    if (deviceFilter !== 'all') params.set('device', deviceFilter);
-    return params.toString();
-  };
-
-  async function fetchData() {
+  const fetchData = async () => {
     try {
-      const query = buildQueryString();
-      const res = await fetch(`/api/dashboard${query ? `?${query}` : ''}`);
-      if (!res.ok) throw new Error('Failed to fetch');
-      const data = await res.json();
-      setStats(data.stats);
-      setRecentEvents(data.recentEvents);
-      setDeviceBreakdown(data.deviceBreakdown || []);
-      setBrowserBreakdown(data.browserBreakdown || []);
-      setOsBreakdown(data.osBreakdown || []);
-      setTopPages(data.topPages || []);
-      setEventBreakdown(data.eventBreakdown || []);
-      setTrafficSources(data.trafficSources || []);
-      setCountryBreakdown(data.countryBreakdown || []);
-      setCityBreakdown(data.cityBreakdown || []);
-      setIdentifiedUsers(data.identifiedUsers || []);
-      setAvailableFilters(data.filters || { countries: [], eventTypes: [] });
+      const response = await fetch('/api/dashboard');
+      if (!response.ok) throw new Error('Failed to fetch');
+      const result = await response.json();
+      setData(result);
       setLastUpdated(new Date());
+      setError(null);
     } catch (err) {
-      setError(err instanceof Error ? err.message : 'Error');
+      setError('Failed to fetch dashboard data');
+      console.error(err);
     } finally {
       setLoading(false);
     }
-  }
+  };
 
   useEffect(() => {
     fetchData();
-    const timeTimer = setInterval(() => setCurrentTime(new Date()), 1000);
-    return () => { clearInterval(timeTimer); };
+    const interval = setInterval(fetchData, 30000);
+    return () => clearInterval(interval);
   }, []);
 
   useEffect(() => {
-    fetchData();
-  }, [dateFrom, dateTo, eventTypeFilter, countryFilter, deviceFilter]);
+    const timer = setInterval(() => setCurrentTime(new Date()), 1000);
+    return () => clearInterval(timer);
+  }, []);
 
-  const handleExport = (type: 'events' | 'users') => {
-    const query = buildQueryString();
-    const url = `/api/export?type=${type}${query ? `&${query}` : ''}`;
-    window.open(url, '_blank');
+  // Event colors for all event types
+  const eventColors: Record<string, string> = { 
+    page_view: '#3b82f6', 
+    click: '#10b981', 
+    button_click: '#06b6d4', 
+    form_submit: '#8b5cf6', 
+    identify: '#f59e0b', 
+    page_leave: '#ef4444',
+    scroll_depth: '#a855f7',
+    time_on_page: '#ec4899',
+    form_start: '#14b8a6',
+    form_abandon: '#f97316',
+    outbound_click: '#06b6d4',
+    product_view: '#8b5cf6',
+    add_to_cart: '#22c55e',
+    remove_from_cart: '#ef4444',
+    cart_view: '#3b82f6',
+    begin_checkout: '#f59e0b',
+    purchase: '#10b981',
+    cart_abandon: '#ef4444',
+    lead_form: '#8b5cf6',
+    video_start: '#6366f1',
+    video_progress: '#a855f7',
+    video_complete: '#22c55e',
+    file_download: '#06b6d4',
+    search: '#f59e0b',
+    share: '#ec4899',
+    sign_up: '#10b981',
+    login: '#3b82f6',
+    logout: '#64748b',
+    callback_request: '#f59e0b',
+    refund: '#ef4444'
   };
 
-  const clearFilters = () => {
-    setDateFrom('');
-    setDateTo('');
-    setEventTypeFilter('all');
-    setCountryFilter('all');
-    setDeviceFilter('all');
+  // Event icons
+  const eventIcons: Record<string, string> = {
+    page_view: '👁️',
+    click: '👆',
+    button_click: '🔘',
+    form_submit: '📝',
+    identify: '👤',
+    page_leave: '🚪',
+    scroll_depth: '📜',
+    time_on_page: '⏱️',
+    form_start: '✏️',
+    form_abandon: '❌',
+    outbound_click: '🔗',
+    product_view: '🛍️',
+    add_to_cart: '🛒',
+    remove_from_cart: '🗑️',
+    cart_view: '🛒',
+    begin_checkout: '💳',
+    purchase: '✅',
+    cart_abandon: '🛒❌',
+    lead_form: '📋',
+    video_start: '▶️',
+    video_progress: '⏩',
+    video_complete: '🎬',
+    file_download: '📥',
+    search: '🔍',
+    share: '📤',
+    sign_up: '🆕',
+    login: '🔑',
+    logout: '🚶',
+    callback_request: '📞',
+    refund: '💸'
   };
 
-  const formatDateTime = (timestamp: string) => {
-    const date = new Date(timestamp);
-    return date.toLocaleDateString('en-US', { month: 'short', day: 'numeric', hour: '2-digit', minute: '2-digit' });
+  // Calculate e-commerce metrics
+  const getEcommerceMetrics = () => {
+    if (!data) return { purchases: 0, revenue: 0, cartAbandonment: 0, avgOrderValue: 0, addToCarts: 0, checkouts: 0 };
+    
+    const purchases = data.eventBreakdown.find(e => e.event_type === 'purchase')?.count || 0;
+    const cartAbandons = data.eventBreakdown.find(e => e.event_type === 'cart_abandon')?.count || 0;
+    const addToCarts = data.eventBreakdown.find(e => e.event_type === 'add_to_cart')?.count || 0;
+    
+    const cartAbandonment = addToCarts > 0 ? Math.round((cartAbandons / addToCarts) * 100) : 0;
+    
+    return {
+      purchases,
+      cartAbandonment,
+      addToCarts,
+      checkouts: data.eventBreakdown.find(e => e.event_type === 'begin_checkout')?.count || 0
+    };
   };
 
-  const selectStyle = { background: '#0f172a', color: '#e2e8f0', border: '1px solid #334155', borderRadius: '6px', padding: '8px 12px', fontSize: '13px', cursor: 'pointer' };
-  const inputStyle = { background: '#0f172a', color: '#e2e8f0', border: '1px solid #334155', borderRadius: '6px', padding: '8px 12px', fontSize: '13px' };
-  const buttonStyle = { background: 'linear-gradient(135deg, #06b6d4, #3b82f6)', color: '#fff', border: 'none', borderRadius: '6px', padding: '8px 16px', fontSize: '13px', cursor: 'pointer', fontWeight: 500 };
-  const buttonSecondaryStyle = { background: '#334155', color: '#e2e8f0', border: 'none', borderRadius: '6px', padding: '8px 16px', fontSize: '13px', cursor: 'pointer' };
+  // Calculate engagement metrics
+  const getEngagementMetrics = () => {
+    if (!data) return { formStarts: 0, formSubmits: 0, formAbandons: 0, conversionRate: 0, scrollEvents: 0 };
+    
+    const formStarts = data.eventBreakdown.find(e => e.event_type === 'form_start')?.count || 0;
+    const formSubmits = data.eventBreakdown.find(e => e.event_type === 'form_submit')?.count || 0;
+    const formAbandons = data.eventBreakdown.find(e => e.event_type === 'form_abandon')?.count || 0;
+    const scrollEvents = data.eventBreakdown.find(e => e.event_type === 'scroll_depth')?.count || 0;
+    
+    const conversionRate = formStarts > 0 ? Math.round((formSubmits / formStarts) * 100) : 0;
+    
+    return {
+      formStarts,
+      formSubmits,
+      formAbandons,
+      conversionRate,
+      scrollEvents
+    };
+  };
+
+  const ecomMetrics = getEcommerceMetrics();
+  const engagementMetrics = getEngagementMetrics();
 
   if (loading) {
     return (
       <div style={{ minHeight: '100vh', background: 'linear-gradient(135deg, #0f172a 0%, #1e293b 100%)', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
-        <p style={{ color: '#94a3b8' }}>Loading...</p>
+        <div style={{ textAlign: 'center', color: '#e2e8f0' }}>
+          <div style={{ fontSize: '48px', marginBottom: '16px' }}>📊</div>
+          <p>Loading dashboard...</p>
+        </div>
       </div>
     );
   }
 
   if (error) {
     return (
-      <div style={{ minHeight: '100vh', background: '#0f172a', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
-        <p style={{ color: '#f87171' }}>Error: {error}</p>
+      <div style={{ minHeight: '100vh', background: 'linear-gradient(135deg, #0f172a 0%, #1e293b 100%)', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+        <div style={{ textAlign: 'center', color: '#ef4444' }}>
+          <div style={{ fontSize: '48px', marginBottom: '16px' }}>⚠️</div>
+          <p>{error}</p>
+          <button onClick={fetchData} style={{ marginTop: '16px', padding: '8px 16px', background: '#3b82f6', color: 'white', border: 'none', borderRadius: '8px', cursor: 'pointer' }}>
+            Retry
+          </button>
+        </div>
       </div>
     );
   }
 
-  const conversionRate = stats && stats.totalVisitors > 0 ? ((stats.identifiedVisitors / stats.totalVisitors) * 100).toFixed(1) : '0';
-  const getMaxCount = (items: BreakdownItem[]) => Math.max(...items.map(i => Number(i.count) || 0), 1);
-const eventColors: Record<string, string> = { 
-  page_view: '#3b82f6', 
-  click: '#10b981', 
-  button_click: '#06b6d4', 
-  form_submit: '#8b5cf6', 
-  identify: '#f59e0b', 
-  page_leave: '#ef4444',
-  scroll_depth: '#a855f7',
-  time_on_page: '#ec4899',
-  form_start: '#14b8a6',
-  form_abandon: '#f97316',
-  outbound_click: '#06b6d4',
-  product_view: '#8b5cf6',
-  add_to_cart: '#22c55e',
-  remove_from_cart: '#ef4444',
-  cart_view: '#3b82f6',
-  begin_checkout: '#f59e0b',
-  purchase: '#10b981',
-  cart_abandon: '#ef4444',
-  lead_form: '#8b5cf6',
-  video_start: '#6366f1',
-  video_progress: '#a855f7',
-  video_complete: '#22c55e',
-  file_download: '#06b6d4',
-  search: '#f59e0b',
-  share: '#ec4899',
-  sign_up: '#10b981',
-  login: '#3b82f6',
-  logout: '#64748b'
-};
   return (
-    <div style={{ minHeight: '100vh', background: 'linear-gradient(135deg, #0f172a 0%, #1e293b 50%, #0f172a 100%)', fontFamily: 'system-ui, sans-serif' }}>
-      <header style={{ borderBottom: '1px solid #334155', background: 'rgba(15,23,42,0.95)', padding: '16px 24px', position: 'sticky', top: 0, zIndex: 100 }}>
-        <div style={{ maxWidth: '1400px', margin: '0 auto', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-          <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
-            <a href="/" style={{ textDecoration: 'none', display: 'flex', alignItems: 'center', gap: '12px' }}>
-              <div style={{ width: '40px', height: '40px', background: 'linear-gradient(135deg, #06b6d4, #3b82f6)', borderRadius: '10px', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
-                <svg width="22" height="22" fill="none" stroke="white" strokeWidth="2" viewBox="0 0 24 24"><path d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z" /></svg>
-              </div>
-              <div>
-                <h1 style={{ margin: 0, fontSize: '20px', color: '#fff', fontWeight: 700 }}>Boopin Data Platform</h1>
-                <p style={{ margin: 0, fontSize: '13px', color: '#64748b' }}>1st Party Customer Data Platform</p>
-              </div>
-            </a>
-          </div>
-          <div style={{ display: 'flex', alignItems: 'center', gap: '24px' }}>
-            <nav style={{ display: 'flex', gap: '16px' }}>
-              <a href="/" style={{ color: '#22d3ee', textDecoration: 'none', fontSize: '14px', fontWeight: 600 }}>Dashboard</a>
-              <a href="/visitors" style={{ color: '#94a3b8', textDecoration: 'none', fontSize: '14px' }}>Visitors</a>
-              <a href="/segments" style={{ color: '#94a3b8', textDecoration: 'none', fontSize: '14px' }}>Segments</a>
-            </nav>
-            <div style={{ textAlign: 'right' }}>
-              <p style={{ color: '#e2e8f0', margin: 0, fontSize: '14px', fontWeight: 500 }}>{currentTime.toLocaleTimeString()}</p>
-              <p style={{ color: '#22d3ee', margin: '2px 0 0', fontSize: '11px' }}>● Live • Updated {Math.round((currentTime.getTime() - lastUpdated.getTime()) / 1000)}s ago</p>
-            </div>
+    <div style={{ minHeight: '100vh', background: 'linear-gradient(135deg, #0f172a 0%, #1e293b 100%)', padding: '24px' }}>
+      {/* Header */}
+      <header style={{ marginBottom: '32px', display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: '16px' }}>
+        <div>
+          <h1 style={{ margin: 0, fontSize: '28px', fontWeight: 700, color: '#f8fafc' }}>
+            📊 Pulse Analytics
+          </h1>
+          <p style={{ margin: '4px 0 0', color: '#94a3b8', fontSize: '14px' }}>Real-time visitor intelligence</p>
+        </div>
+        <div style={{ display: 'flex', alignItems: 'center', gap: '24px' }}>
+          <nav style={{ display: 'flex', gap: '16px' }}>
+            <a href="/" style={{ color: '#22d3ee', textDecoration: 'none', fontSize: '14px', fontWeight: 600 }}>Dashboard</a>
+            <a href="/visitors" style={{ color: '#94a3b8', textDecoration: 'none', fontSize: '14px' }}>Visitors</a>
+            <a href="/segments" style={{ color: '#94a3b8', textDecoration: 'none', fontSize: '14px' }}>Segments</a>
+          </nav>
+          <div style={{ textAlign: 'right' }}>
+            <p style={{ color: '#e2e8f0', margin: 0, fontSize: '14px', fontWeight: 500 }}>{currentTime.toLocaleTimeString()}</p>
+            <p style={{ color: '#22d3ee', margin: '2px 0 0', fontSize: '11px' }}>● Live • Updated {Math.round((currentTime.getTime() - lastUpdated.getTime()) / 1000)}s ago</p>
           </div>
         </div>
       </header>
 
-      <main style={{ maxWidth: '1400px', margin: '0 auto', padding: '24px' }}>
-        {/* Filters Section */}
-        <div style={{ background: '#1e293b', borderRadius: '12px', border: '1px solid #334155', padding: '18px', marginBottom: '24px' }}>
-          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '16px' }}>
-            <h2 style={{ margin: 0, fontSize: '15px', color: '#fff', fontWeight: 600 }}>🔍 Filters & Export</h2>
-            <div style={{ display: 'flex', gap: '8px' }}>
-              <button onClick={() => handleExport('events')} style={buttonStyle}>📥 Export Events CSV</button>
-              <button onClick={() => handleExport('users')} style={buttonSecondaryStyle}>📥 Export Users CSV</button>
+      {/* Main Stats */}
+      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(200px, 1fr))', gap: '16px', marginBottom: '24px' }}>
+        {[
+          { label: 'Total Visitors', value: data?.stats.totalVisitors || 0, icon: '👥', color: '#3b82f6' },
+          { label: 'Page Views', value: data?.stats.totalPageViews || 0, icon: '👁️', color: '#10b981' },
+          { label: 'Total Events', value: data?.stats.totalEvents || 0, icon: '⚡', color: '#f59e0b' },
+          { label: 'Identified Users', value: data?.stats.identifiedVisitors || 0, icon: '👤', color: '#8b5cf6' },
+        ].map((stat, i) => (
+          <div key={i} style={{ background: '#1e293b', borderRadius: '12px', padding: '20px', border: '1px solid #334155' }}>
+            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start' }}>
+              <div>
+                <p style={{ color: '#94a3b8', fontSize: '13px', margin: 0 }}>{stat.label}</p>
+                <p style={{ color: '#f8fafc', fontSize: '32px', fontWeight: 700, margin: '8px 0 0' }}>{stat.value.toLocaleString()}</p>
+              </div>
+              <span style={{ fontSize: '24px' }}>{stat.icon}</span>
             </div>
           </div>
-          <div style={{ display: 'flex', flexWrap: 'wrap', gap: '12px', alignItems: 'center' }}>
-            <div>
-              <label style={{ color: '#94a3b8', fontSize: '11px', display: 'block', marginBottom: '4px' }}>Date From</label>
-              <input type="date" value={dateFrom} onChange={(e) => setDateFrom(e.target.value)} style={inputStyle} />
+        ))}
+      </div>
+
+      {/* E-commerce & Engagement Stats */}
+      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(180px, 1fr))', gap: '12px', marginBottom: '24px' }}>
+        {[
+          { label: 'Purchases', value: ecomMetrics.purchases, icon: '✅', color: '#10b981' },
+          { label: 'Add to Cart', value: ecomMetrics.addToCarts, icon: '🛒', color: '#22c55e' },
+          { label: 'Checkouts', value: ecomMetrics.checkouts, icon: '💳', color: '#f59e0b' },
+          { label: 'Cart Abandon %', value: `${ecomMetrics.cartAbandonment}%`, icon: '🛒', color: '#ef4444' },
+          { label: 'Form Starts', value: engagementMetrics.formStarts, icon: '✏️', color: '#14b8a6' },
+          { label: 'Form Submits', value: engagementMetrics.formSubmits, icon: '📝', color: '#8b5cf6' },
+          { label: 'Form Conversion', value: `${engagementMetrics.conversionRate}%`, icon: '📊', color: '#3b82f6' },
+          { label: 'Scroll Events', value: engagementMetrics.scrollEvents, icon: '📜', color: '#a855f7' },
+        ].map((stat, i) => (
+          <div key={i} style={{ background: '#1e293b', borderRadius: '10px', padding: '16px', border: '1px solid #334155' }}>
+            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+              <div>
+                <p style={{ color: '#64748b', fontSize: '11px', margin: 0, textTransform: 'uppercase' }}>{stat.label}</p>
+                <p style={{ color: stat.color, fontSize: '24px', fontWeight: 700, margin: '4px 0 0' }}>{stat.value}</p>
+              </div>
+              <span style={{ fontSize: '20px' }}>{stat.icon}</span>
             </div>
-            <div>
-              <label style={{ color: '#94a3b8', fontSize: '11px', display: 'block', marginBottom: '4px' }}>Date To</label>
-              <input type="date" value={dateTo} onChange={(e) => setDateTo(e.target.value)} style={inputStyle} />
-            </div>
-            <div>
-              <label style={{ color: '#94a3b8', fontSize: '11px', display: 'block', marginBottom: '4px' }}>Event Type</label>
-              <select value={eventTypeFilter} onChange={(e) => setEventTypeFilter(e.target.value)} style={selectStyle}>
-                <option value="all">All Events</option>
-                {availableFilters.eventTypes.map(et => <option key={et} value={et}>{et}</option>)}
-              </select>
-            </div>
-            <div>
-              <label style={{ color: '#94a3b8', fontSize: '11px', display: 'block', marginBottom: '4px' }}>Country</label>
-              <select value={countryFilter} onChange={(e) => setCountryFilter(e.target.value)} style={selectStyle}>
-                <option value="all">All Countries</option>
-                {availableFilters.countries.map(c => <option key={c} value={c}>{c}</option>)}
-              </select>
-            </div>
-            <div>
-              <label style={{ color: '#94a3b8', fontSize: '11px', display: 'block', marginBottom: '4px' }}>Device</label>
-              <select value={deviceFilter} onChange={(e) => setDeviceFilter(e.target.value)} style={selectStyle}>
-                <option value="all">All Devices</option>
-                <option value="desktop">Desktop</option>
-                <option value="mobile">Mobile</option>
-                <option value="tablet">Tablet</option>
-              </select>
-            </div>
-            <div style={{ alignSelf: 'flex-end' }}>
-              <button onClick={clearFilters} style={{ ...buttonSecondaryStyle, background: '#ef4444' }}>Clear Filters</button>
-            </div>
+          </div>
+        ))}
+      </div>
+
+      {/* Main Grid */}
+      <div style={{ display: 'grid', gridTemplateColumns: '2fr 1fr', gap: '24px' }}>
+        {/* Recent Events */}
+        <div style={{ background: '#1e293b', borderRadius: '12px', padding: '20px', border: '1px solid #334155' }}>
+          <h2 style={{ color: '#f8fafc', fontSize: '16px', margin: '0 0 16px', display: 'flex', alignItems: 'center', gap: '8px' }}>
+            <span>⚡</span> Recent Events
+          </h2>
+          <div style={{ maxHeight: '500px', overflowY: 'auto' }}>
+            {data?.recentEvents.slice(0, 50).map((event, i) => (
+              <div key={i} style={{ 
+                display: 'flex', 
+                alignItems: 'center', 
+                gap: '12px', 
+                padding: '12px', 
+                borderBottom: '1px solid #334155',
+                transition: 'background 0.2s'
+              }}>
+                <span style={{ fontSize: '18px' }}>{eventIcons[event.event_type] || '📌'}</span>
+                <div style={{ flex: 1, minWidth: 0 }}>
+                  <div style={{ display: 'flex', alignItems: 'center', gap: '8px', flexWrap: 'wrap' }}>
+                    <span style={{ 
+                      background: eventColors[event.event_type] || '#64748b', 
+                      color: 'white', 
+                      padding: '2px 8px', 
+                      borderRadius: '4px', 
+                      fontSize: '11px',
+                      fontWeight: 600
+                    }}>
+                      {event.event_type}
+                    </span>
+                    {event.email && (
+                      <span style={{ color: '#22d3ee', fontSize: '12px', fontWeight: 500 }}>
+                        {event.name || event.email}
+                      </span>
+                    )}
+                  </div>
+                  <p style={{ color: '#94a3b8', fontSize: '12px', margin: '4px 0 0', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
+                    {event.page_path?.replace('/Users/boopin/Downloads/', '') || 'N/A'}
+                  </p>
+                </div>
+                <div style={{ textAlign: 'right', flexShrink: 0 }}>
+                  <p style={{ color: '#64748b', fontSize: '11px', margin: 0 }}>
+                    {new Date(event.timestamp).toLocaleTimeString()}
+                  </p>
+                  <p style={{ color: '#475569', fontSize: '10px', margin: '2px 0 0' }}>
+                    {event.country || ''} {event.device_type === 'mobile' ? '📱' : '💻'}
+                  </p>
+                </div>
+              </div>
+            ))}
           </div>
         </div>
 
-        {/* Stats Row */}
-        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(180px, 1fr))', gap: '16px', marginBottom: '24px' }}>
-          {[
-            { label: 'Total Visitors', value: stats?.totalVisitors || 0, icon: '👥' },
-            { label: 'Page Views', value: stats?.totalPageViews || 0, icon: '👁️' },
-            { label: 'Total Events', value: stats?.totalEvents || 0, icon: '⚡' },
-            { label: 'Identified Users', value: stats?.identifiedVisitors || 0, icon: '✓', sub: `${conversionRate}% conversion` },
-          ].map((stat, i) => (
-            <div key={i} style={{ background: '#1e293b', borderRadius: '12px', padding: '20px', border: '1px solid #334155' }}>
-              <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '8px' }}>
-                <p style={{ color: '#94a3b8', margin: 0, fontSize: '13px' }}>{stat.label}</p>
-                <span style={{ fontSize: '18px' }}>{stat.icon}</span>
-              </div>
-              <p style={{ color: '#fff', margin: 0, fontSize: '28px', fontWeight: 700 }}>{stat.value.toLocaleString()}</p>
-              {stat.sub && <p style={{ color: '#64748b', margin: '4px 0 0', fontSize: '11px' }}>{stat.sub}</p>}
-            </div>
-          ))}
-        </div>
-
-        {/* Identified Users */}
-        <div style={{ background: '#1e293b', borderRadius: '12px', border: '1px solid #334155', overflow: 'hidden', marginBottom: '24px' }}>
-          <div style={{ padding: '14px 18px', borderBottom: '1px solid #334155', display: 'flex', justifyContent: 'space-between', alignItems: 'center', background: 'linear-gradient(135deg, #059669 0%, #10b981 100%)' }}>
-            <h2 style={{ margin: 0, fontSize: '15px', color: '#fff', fontWeight: 600 }}>👤 Identified Users (Leads)</h2>
-            <a href="/visitors" style={{ color: '#d1fae5', fontSize: '12px', textDecoration: 'none' }}>View All →</a>
-          </div>
-          <div style={{ maxHeight: '300px', overflowY: 'auto' }}>
-            {identifiedUsers.length === 0 ? (
-              <p style={{ padding: '32px', textAlign: 'center', color: '#64748b', margin: 0 }}>No identified users yet</p>
-            ) : (
-              <table style={{ width: '100%', borderCollapse: 'collapse' }}>
-                <thead><tr style={{ background: '#0f172a' }}>
-                  <th style={{ padding: '10px 14px', textAlign: 'left', color: '#64748b', fontSize: '11px' }}>EMAIL</th>
-                  <th style={{ padding: '10px 14px', textAlign: 'left', color: '#64748b', fontSize: '11px' }}>NAME</th>
-                  <th style={{ padding: '10px 14px', textAlign: 'left', color: '#64748b', fontSize: '11px' }}>PHONE</th>
-                  <th style={{ padding: '10px 14px', textAlign: 'left', color: '#64748b', fontSize: '11px' }}>VISITS</th>
-                  <th style={{ padding: '10px 14px', textAlign: 'left', color: '#64748b', fontSize: '11px' }}>LAST SEEN</th>
-                </tr></thead>
-                <tbody>
-                  {identifiedUsers.map((user) => (
-                    <tr key={user.id} style={{ borderTop: '1px solid #334155' }}>
-                      <td style={{ padding: '10px 14px', color: '#22d3ee', fontSize: '12px' }}>{user.email || '-'}</td>
-                      <td style={{ padding: '10px 14px', color: '#e2e8f0', fontSize: '12px' }}>{user.name || '-'}</td>
-                      <td style={{ padding: '10px 14px', color: '#94a3b8', fontSize: '12px' }}>{user.phone || '-'}</td>
-                      <td style={{ padding: '10px 14px', color: '#f59e0b', fontSize: '12px', fontWeight: 600 }}>{user.visit_count}</td>
-                      <td style={{ padding: '10px 14px', color: '#64748b', fontSize: '11px' }}>{formatDateTime(user.last_seen_at)}</td>
-                    </tr>
-                  ))}
-                </tbody>
-              </table>
-            )}
-          </div>
-        </div>
-
-        {/* Recent Events & Event Breakdown */}
-        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(400px, 1fr))', gap: '20px', marginBottom: '24px' }}>
-          <div style={{ background: '#1e293b', borderRadius: '12px', border: '1px solid #334155', overflow: 'hidden' }}>
-            <div style={{ padding: '14px 18px', borderBottom: '1px solid #334155', display: 'flex', justifyContent: 'space-between' }}>
-              <h2 style={{ margin: 0, fontSize: '15px', color: '#fff', fontWeight: 600 }}>📊 Recent Events</h2>
-              <span style={{ color: '#64748b', fontSize: '12px' }}>{recentEvents.length} events</span>
-            </div>
-            <div style={{ maxHeight: '400px', overflowY: 'auto' }}>
-              {recentEvents.length === 0 ? (
-                <p style={{ padding: '32px', textAlign: 'center', color: '#64748b', margin: 0 }}>No events match filters</p>
-              ) : (
-                <table style={{ width: '100%', borderCollapse: 'collapse' }}>
-                  <thead><tr style={{ background: '#0f172a' }}>
-                    <th style={{ padding: '10px 14px', textAlign: 'left', color: '#64748b', fontSize: '11px' }}>EVENT</th>
-                    <th style={{ padding: '10px 14px', textAlign: 'left', color: '#64748b', fontSize: '11px' }}>LOCATION</th>
-                    <th style={{ padding: '10px 14px', textAlign: 'left', color: '#64748b', fontSize: '11px' }}>DEVICE</th>
-                    <th style={{ padding: '10px 14px', textAlign: 'left', color: '#64748b', fontSize: '11px' }}>TIME</th>
-                  </tr></thead>
-                  <tbody>
-                    {recentEvents.slice(0, 15).map((e) => (
-                      <tr key={e.id} style={{ borderTop: '1px solid #334155' }}>
-                        <td style={{ padding: '10px 14px' }}><span style={{ background: `${eventColors[e.event_type] || '#64748b'}20`, color: eventColors[e.event_type] || '#94a3b8', padding: '3px 8px', borderRadius: '4px', fontSize: '11px' }}>{e.event_type}</span></td>
-                        <td style={{ padding: '10px 14px' }}><div style={{ fontSize: '12px', color: '#cbd5e1' }}>{e.city || '-'}</div><div style={{ fontSize: '10px', color: '#64748b' }}>{e.country || '-'}</div></td>
-                        <td style={{ padding: '10px 14px' }}><div style={{ fontSize: '12px', color: '#cbd5e1' }}>{e.browser}</div><div style={{ fontSize: '10px', color: '#64748b' }}>{e.os} • {e.device_type}</div></td>
-                        <td style={{ padding: '10px 14px', color: '#64748b', fontSize: '11px' }}>{formatDateTime(e.timestamp)}</td>
-                      </tr>
-                    ))}
-                  </tbody>
-                </table>
-              )}
+        {/* Right Sidebar */}
+        <div style={{ display: 'flex', flexDirection: 'column', gap: '16px' }}>
+          {/* Event Breakdown */}
+          <div style={{ background: '#1e293b', borderRadius: '12px', padding: '20px', border: '1px solid #334155' }}>
+            <h2 style={{ color: '#f8fafc', fontSize: '16px', margin: '0 0 16px', display: 'flex', alignItems: 'center', gap: '8px' }}>
+              <span>📊</span> Events by Type
+            </h2>
+            <div style={{ maxHeight: '300px', overflowY: 'auto' }}>
+              {data?.eventBreakdown.map((event, i) => (
+                <div key={i} style={{ display: 'flex', alignItems: 'center', gap: '8px', marginBottom: '8px' }}>
+                  <span style={{ fontSize: '14px' }}>{eventIcons[event.event_type] || '📌'}</span>
+                  <div style={{ flex: 1 }}>
+                    <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '4px' }}>
+                      <span style={{ color: '#e2e8f0', fontSize: '12px' }}>{event.event_type}</span>
+                      <span style={{ color: '#94a3b8', fontSize: '12px' }}>{event.count}</span>
+                    </div>
+                    <div style={{ height: '4px', background: '#334155', borderRadius: '2px', overflow: 'hidden' }}>
+                      <div style={{ 
+                        height: '100%', 
+                        width: `${(event.count / (data?.stats.totalEvents || 1)) * 100}%`,
+                        background: eventColors[event.event_type] || '#64748b',
+                        borderRadius: '2px'
+                      }} />
+                    </div>
+                  </div>
+                </div>
+              ))}
             </div>
           </div>
 
-          <div style={{ background: '#1e293b', borderRadius: '12px', border: '1px solid #334155', padding: '18px' }}>
-            <h2 style={{ margin: '0 0 16px', fontSize: '15px', color: '#fff', fontWeight: 600 }}>⚡ Event Breakdown</h2>
-            <div style={{ display: 'flex', flexDirection: 'column', gap: '12px' }}>
-              {eventBreakdown.length === 0 ? <p style={{ color: '#64748b', fontSize: '13px', margin: 0 }}>No data</p> : eventBreakdown.slice(0, 6).map((item, i) => {
-                const type = item.event_type || 'unknown';
-                const count = Number(item.count);
-                return (
-                  <div key={i}>
-                    <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '4px' }}>
-                      <span style={{ color: '#e2e8f0', fontSize: '13px' }}>{type.replace('_', ' ')}</span>
-                      <span style={{ color: '#94a3b8', fontSize: '13px' }}>{count}</span>
-                    </div>
-                    <div style={{ height: '8px', background: '#0f172a', borderRadius: '4px' }}>
-                      <div style={{ height: '100%', width: `${(count / getMaxCount(eventBreakdown)) * 100}%`, background: eventColors[type] || '#64748b', borderRadius: '4px' }}></div>
-                    </div>
+          {/* Identified Users */}
+          <div style={{ background: '#1e293b', borderRadius: '12px', padding: '20px', border: '1px solid #334155' }}>
+            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '16px' }}>
+              <h2 style={{ color: '#f8fafc', fontSize: '16px', margin: 0, display: 'flex', alignItems: 'center', gap: '8px' }}>
+                <span>👤</span> Identified Users
+              </h2>
+              <a href="/visitors" style={{ color: '#22d3ee', fontSize: '12px', textDecoration: 'none' }}>View all →</a>
+            </div>
+            <div style={{ maxHeight: '250px', overflowY: 'auto' }}>
+              {data?.identifiedUsers.slice(0, 10).map((user, i) => (
+                <a 
+                  key={i} 
+                  href={`/visitors/${user.id}`}
+                  style={{ 
+                    display: 'flex', 
+                    alignItems: 'center', 
+                    gap: '12px', 
+                    padding: '10px', 
+                    borderBottom: '1px solid #334155',
+                    textDecoration: 'none',
+                    transition: 'background 0.2s'
+                  }}
+                >
+                  <div style={{ 
+                    width: '36px', 
+                    height: '36px', 
+                    borderRadius: '50%', 
+                    background: 'linear-gradient(135deg, #3b82f6, #8b5cf6)', 
+                    display: 'flex', 
+                    alignItems: 'center', 
+                    justifyContent: 'center',
+                    color: 'white',
+                    fontWeight: 600,
+                    fontSize: '14px'
+                  }}>
+                    {(user.name || user.email || '?')[0].toUpperCase()}
                   </div>
-                );
-              })}
+                  <div style={{ flex: 1, minWidth: 0 }}>
+                    <p style={{ color: '#f8fafc', fontSize: '13px', margin: 0, fontWeight: 500 }}>
+                      {user.name || 'Anonymous'}
+                    </p>
+                    <p style={{ color: '#64748b', fontSize: '11px', margin: '2px 0 0', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
+                      {user.email}
+                    </p>
+                  </div>
+                  <div style={{ textAlign: 'right' }}>
+                    <p style={{ color: '#22d3ee', fontSize: '12px', margin: 0, fontWeight: 600 }}>{user.visit_count}</p>
+                    <p style={{ color: '#475569', fontSize: '10px', margin: 0 }}>visits</p>
+                  </div>
+                </a>
+              ))}
             </div>
           </div>
-        </div>
 
-        {/* Location */}
-        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(300px, 1fr))', gap: '20px', marginBottom: '24px' }}>
-          <div style={{ background: '#1e293b', borderRadius: '12px', border: '1px solid #334155', padding: '18px' }}>
-            <h2 style={{ margin: '0 0 16px', fontSize: '15px', color: '#fff', fontWeight: 600 }}>🌍 Countries</h2>
-            {countryBreakdown.length === 0 ? <p style={{ color: '#64748b', fontSize: '13px', margin: 0 }}>No data yet</p> : (
-              <div style={{ display: 'flex', flexDirection: 'column', gap: '10px' }}>
-                {countryBreakdown.slice(0, 5).map((item, i) => (
-                  <div key={i}>
-                    <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '4px' }}>
-                      <span style={{ color: '#e2e8f0', fontSize: '12px' }}>{item.country}</span>
-                      <span style={{ color: '#94a3b8', fontSize: '12px' }}>{Number(item.count)}</span>
-                    </div>
-                    <div style={{ height: '6px', background: '#0f172a', borderRadius: '3px' }}>
-                      <div style={{ height: '100%', width: `${(Number(item.count) / getMaxCount(countryBreakdown)) * 100}%`, background: '#f59e0b', borderRadius: '3px' }}></div>
-                    </div>
-                  </div>
-                ))}
+          {/* Location Breakdown */}
+          <div style={{ background: '#1e293b', borderRadius: '12px', padding: '20px', border: '1px solid #334155' }}>
+            <h2 style={{ color: '#f8fafc', fontSize: '16px', margin: '0 0 16px', display: 'flex', alignItems: 'center', gap: '8px' }}>
+              <span>🌍</span> Top Locations
+            </h2>
+            {data?.cityBreakdown.slice(0, 5).map((city, i) => (
+              <div key={i} style={{ display: 'flex', justifyContent: 'space-between', padding: '8px 0', borderBottom: '1px solid #334155' }}>
+                <span style={{ color: '#e2e8f0', fontSize: '13px' }}>{city.city}, {city.country}</span>
+                <span style={{ color: '#22d3ee', fontSize: '13px', fontWeight: 600 }}>{city.count}</span>
               </div>
-            )}
-          </div>
-
-          <div style={{ background: '#1e293b', borderRadius: '12px', border: '1px solid #334155', padding: '18px' }}>
-            <h2 style={{ margin: '0 0 16px', fontSize: '15px', color: '#fff', fontWeight: 600 }}>🏙️ Cities</h2>
-            {cityBreakdown.length === 0 ? <p style={{ color: '#64748b', fontSize: '13px', margin: 0 }}>No data yet</p> : (
-              <div style={{ display: 'flex', flexDirection: 'column', gap: '10px' }}>
-                {cityBreakdown.slice(0, 5).map((item, i) => (
-                  <div key={i}>
-                    <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '4px' }}>
-                      <span style={{ color: '#e2e8f0', fontSize: '12px' }}>{item.city}, {item.country}</span>
-                      <span style={{ color: '#94a3b8', fontSize: '12px' }}>{Number(item.count)}</span>
-                    </div>
-                    <div style={{ height: '6px', background: '#0f172a', borderRadius: '3px' }}>
-                      <div style={{ height: '100%', width: `${(Number(item.count) / getMaxCount(cityBreakdown)) * 100}%`, background: '#ec4899', borderRadius: '3px' }}></div>
-                    </div>
-                  </div>
-                ))}
-              </div>
-            )}
+            ))}
           </div>
         </div>
+      </div>
 
-        {/* Browsers, OS, Devices */}
-        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(250px, 1fr))', gap: '20px', marginBottom: '24px' }}>
-          <div style={{ background: '#1e293b', borderRadius: '12px', border: '1px solid #334155', padding: '18px' }}>
-            <h2 style={{ margin: '0 0 16px', fontSize: '15px', color: '#fff', fontWeight: 600 }}>🌐 Browsers</h2>
-            {browserBreakdown.length === 0 ? <p style={{ color: '#64748b', fontSize: '13px', margin: 0 }}>No data</p> : (
-              <div style={{ display: 'flex', flexDirection: 'column', gap: '10px' }}>
-                {browserBreakdown.slice(0, 5).map((item, i) => (
-                  <div key={i}>
-                    <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '4px' }}>
-                      <span style={{ color: '#e2e8f0', fontSize: '12px' }}>{item.name}</span>
-                      <span style={{ color: '#94a3b8', fontSize: '12px' }}>{Number(item.count)}</span>
-                    </div>
-                    <div style={{ height: '6px', background: '#0f172a', borderRadius: '3px' }}>
-                      <div style={{ height: '100%', width: `${(Number(item.count) / getMaxCount(browserBreakdown)) * 100}%`, background: '#3b82f6', borderRadius: '3px' }}></div>
-                    </div>
-                  </div>
-                ))}
-              </div>
-            )}
-          </div>
-
-          <div style={{ background: '#1e293b', borderRadius: '12px', border: '1px solid #334155', padding: '18px' }}>
-            <h2 style={{ margin: '0 0 16px', fontSize: '15px', color: '#fff', fontWeight: 600 }}>💻 Operating Systems</h2>
-            {osBreakdown.length === 0 ? <p style={{ color: '#64748b', fontSize: '13px', margin: 0 }}>No data</p> : (
-              <div style={{ display: 'flex', flexDirection: 'column', gap: '10px' }}>
-                {osBreakdown.slice(0, 5).map((item, i) => (
-                  <div key={i}>
-                    <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '4px' }}>
-                      <span style={{ color: '#e2e8f0', fontSize: '12px' }}>{item.name}</span>
-                      <span style={{ color: '#94a3b8', fontSize: '12px' }}>{Number(item.count)}</span>
-                    </div>
-                    <div style={{ height: '6px', background: '#0f172a', borderRadius: '3px' }}>
-                      <div style={{ height: '100%', width: `${(Number(item.count) / getMaxCount(osBreakdown)) * 100}%`, background: '#8b5cf6', borderRadius: '3px' }}></div>
-                    </div>
-                  </div>
-                ))}
-              </div>
-            )}
-          </div>
-
-          <div style={{ background: '#1e293b', borderRadius: '12px', border: '1px solid #334155', padding: '18px' }}>
-            <h2 style={{ margin: '0 0 16px', fontSize: '15px', color: '#fff', fontWeight: 600 }}>📱 Devices</h2>
-            {deviceBreakdown.length === 0 ? <p style={{ color: '#64748b', fontSize: '13px', margin: 0 }}>No data</p> : (
-              <div style={{ display: 'flex', flexDirection: 'column', gap: '10px' }}>
-                {deviceBreakdown.map((item, i) => (
-                  <div key={i}>
-                    <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '4px' }}>
-                      <span style={{ color: '#e2e8f0', fontSize: '12px' }}>{item.device_type === 'desktop' ? '🖥️' : item.device_type === 'mobile' ? '📱' : '📟'} {item.device_type}</span>
-                      <span style={{ color: '#94a3b8', fontSize: '12px' }}>{Number(item.count)}</span>
-                    </div>
-                    <div style={{ height: '6px', background: '#0f172a', borderRadius: '3px' }}>
-                      <div style={{ height: '100%', width: `${(Number(item.count) / getMaxCount(deviceBreakdown)) * 100}%`, background: '#10b981', borderRadius: '3px' }}></div>
-                    </div>
-                  </div>
-                ))}
-              </div>
-            )}
-          </div>
-        </div>
-
-        {/* Top Pages & Traffic Sources */}
-        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(300px, 1fr))', gap: '20px', marginBottom: '24px' }}>
-          <div style={{ background: '#1e293b', borderRadius: '12px', border: '1px solid #334155', padding: '18px' }}>
-            <h2 style={{ margin: '0 0 16px', fontSize: '15px', color: '#fff', fontWeight: 600 }}>📄 Top Pages</h2>
-            {topPages.length === 0 ? <p style={{ color: '#64748b', fontSize: '13px', margin: 0 }}>No data</p> : (
-              <div style={{ display: 'flex', flexDirection: 'column', gap: '10px' }}>
-                {topPages.map((item, i) => (
-                  <div key={i}>
-                    <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '4px' }}>
-                      <span style={{ color: '#e2e8f0', fontSize: '12px', fontFamily: 'monospace' }}>{(item.page_path || '/').slice(0, 30)}</span>
-                      <span style={{ color: '#94a3b8', fontSize: '12px' }}>{Number(item.count)}</span>
-                    </div>
-                    <div style={{ height: '6px', background: '#0f172a', borderRadius: '3px' }}>
-                      <div style={{ height: '100%', width: `${(Number(item.count) / getMaxCount(topPages)) * 100}%`, background: '#06b6d4', borderRadius: '3px' }}></div>
-                    </div>
-                  </div>
-                ))}
-              </div>
-            )}
-          </div>
-
-          <div style={{ background: '#1e293b', borderRadius: '12px', border: '1px solid #334155', padding: '18px' }}>
-            <h2 style={{ margin: '0 0 16px', fontSize: '15px', color: '#fff', fontWeight: 600 }}>🔗 Traffic Sources</h2>
-            {trafficSources.length === 0 ? <p style={{ color: '#64748b', fontSize: '13px', margin: 0 }}>No data</p> : (
-              <div style={{ display: 'flex', flexDirection: 'column', gap: '10px' }}>
-                {trafficSources.map((item, i) => (
-                  <div key={i}>
-                    <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '4px' }}>
-                      <span style={{ color: '#e2e8f0', fontSize: '12px' }}>{item.source}</span>
-                      <span style={{ color: '#94a3b8', fontSize: '12px' }}>{Number(item.count)}</span>
-                    </div>
-                    <div style={{ height: '6px', background: '#0f172a', borderRadius: '3px' }}>
-                      <div style={{ height: '100%', width: `${(Number(item.count) / getMaxCount(trafficSources)) * 100}%`, background: '#ef4444', borderRadius: '3px' }}></div>
-                    </div>
-                  </div>
-                ))}
-              </div>
-            )}
-          </div>
-        </div>
-
-        {/* Install Pixel */}
-        <div style={{ background: '#1e293b', borderRadius: '12px', border: '1px solid #334155', padding: '20px' }}>
-          <h2 style={{ margin: '0 0 12px', fontSize: '15px', color: '#fff', fontWeight: 600 }}>🔧 Install Tracking Pixel</h2>
-          <pre style={{ background: '#0f172a', padding: '16px', borderRadius: '8px', overflow: 'auto', color: '#e2e8f0', fontSize: '12px', margin: 0 }}>
+      {/* Install Pixel Section */}
+      <div style={{ marginTop: '24px', background: '#1e293b', borderRadius: '12px', padding: '20px', border: '1px solid #334155' }}>
+        <h2 style={{ color: '#f8fafc', fontSize: '16px', margin: '0 0 16px', display: 'flex', alignItems: 'center', gap: '8px' }}>
+          <span>🔧</span> Install Tracking Pixel
+        </h2>
+        <p style={{ color: '#94a3b8', fontSize: '13px', marginBottom: '12px' }}>Add this code before the closing &lt;/head&gt; tag:</p>
+        <pre style={{ 
+          background: '#0f172a', 
+          padding: '16px', 
+          borderRadius: '8px', 
+          overflow: 'auto',
+          fontSize: '12px',
+          color: '#22d3ee',
+          border: '1px solid #334155'
+        }}>
 {`<script>
 (function(w,d,s,u,k){
   w._bp=w._bp||[];w._bp.push(['init',k]);
   var f=d.getElementsByTagName(s)[0],j=d.createElement(s);
   j.async=true;j.src=u;f.parentNode.insertBefore(j,f);
 })(window,document,'script',
-'https://pulse-analytics-data-platform.vercel.app/pixel.js','YOUR_API_KEY');
+'https://pulse-analytics-data-platform.vercel.app/pixel.js',
+'YOUR_API_KEY');
 </script>`}
-          </pre>
-          <p style={{ color: '#64748b', fontSize: '12px', margin: '12px 0 0' }}>Your API Key: <code style={{ background: '#0f172a', padding: '2px 6px', borderRadius: '4px', color: '#22d3ee' }}>b64b1ae188e43c8be236ae5ab4c3e4f84899349717f8a2c2c215dda814918403</code></p>
-        </div>
-      </main>
+        </pre>
+      </div>
     </div>
   );
 }
