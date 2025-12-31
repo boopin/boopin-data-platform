@@ -52,6 +52,7 @@ export default function VisitorDetailPage() {
   const [events, setEvents] = useState<Event[]>([]);
   const [sessions, setSessions] = useState<Session[]>([]);
   const [loading, setLoading] = useState(true);
+  const [activeTab, setActiveTab] = useState<'profile' | 'journey'>('profile');
   const [activeSession, setActiveSession] = useState<number>(0);
 
   useEffect(() => {
@@ -81,7 +82,6 @@ export default function VisitorDetailPage() {
   function groupEventsIntoSessions(events: Event[]): Session[] {
     if (events.length === 0) return [];
     
-    // Sort events by timestamp (oldest first)
     const sorted = [...events].sort((a, b) => 
       new Date(a.timestamp).getTime() - new Date(b.timestamp).getTime()
     );
@@ -95,7 +95,6 @@ export default function VisitorDetailPage() {
       const gapMinutes = (currTime - prevTime) / (1000 * 60);
       
       if (gapMinutes > 30) {
-        // New session
         sessions.push(createSession(currentSession));
         currentSession = [sorted[i]];
       } else {
@@ -103,10 +102,7 @@ export default function VisitorDetailPage() {
       }
     }
     
-    // Don't forget the last session
     sessions.push(createSession(currentSession));
-    
-    // Return in reverse order (most recent first)
     return sessions.reverse();
   }
 
@@ -176,10 +172,24 @@ export default function VisitorDetailPage() {
     purchase: '#eab308'
   };
 
+  // Get unique values from events for profile stats
+  const uniqueCountries = [...new Set(events.map(e => e.country).filter(Boolean))];
+  const uniqueCities = [...new Set(events.map(e => e.city).filter(Boolean))];
+  const uniqueDevices = [...new Set(events.map(e => e.device_type).filter(Boolean))];
+  const uniqueBrowsers = [...new Set(events.map(e => e.browser).filter(Boolean))];
+  const uniqueUtmSources = [...new Set(events.map(e => e.utm_source).filter(Boolean))];
+  const topPages = events
+    .filter(e => e.event_type === 'page_view')
+    .reduce((acc, e) => {
+      acc[e.page_path] = (acc[e.page_path] || 0) + 1;
+      return acc;
+    }, {} as Record<string, number>);
+  const sortedPages = Object.entries(topPages).sort((a, b) => b[1] - a[1]).slice(0, 10);
+
   if (loading) {
     return (
       <div style={{ minHeight: '100vh', background: 'linear-gradient(135deg, #0f172a 0%, #1e293b 100%)', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
-        <p style={{ color: '#94a3b8' }}>Loading visitor journey...</p>
+        <p style={{ color: '#94a3b8' }}>Loading visitor data...</p>
       </div>
     );
   }
@@ -204,7 +214,7 @@ export default function VisitorDetailPage() {
               </div>
               <div>
                 <h1 style={{ margin: 0, fontSize: '20px', color: '#fff', fontWeight: 700 }}>Pulse Analytics</h1>
-                <p style={{ margin: 0, fontSize: '13px', color: '#64748b' }}>Visitor Journey</p>
+                <p style={{ margin: 0, fontSize: '13px', color: '#64748b' }}>Visitor Details</p>
               </div>
             </Link>
           </div>
@@ -254,11 +264,15 @@ export default function VisitorDetailPage() {
                   {visitor.phone && (
                     <span style={{ color: '#a78bfa', fontSize: '14px' }}>📱 {visitor.phone}</span>
                   )}
-                  {!visitor.is_identified && (
-                    <span style={{ color: '#64748b', fontSize: '14px', fontFamily: 'monospace' }}>
-                      ID: {visitor.anonymous_id.slice(0, 12)}...
-                    </span>
-                  )}
+                  <span style={{ 
+                    background: visitor.is_identified ? '#10b98120' : '#64748b20',
+                    color: visitor.is_identified ? '#10b981' : '#64748b',
+                    padding: '2px 10px',
+                    borderRadius: '4px',
+                    fontSize: '12px'
+                  }}>
+                    {visitor.is_identified ? '✓ Identified' : 'Anonymous'}
+                  </span>
                 </div>
               </div>
             </div>
@@ -306,116 +320,250 @@ export default function VisitorDetailPage() {
           </div>
         </div>
 
-        {/* Sessions and Timeline */}
-        <div style={{ display: 'grid', gridTemplateColumns: '300px 1fr', gap: '24px' }}>
-          {/* Sessions List */}
-          <div style={{ background: '#1e293b', borderRadius: '12px', border: '1px solid #334155', overflow: 'hidden' }}>
-            <div style={{ padding: '16px', borderBottom: '1px solid #334155' }}>
-              <h3 style={{ margin: 0, color: '#fff', fontSize: '16px', fontWeight: 600 }}>📅 Sessions</h3>
+        {/* Tabs */}
+        <div style={{ display: 'flex', gap: '8px', marginBottom: '24px' }}>
+          <button
+            onClick={() => setActiveTab('profile')}
+            style={{
+              background: activeTab === 'profile' ? 'linear-gradient(135deg, #06b6d4, #3b82f6)' : '#334155',
+              color: '#fff',
+              border: 'none',
+              borderRadius: '8px',
+              padding: '12px 24px',
+              fontSize: '14px',
+              fontWeight: 600,
+              cursor: 'pointer'
+            }}
+          >
+            👤 Profile
+          </button>
+          <button
+            onClick={() => setActiveTab('journey')}
+            style={{
+              background: activeTab === 'journey' ? 'linear-gradient(135deg, #06b6d4, #3b82f6)' : '#334155',
+              color: '#fff',
+              border: 'none',
+              borderRadius: '8px',
+              padding: '12px 24px',
+              fontSize: '14px',
+              fontWeight: 600,
+              cursor: 'pointer'
+            }}
+          >
+            🛤️ Journey Timeline
+          </button>
+        </div>
+
+        {/* Profile Tab */}
+        {activeTab === 'profile' && (
+          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(350px, 1fr))', gap: '24px' }}>
+            {/* Identity Card */}
+            <div style={{ background: '#1e293b', borderRadius: '12px', border: '1px solid #334155', padding: '20px' }}>
+              <h3 style={{ margin: '0 0 16px', color: '#fff', fontSize: '16px', fontWeight: 600 }}>🆔 Identity Information</h3>
+              <div style={{ display: 'flex', flexDirection: 'column', gap: '12px' }}>
+                <div style={{ display: 'flex', justifyContent: 'space-between', padding: '8px 0', borderBottom: '1px solid #334155' }}>
+                  <span style={{ color: '#64748b', fontSize: '13px' }}>Visitor ID</span>
+                  <span style={{ color: '#e2e8f0', fontSize: '13px', fontFamily: 'monospace' }}>{visitor.id.slice(0, 18)}...</span>
+                </div>
+                <div style={{ display: 'flex', justifyContent: 'space-between', padding: '8px 0', borderBottom: '1px solid #334155' }}>
+                  <span style={{ color: '#64748b', fontSize: '13px' }}>Anonymous ID</span>
+                  <span style={{ color: '#e2e8f0', fontSize: '13px', fontFamily: 'monospace' }}>{visitor.anonymous_id.slice(0, 18)}...</span>
+                </div>
+                <div style={{ display: 'flex', justifyContent: 'space-between', padding: '8px 0', borderBottom: '1px solid #334155' }}>
+                  <span style={{ color: '#64748b', fontSize: '13px' }}>Email</span>
+                  <span style={{ color: '#22d3ee', fontSize: '13px' }}>{visitor.email || '—'}</span>
+                </div>
+                <div style={{ display: 'flex', justifyContent: 'space-between', padding: '8px 0', borderBottom: '1px solid #334155' }}>
+                  <span style={{ color: '#64748b', fontSize: '13px' }}>Name</span>
+                  <span style={{ color: '#e2e8f0', fontSize: '13px' }}>{visitor.name || '—'}</span>
+                </div>
+                <div style={{ display: 'flex', justifyContent: 'space-between', padding: '8px 0', borderBottom: '1px solid #334155' }}>
+                  <span style={{ color: '#64748b', fontSize: '13px' }}>Phone</span>
+                  <span style={{ color: '#a78bfa', fontSize: '13px' }}>{visitor.phone || '—'}</span>
+                </div>
+                <div style={{ display: 'flex', justifyContent: 'space-between', padding: '8px 0' }}>
+                  <span style={{ color: '#64748b', fontSize: '13px' }}>Status</span>
+                  <span style={{ 
+                    background: visitor.is_identified ? '#10b98120' : '#64748b20',
+                    color: visitor.is_identified ? '#10b981' : '#64748b',
+                    padding: '2px 10px',
+                    borderRadius: '4px',
+                    fontSize: '12px'
+                  }}>
+                    {visitor.is_identified ? 'Identified' : 'Anonymous'}
+                  </span>
+                </div>
+              </div>
             </div>
-            <div style={{ maxHeight: '600px', overflowY: 'auto' }}>
-              {sessions.length === 0 ? (
-                <p style={{ padding: '24px', color: '#64748b', textAlign: 'center' }}>No sessions recorded</p>
+
+            {/* Location & Device */}
+            <div style={{ background: '#1e293b', borderRadius: '12px', border: '1px solid #334155', padding: '20px' }}>
+              <h3 style={{ margin: '0 0 16px', color: '#fff', fontSize: '16px', fontWeight: 600 }}>📍 Location & Device</h3>
+              <div style={{ display: 'flex', flexDirection: 'column', gap: '12px' }}>
+                <div style={{ display: 'flex', justifyContent: 'space-between', padding: '8px 0', borderBottom: '1px solid #334155' }}>
+                  <span style={{ color: '#64748b', fontSize: '13px' }}>Countries</span>
+                  <span style={{ color: '#e2e8f0', fontSize: '13px' }}>{uniqueCountries.join(', ') || '—'}</span>
+                </div>
+                <div style={{ display: 'flex', justifyContent: 'space-between', padding: '8px 0', borderBottom: '1px solid #334155' }}>
+                  <span style={{ color: '#64748b', fontSize: '13px' }}>Cities</span>
+                  <span style={{ color: '#e2e8f0', fontSize: '13px' }}>{uniqueCities.join(', ') || '—'}</span>
+                </div>
+                <div style={{ display: 'flex', justifyContent: 'space-between', padding: '8px 0', borderBottom: '1px solid #334155' }}>
+                  <span style={{ color: '#64748b', fontSize: '13px' }}>Devices</span>
+                  <span style={{ color: '#e2e8f0', fontSize: '13px' }}>{uniqueDevices.join(', ') || '—'}</span>
+                </div>
+                <div style={{ display: 'flex', justifyContent: 'space-between', padding: '8px 0', borderBottom: '1px solid #334155' }}>
+                  <span style={{ color: '#64748b', fontSize: '13px' }}>Browsers</span>
+                  <span style={{ color: '#e2e8f0', fontSize: '13px' }}>{uniqueBrowsers.join(', ') || '—'}</span>
+                </div>
+                <div style={{ display: 'flex', justifyContent: 'space-between', padding: '8px 0' }}>
+                  <span style={{ color: '#64748b', fontSize: '13px' }}>Traffic Sources</span>
+                  <span style={{ color: '#f59e0b', fontSize: '13px' }}>{uniqueUtmSources.join(', ') || 'Direct'}</span>
+                </div>
+              </div>
+            </div>
+
+            {/* Top Pages */}
+            <div style={{ background: '#1e293b', borderRadius: '12px', border: '1px solid #334155', padding: '20px' }}>
+              <h3 style={{ margin: '0 0 16px', color: '#fff', fontSize: '16px', fontWeight: 600 }}>📄 Top Pages Visited</h3>
+              {sortedPages.length === 0 ? (
+                <p style={{ color: '#64748b', fontSize: '13px' }}>No page views recorded</p>
               ) : (
-                sessions.map((session, index) => (
-                  <div 
-                    key={index}
-                    onClick={() => setActiveSession(index)}
-                    style={{ 
-                      padding: '16px', 
-                      borderBottom: '1px solid #334155', 
-                      cursor: 'pointer',
-                      background: activeSession === index ? '#334155' : 'transparent',
-                      transition: 'background 0.2s'
-                    }}
-                  >
-                    <p style={{ color: '#fff', fontSize: '14px', fontWeight: 600, margin: 0 }}>
-                      {session.date}
-                    </p>
-                    <p style={{ color: '#64748b', fontSize: '12px', margin: '4px 0 0' }}>
-                      {formatTime(session.startTime)}
-                    </p>
-                    <div style={{ display: 'flex', gap: '12px', marginTop: '8px' }}>
-                      <span style={{ color: '#3b82f6', fontSize: '12px' }}>
-                        📄 {session.pageViews} pages
-                      </span>
-                      <span style={{ color: '#10b981', fontSize: '12px' }}>
-                        ⏱️ {formatDuration(session.duration)}
-                      </span>
-                      <span style={{ color: '#f59e0b', fontSize: '12px' }}>
-                        ⚡ {session.events.length} events
-                      </span>
+                <div style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
+                  {sortedPages.map(([page, count], i) => (
+                    <div key={i} style={{ display: 'flex', justifyContent: 'space-between', padding: '8px', background: '#0f172a', borderRadius: '6px' }}>
+                      <span style={{ color: '#e2e8f0', fontSize: '12px', fontFamily: 'monospace' }}>{page}</span>
+                      <span style={{ color: '#3b82f6', fontSize: '12px', fontWeight: 600 }}>{count}x</span>
                     </div>
-                  </div>
-                ))
+                  ))}
+                </div>
+              )}
+            </div>
+
+            {/* Custom Properties */}
+            <div style={{ background: '#1e293b', borderRadius: '12px', border: '1px solid #334155', padding: '20px' }}>
+              <h3 style={{ margin: '0 0 16px', color: '#fff', fontSize: '16px', fontWeight: 600 }}>⚙️ Custom Properties</h3>
+              {!visitor.properties || Object.keys(visitor.properties).length === 0 ? (
+                <p style={{ color: '#64748b', fontSize: '13px' }}>No custom properties</p>
+              ) : (
+                <pre style={{ color: '#e2e8f0', fontSize: '12px', margin: 0, background: '#0f172a', padding: '12px', borderRadius: '6px', overflow: 'auto' }}>
+                  {JSON.stringify(visitor.properties, null, 2)}
+                </pre>
               )}
             </div>
           </div>
+        )}
 
-          {/* Event Timeline */}
-          <div style={{ background: '#1e293b', borderRadius: '12px', border: '1px solid #334155', overflow: 'hidden' }}>
-            <div style={{ padding: '16px', borderBottom: '1px solid #334155', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-              <h3 style={{ margin: 0, color: '#fff', fontSize: '16px', fontWeight: 600 }}>
-                🛤️ Event Timeline
-                {sessions[activeSession] && (
-                  <span style={{ color: '#64748b', fontWeight: 400, marginLeft: '8px' }}>
-                    — {sessions[activeSession].date}
-                  </span>
-                )}
-              </h3>
-              <span style={{ color: '#64748b', fontSize: '13px' }}>
-                {sessions[activeSession]?.events.length || 0} events
-              </span>
-            </div>
-            <div style={{ maxHeight: '600px', overflowY: 'auto', padding: '16px' }}>
-              {sessions[activeSession]?.events.length === 0 ? (
-                <p style={{ color: '#64748b', textAlign: 'center', padding: '24px' }}>No events in this session</p>
-              ) : (
-                <div style={{ position: 'relative' }}>
-                  {/* Timeline line */}
-                  <div style={{ 
-                    position: 'absolute', 
-                    left: '20px', 
-                    top: '24px', 
-                    bottom: '24px', 
-                    width: '2px', 
-                    background: '#334155' 
-                  }}></div>
-                  
-                  {sessions[activeSession]?.events.map((event, index) => (
-                    <div key={event.id} style={{ 
-                      display: 'flex', 
-                      gap: '16px', 
-                      marginBottom: '16px',
-                      position: 'relative'
-                    }}>
-                      {/* Timeline dot */}
-                      <div style={{ 
-                        width: '42px', 
-                        height: '42px', 
-                        borderRadius: '50%', 
-                        background: `${eventColors[event.event_type] || '#64748b'}20`,
-                        border: `2px solid ${eventColors[event.event_type] || '#64748b'}`,
-                        display: 'flex', 
-                        alignItems: 'center', 
-                        justifyContent: 'center',
-                        fontSize: '18px',
-                        flexShrink: 0,
-                        zIndex: 1
-                      }}>
-                        {eventIcons[event.event_type] || '⚡'}
+        {/* Journey Tab */}
+        {activeTab === 'journey' && (
+          <div style={{ display: 'grid', gridTemplateColumns: '300px 1fr', gap: '24px' }}>
+            {/* Sessions List */}
+            <div style={{ background: '#1e293b', borderRadius: '12px', border: '1px solid #334155', overflow: 'hidden' }}>
+              <div style={{ padding: '16px', borderBottom: '1px solid #334155' }}>
+                <h3 style={{ margin: 0, color: '#fff', fontSize: '16px', fontWeight: 600 }}>📅 Sessions</h3>
+              </div>
+              <div style={{ maxHeight: '600px', overflowY: 'auto' }}>
+                {sessions.length === 0 ? (
+                  <p style={{ padding: '24px', color: '#64748b', textAlign: 'center' }}>No sessions recorded</p>
+                ) : (
+                  sessions.map((session, index) => (
+                    <div 
+                      key={index}
+                      onClick={() => setActiveSession(index)}
+                      style={{ 
+                        padding: '16px', 
+                        borderBottom: '1px solid #334155', 
+                        cursor: 'pointer',
+                        background: activeSession === index ? '#334155' : 'transparent',
+                        transition: 'background 0.2s'
+                      }}
+                    >
+                      <p style={{ color: '#fff', fontSize: '14px', fontWeight: 600, margin: 0 }}>
+                        {session.date}
+                      </p>
+                      <p style={{ color: '#64748b', fontSize: '12px', margin: '4px 0 0' }}>
+                        {formatTime(session.startTime)}
+                      </p>
+                      <div style={{ display: 'flex', gap: '12px', marginTop: '8px' }}>
+                        <span style={{ color: '#3b82f6', fontSize: '12px' }}>
+                          📄 {session.pageViews} pages
+                        </span>
+                        <span style={{ color: '#10b981', fontSize: '12px' }}>
+                          ⏱️ {formatDuration(session.duration)}
+                        </span>
+                        <span style={{ color: '#f59e0b', fontSize: '12px' }}>
+                          ⚡ {session.events.length} events
+                        </span>
                       </div>
-                      
-                      {/* Event card */}
-                      <div style={{ 
-                        flex: 1, 
-                        background: '#0f172a', 
-                        borderRadius: '8px', 
-                        padding: '12px 16px',
-                        border: '1px solid #334155'
+                    </div>
+                  ))
+                )}
+              </div>
+            </div>
+
+            {/* Event Timeline */}
+            <div style={{ background: '#1e293b', borderRadius: '12px', border: '1px solid #334155', overflow: 'hidden' }}>
+              <div style={{ padding: '16px', borderBottom: '1px solid #334155', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                <h3 style={{ margin: 0, color: '#fff', fontSize: '16px', fontWeight: 600 }}>
+                  🛤️ Event Timeline
+                  {sessions[activeSession] && (
+                    <span style={{ color: '#64748b', fontWeight: 400, marginLeft: '8px' }}>
+                      — {sessions[activeSession].date}
+                    </span>
+                  )}
+                </h3>
+                <span style={{ color: '#64748b', fontSize: '13px' }}>
+                  {sessions[activeSession]?.events.length || 0} events
+                </span>
+              </div>
+              <div style={{ maxHeight: '600px', overflowY: 'auto', padding: '16px' }}>
+                {sessions[activeSession]?.events.length === 0 ? (
+                  <p style={{ color: '#64748b', textAlign: 'center', padding: '24px' }}>No events in this session</p>
+                ) : (
+                  <div style={{ position: 'relative' }}>
+                    {/* Timeline line */}
+                    <div style={{ 
+                      position: 'absolute', 
+                      left: '20px', 
+                      top: '24px', 
+                      bottom: '24px', 
+                      width: '2px', 
+                      background: '#334155' 
+                    }}></div>
+                    
+                    {sessions[activeSession]?.events.map((event, index) => (
+                      <div key={event.id} style={{ 
+                        display: 'flex', 
+                        gap: '16px', 
+                        marginBottom: '16px',
+                        position: 'relative'
                       }}>
-                        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: '8px' }}>
-                          <div>
+                        {/* Timeline dot */}
+                        <div style={{ 
+                          width: '42px', 
+                          height: '42px', 
+                          borderRadius: '50%', 
+                          background: `${eventColors[event.event_type] || '#64748b'}20`,
+                          border: `2px solid ${eventColors[event.event_type] || '#64748b'}`,
+                          display: 'flex', 
+                          alignItems: 'center', 
+                          justifyContent: 'center',
+                          fontSize: '18px',
+                          flexShrink: 0,
+                          zIndex: 1
+                        }}>
+                          {eventIcons[event.event_type] || '⚡'}
+                        </div>
+                        
+                        {/* Event card */}
+                        <div style={{ 
+                          flex: 1, 
+                          background: '#0f172a', 
+                          borderRadius: '8px', 
+                          padding: '12px 16px',
+                          border: '1px solid #334155'
+                        }}>
+                          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: '8px' }}>
                             <span style={{ 
                               background: `${eventColors[event.event_type] || '#64748b'}20`,
                               color: eventColors[event.event_type] || '#94a3b8',
@@ -426,82 +574,75 @@ export default function VisitorDetailPage() {
                             }}>
                               {event.event_type.replace('_', ' ')}
                             </span>
+                            <span style={{ color: '#64748b', fontSize: '12px' }}>
+                              {formatTime(event.timestamp)}
+                            </span>
                           </div>
-                          <span style={{ color: '#64748b', fontSize: '12px' }}>
-                            {formatTime(event.timestamp)}
-                          </span>
-                        </div>
-                        
-                        {/* Page path */}
-                        {event.page_path && (
-                          <p style={{ 
-                            color: '#e2e8f0', 
-                            fontSize: '14px', 
-                            margin: '8px 0 0',
-                            fontFamily: 'monospace',
-                            wordBreak: 'break-all'
-                          }}>
-                            {event.page_path}
-                          </p>
-                        )}
-                        
-                        {/* Page title */}
-                        {event.page_title && (
-                          <p style={{ color: '#94a3b8', fontSize: '13px', margin: '4px 0 0' }}>
-                            {event.page_title}
-                          </p>
-                        )}
-                        
-                        {/* Meta info */}
-                        <div style={{ display: 'flex', gap: '16px', marginTop: '10px', flexWrap: 'wrap' }}>
-                          {event.device_type && (
-                            <span style={{ color: '#64748b', fontSize: '11px' }}>
-                              {event.device_type === 'desktop' ? '🖥️' : event.device_type === 'mobile' ? '📱' : '📟'} {event.device_type}
-                            </span>
+                          
+                          {event.page_path && (
+                            <p style={{ 
+                              color: '#e2e8f0', 
+                              fontSize: '14px', 
+                              margin: '8px 0 0',
+                              fontFamily: 'monospace',
+                              wordBreak: 'break-all'
+                            }}>
+                              {event.page_path}
+                            </p>
                           )}
-                          {event.browser && (
-                            <span style={{ color: '#64748b', fontSize: '11px' }}>
-                              🌐 {event.browser}
-                            </span>
+                          
+                          {event.page_title && (
+                            <p style={{ color: '#94a3b8', fontSize: '13px', margin: '4px 0 0' }}>
+                              {event.page_title}
+                            </p>
                           )}
-                          {event.country && (
-                            <span style={{ color: '#64748b', fontSize: '11px' }}>
-                              📍 {event.city ? `${event.city}, ` : ''}{event.country}
-                            </span>
-                          )}
-                          {event.utm_source && (
-                            <span style={{ color: '#64748b', fontSize: '11px' }}>
-                              🔗 {event.utm_source}
-                              {event.utm_medium ? ` / ${event.utm_medium}` : ''}
-                              {event.utm_campaign ? ` / ${event.utm_campaign}` : ''}
-                            </span>
-                          )}
-                        </div>
-                        
-                        {/* Referrer */}
-                        {event.referrer && (
-                          <p style={{ color: '#64748b', fontSize: '11px', margin: '8px 0 0' }}>
-                            Referrer: {event.referrer}
-                          </p>
-                        )}
-                        
-                        {/* Custom properties */}
-                        {event.properties && Object.keys(event.properties).length > 0 && (
-                          <div style={{ marginTop: '8px', padding: '8px', background: '#1e293b', borderRadius: '4px' }}>
-                            <p style={{ color: '#64748b', fontSize: '11px', margin: '0 0 4px' }}>Properties:</p>
-                            <pre style={{ color: '#94a3b8', fontSize: '11px', margin: 0, whiteSpace: 'pre-wrap' }}>
-                              {JSON.stringify(event.properties, null, 2)}
-                            </pre>
+                          
+                          <div style={{ display: 'flex', gap: '16px', marginTop: '10px', flexWrap: 'wrap' }}>
+                            {event.device_type && (
+                              <span style={{ color: '#64748b', fontSize: '11px' }}>
+                                {event.device_type === 'desktop' ? '🖥️' : event.device_type === 'mobile' ? '📱' : '📟'} {event.device_type}
+                              </span>
+                            )}
+                            {event.browser && (
+                              <span style={{ color: '#64748b', fontSize: '11px' }}>
+                                🌐 {event.browser}
+                              </span>
+                            )}
+                            {event.country && (
+                              <span style={{ color: '#64748b', fontSize: '11px' }}>
+                                📍 {event.city ? `${event.city}, ` : ''}{event.country}
+                              </span>
+                            )}
+                            {event.utm_source && (
+                              <span style={{ color: '#64748b', fontSize: '11px' }}>
+                                🔗 {event.utm_source}
+                              </span>
+                            )}
                           </div>
-                        )}
+                          
+                          {event.referrer && (
+                            <p style={{ color: '#64748b', fontSize: '11px', margin: '8px 0 0' }}>
+                              Referrer: {event.referrer}
+                            </p>
+                          )}
+                          
+                          {event.properties && Object.keys(event.properties).length > 0 && (
+                            <div style={{ marginTop: '8px', padding: '8px', background: '#1e293b', borderRadius: '4px' }}>
+                              <p style={{ color: '#64748b', fontSize: '11px', margin: '0 0 4px' }}>Properties:</p>
+                              <pre style={{ color: '#94a3b8', fontSize: '11px', margin: 0, whiteSpace: 'pre-wrap' }}>
+                                {JSON.stringify(event.properties, null, 2)}
+                              </pre>
+                            </div>
+                          )}
+                        </div>
                       </div>
-                    </div>
-                  ))}
-                </div>
-              )}
+                    ))}
+                  </div>
+                )}
+              </div>
             </div>
           </div>
-        </div>
+        )}
       </main>
     </div>
   );
