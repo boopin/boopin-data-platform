@@ -64,7 +64,6 @@ export default function VisitorDetailPage() {
         setVisitor(data.visitor);
         setEvents(data.events || []);
         
-        // Group events into sessions (30 min gap = new session)
         const groupedSessions = groupEventsIntoSessions(data.events || []);
         setSessions(groupedSessions);
       } catch (err) {
@@ -82,7 +81,7 @@ export default function VisitorDetailPage() {
   function groupEventsIntoSessions(events: Event[]): Session[] {
     if (events.length === 0) return [];
     
-    const sorted = [...events].sort((a, b) => 
+    const sorted = events.slice().sort((a, b) => 
       new Date(a.timestamp).getTime() - new Date(b.timestamp).getTime()
     );
     
@@ -172,12 +171,12 @@ export default function VisitorDetailPage() {
     purchase: '#eab308'
   };
 
-  // Get unique values from events for profile stats
-  const uniqueCountries = [...new Set(events.map(e => e.country).filter(Boolean))];
-  const uniqueCities = [...new Set(events.map(e => e.city).filter(Boolean))];
-  const uniqueDevices = [...new Set(events.map(e => e.device_type).filter(Boolean))];
-  const uniqueBrowsers = [...new Set(events.map(e => e.browser).filter(Boolean))];
-  const uniqueUtmSources = [...new Set(events.map(e => e.utm_source).filter(Boolean))];
+  // Get unique values from events for profile stats - using Array.from for TS compatibility
+  const uniqueCountries = Array.from(new Set(events.map(e => e.country).filter(Boolean)));
+  const uniqueCities = Array.from(new Set(events.map(e => e.city).filter(Boolean)));
+  const uniqueDevices = Array.from(new Set(events.map(e => e.device_type).filter(Boolean)));
+  const uniqueBrowsers = Array.from(new Set(events.map(e => e.browser).filter(Boolean)));
+  const uniqueUtmSources = Array.from(new Set(events.map(e => e.utm_source).filter(Boolean)));
   const topPages = events
     .filter(e => e.event_type === 'page_view')
     .reduce((acc, e) => {
@@ -517,7 +516,7 @@ export default function VisitorDetailPage() {
                 </span>
               </div>
               <div style={{ maxHeight: '600px', overflowY: 'auto', padding: '16px' }}>
-                {sessions[activeSession]?.events.length === 0 ? (
+                {!sessions[activeSession] || sessions[activeSession].events.length === 0 ? (
                   <p style={{ color: '#64748b', textAlign: 'center', padding: '24px' }}>No events in this session</p>
                 ) : (
                   <div style={{ position: 'relative' }}>
@@ -531,7 +530,7 @@ export default function VisitorDetailPage() {
                       background: '#334155' 
                     }}></div>
                     
-                    {sessions[activeSession]?.events.map((event, index) => (
+                    {sessions[activeSession].events.map((event) => (
                       <div key={event.id} style={{ 
                         display: 'flex', 
                         gap: '16px', 
