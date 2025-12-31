@@ -240,20 +240,38 @@ export default function VisitorsPage() {
                       {formatDateTime(visitor.last_seen_at)}
                     </td>
                     <td style={{ padding: '14px 16px', textAlign: 'center' }}>
-                      <Link 
-                        href={`/visitors/${visitor.id}`}
-                        style={{
-                          background: 'linear-gradient(135deg, #06b6d4, #3b82f6)',
-                          color: '#fff',
-                          padding: '6px 14px',
-                          borderRadius: '6px',
-                          fontSize: '12px',
-                          textDecoration: 'none',
-                          fontWeight: 500
-                        }}
-                      >
-                        View Journey →
-                      </Link>
+                      <div style={{ display: 'flex', gap: '8px', justifyContent: 'center' }}>
+                        <Link
+                          href={`/visitors/${visitor.id}`}
+                          style={{
+                            background: 'linear-gradient(135deg, #8b5cf6, #6366f1)',
+                            color: '#fff',
+                            padding: '6px 12px',
+                            borderRadius: '6px',
+                            fontSize: '12px',
+                            textDecoration: 'none',
+                            fontWeight: 500,
+                            display: 'inline-block'
+                          }}
+                        >
+                          👤 Profile
+                        </Link>
+                        <Link
+                          href={`/visitors/${visitor.id}?tab=journey`}
+                          style={{
+                            background: 'linear-gradient(135deg, #06b6d4, #3b82f6)',
+                            color: '#fff',
+                            padding: '6px 12px',
+                            borderRadius: '6px',
+                            fontSize: '12px',
+                            textDecoration: 'none',
+                            fontWeight: 500,
+                            display: 'inline-block'
+                          }}
+                        >
+                          🛤️ Journey
+                        </Link>
+                      </div>
                     </td>
                   </tr>
                 ))
