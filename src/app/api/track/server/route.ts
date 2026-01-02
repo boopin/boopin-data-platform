@@ -1,48 +1,9 @@
 import { sql } from '../../../../lib/db';
 import { NextRequest, NextResponse } from 'next/server';
-import crypto from 'crypto';
+import { validateApiKey } from '../../../../lib/apiKeyValidation';
 
 export const dynamic = 'force-dynamic';
 export const revalidate = 0;
-
-// Validate API key
-async function validateApiKey(apiKey: string): Promise<{ valid: boolean; permissions?: any }> {
-  try {
-    const hash = crypto.createHash('sha256').update(apiKey).digest('hex');
-
-    const result = await sql`
-      SELECT id, permissions, is_active, expires_at
-      FROM api_keys
-      WHERE key_hash = ${hash}
-    `;
-
-    if (result.length === 0) {
-      return { valid: false };
-    }
-
-    const key = result[0];
-
-    if (!key.is_active) {
-      return { valid: false };
-    }
-
-    if (key.expires_at && new Date(key.expires_at) < new Date()) {
-      return { valid: false };
-    }
-
-    // Update last used timestamp
-    await sql`
-      UPDATE api_keys
-      SET last_used_at = CURRENT_TIMESTAMP
-      WHERE id = ${key.id}
-    `;
-
-    return { valid: true, permissions: key.permissions };
-  } catch (error) {
-    console.error('API key validation error:', error);
-    return { valid: false };
-  }
-}
 
 // POST - Track server-side event
 export async function POST(request: NextRequest) {
