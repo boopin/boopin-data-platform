@@ -33,11 +33,29 @@ export default function WebhooksPage() {
   });
 
   const availableEventTypes = [
-    'pageview',
+    'page_view',
     'click',
     'form_submit',
+    'form_start',
+    'form_abandon',
+    'identify',
     'signup',
+    'login',
+    'logout',
+    'product_view',
+    'add_to_cart',
+    'remove_from_cart',
+    'view_cart',
+    'begin_checkout',
+    'add_payment_info',
+    'add_shipping_info',
     'purchase',
+    'video_start',
+    'video_progress',
+    'video_complete',
+    'file_download',
+    'search',
+    'share',
     'custom_event',
   ];
 
@@ -222,7 +240,7 @@ export default function WebhooksPage() {
   }
 
   return (
-    <div style={{ padding: '40px', maxWidth: '1400px', margin: '0 auto' }}>
+    <div style={{ padding: '40px', maxWidth: '1400px', margin: '0 auto', minHeight: '100vh', background: '#f9fafb' }}>
       {/* Navigation */}
       <div style={{
         background: 'linear-gradient(135deg, #667eea 0%, #764ba2 100%)',
