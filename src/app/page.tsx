@@ -309,6 +309,8 @@ export default function Dashboard() {
             <a href="/visitors" style={{ color: '#94a3b8', textDecoration: 'none', fontSize: '14px' }}>Visitors</a>
             <a href="/segments" style={{ color: '#94a3b8', textDecoration: 'none', fontSize: '14px' }}>Segments</a>
             <a href="/reports" style={{ color: '#94a3b8', textDecoration: 'none', fontSize: '14px' }}>Reports</a>
+            <a href="/live" style={{ color: '#94a3b8', textDecoration: 'none', fontSize: '14px' }}>Live</a>
+            <a href="/goals" style={{ color: '#94a3b8', textDecoration: 'none', fontSize: '14px' }}>Goals</a>
           </nav>
           <div style={{ textAlign: 'right' }}>
             <p style={{ color: '#e2e8f0', margin: 0, fontSize: '14px', fontWeight: 500 }}>{currentTime.toLocaleTimeString()}</p>
