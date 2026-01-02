@@ -198,9 +198,9 @@ export async function POST(request: NextRequest) {
     };
 
     // Insert event
-    await sql`
+    const result = await sql`
       INSERT INTO events (
-        client_id, visitor_id, session_id, event_type, 
+        client_id, visitor_id, session_id, event_type,
         page_url, page_path, page_title, referrer,
         user_agent, browser, os, device_type,
         ip_address, country, city, region,
@@ -214,10 +214,27 @@ export async function POST(request: NextRequest) {
         ${utmSource || null}, ${utmMedium || null}, ${utmCampaign || null}, ${utmTerm || null}, ${utmContent || null},
         ${JSON.stringify(enhancedProperties)}
       )
+      RETURNING id, timestamp
     `;
 
-    return NextResponse.json({ 
-      success: true, 
+    // Trigger webhooks (fire-and-forget)
+    try {
+      await triggerWebhooks(eventType, {
+        event_id: result[0].id,
+        visitor_id: visitorId,
+        event_type: eventType,
+        properties: enhancedProperties,
+        page_url: pageUrl,
+        page_path: pagePath,
+        timestamp: result[0].timestamp
+      });
+    } catch (webhookError) {
+      console.error('Webhook trigger error:', webhookError);
+      // Don't fail the tracking request if webhooks fail
+    }
+
+    return NextResponse.json({
+      success: true,
       visitorId,
       isNewVisitor
     });
@@ -237,4 +254,60 @@ export async function OPTIONS() {
       'Access-Control-Allow-Headers': 'Content-Type, X-API-Key',
     },
   });
+}
+
+// Trigger webhooks for this event
+async function triggerWebhooks(eventType: string, eventData: any) {
+  try {
+    // Get all active webhooks for this event type
+    const webhooks = await sql`
+      SELECT * FROM webhooks
+      WHERE is_active = true
+      AND (
+        event_types IS NULL
+        OR event_types @> ${JSON.stringify([eventType])}
+      )
+    `;
+
+    // Trigger each webhook (fire-and-forget)
+    for (const webhook of webhooks) {
+      fetch(webhook.url, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'X-Pulse-Analytics-Signature': webhook.secret || '',
+          'User-Agent': 'PulseAnalytics-Webhook/1.0'
+        },
+        body: JSON.stringify({
+          webhook_id: webhook.id,
+          event_type: eventType,
+          data: eventData,
+          timestamp: new Date().toISOString()
+        })
+      }).then(async (response) => {
+        // Update webhook statistics
+        await sql`
+          UPDATE webhooks
+          SET
+            total_triggers = total_triggers + 1,
+            last_triggered_at = NOW(),
+            last_status = ${response.status},
+            last_error = NULL
+          WHERE id = ${webhook.id}
+        `;
+      }).catch(async (error) => {
+        console.error(`Webhook ${webhook.id} delivery failed:`, error);
+        // Update webhook with error
+        await sql`
+          UPDATE webhooks
+          SET
+            last_triggered_at = NOW(),
+            last_error = ${error.message}
+          WHERE id = ${webhook.id}
+        `;
+      });
+    }
+  } catch (error) {
+    console.error('Webhook processing error:', error);
+  }
 }
