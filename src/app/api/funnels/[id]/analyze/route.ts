@@ -50,7 +50,7 @@ export async function GET(
       const stepType = step.type; // 'event' or 'url'
       const stepValue = step.value; // event name or URL pattern
 
-      let visitorQuery: any[];
+      let visitorQuery: any[] = [];
 
       if (stepType === 'event') {
         // Find visitors who triggered this event
@@ -70,9 +70,6 @@ export async function GET(
           AND ${dateFilter}
           GROUP BY visitor_id
         `;
-      } else {
-        // Unknown step type, skip
-        visitorQuery = [];
       }
 
       const currentStepVisitors = new Map(
