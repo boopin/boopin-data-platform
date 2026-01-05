@@ -50,6 +50,9 @@ export async function POST(request: NextRequest) {
       );
     }
 
+    // Use default retention periods if not provided
+    const periods = retention_periods || [1, 7, 14, 30, 60, 90];
+
     const result = await sql`
       INSERT INTO cohorts (name, description, cohort_type, date_field, interval_type, retention_periods)
       VALUES (
@@ -58,7 +61,7 @@ export async function POST(request: NextRequest) {
         ${cohort_type},
         ${date_field},
         ${interval_type},
-        ${retention_periods ? JSON.stringify(retention_periods) : null}
+        ${periods}
       )
       RETURNING *
     `;
@@ -85,9 +88,9 @@ export async function PUT(request: NextRequest) {
     const result = await sql`
       UPDATE cohorts
       SET
-        name = COALESCE(${name}, name),
-        description = COALESCE(${description}, description),
-        retention_periods = COALESCE(${retention_periods ? JSON.stringify(retention_periods) : null}, retention_periods),
+        name = COALESCE(${name || null}, name),
+        description = COALESCE(${description || null}, description),
+        retention_periods = COALESCE(${retention_periods || null}, retention_periods),
         updated_at = CURRENT_TIMESTAMP
       WHERE id = ${id}
       RETURNING *
