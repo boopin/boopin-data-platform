@@ -42,7 +42,19 @@ export async function GET(
     }
 
     // Analyze each step
-    const stepAnalysis = [];
+    const stepAnalysis: Array<{
+      stepIndex: number;
+      stepName: string;
+      stepType: string;
+      stepValue: string;
+      totalVisitors: number;
+      convertedFromPrevious: number;
+      dropoffFromPrevious: number;
+      conversionRate: number;
+      dropoffRate: number;
+      avgTimeToConvert: number;
+      visitorTimestamps: Map<string, Date>;
+    }> = [];
     let previousStepVisitors: Set<string> = new Set();
 
     for (let i = 0; i < steps.length; i++) {
