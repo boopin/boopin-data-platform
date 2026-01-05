@@ -128,17 +128,18 @@ export default function FunnelsPage() {
   };
 
   return (
-    <div style={{ padding: '24px', maxWidth: '1400px', margin: '0 auto' }}>
-      {/* Header */}
-      <div style={{ marginBottom: '32px', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-        <div>
-          <h1 style={{ fontSize: '28px', fontWeight: 700, color: '#1a202c', marginBottom: '8px' }}>
-            📊 Funnel Analysis
-          </h1>
-          <p style={{ color: '#718096', fontSize: '14px' }}>
-            Create and analyze multi-step conversion funnels
-          </p>
-        </div>
+    <div style={{ minHeight: '100vh', background: '#f9fafb', padding: '24px' }}>
+      <div style={{ maxWidth: '1400px', margin: '0 auto' }}>
+        {/* Header */}
+        <div style={{ marginBottom: '32px', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+          <div>
+            <h1 style={{ fontSize: '28px', fontWeight: 700, color: '#1a202c', marginBottom: '8px' }}>
+              📊 Funnel Analysis
+            </h1>
+            <p style={{ color: '#718096', fontSize: '14px' }}>
+              Create and analyze multi-step conversion funnels
+            </p>
+          </div>
         <button
           onClick={() => setShowCreateModal(true)}
           style={{
@@ -495,6 +496,7 @@ export default function FunnelsPage() {
           </div>
         </div>
       )}
+      </div>
     </div>
   );
 }

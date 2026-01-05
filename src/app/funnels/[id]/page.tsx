@@ -80,7 +80,7 @@ export default function FunnelAnalysisPage() {
 
   if (loading) {
     return (
-      <div style={{ padding: '24px', textAlign: 'center', color: '#718096' }}>
+      <div style={{ minHeight: '100vh', background: '#f9fafb', padding: '24px', textAlign: 'center', color: '#718096' }}>
         Loading analysis...
       </div>
     );
@@ -88,14 +88,15 @@ export default function FunnelAnalysisPage() {
 
   if (!analysis) {
     return (
-      <div style={{ padding: '24px', textAlign: 'center', color: '#718096' }}>
+      <div style={{ minHeight: '100vh', background: '#f9fafb', padding: '24px', textAlign: 'center', color: '#718096' }}>
         Failed to load funnel analysis
       </div>
     );
   }
 
   return (
-    <div style={{ padding: '24px', maxWidth: '1400px', margin: '0 auto' }}>
+    <div style={{ minHeight: '100vh', background: '#f9fafb', padding: '24px' }}>
+      <div style={{ maxWidth: '1400px', margin: '0 auto' }}>
       {/* Header */}
       <div style={{ marginBottom: '32px' }}>
         <Link
@@ -496,6 +497,7 @@ export default function FunnelAnalysisPage() {
             </tbody>
           </table>
         </div>
+      </div>
       </div>
     </div>
   );
