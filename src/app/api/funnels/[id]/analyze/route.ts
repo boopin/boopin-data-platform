@@ -31,16 +31,6 @@ export async function GET(
       return NextResponse.json({ error: 'Invalid funnel steps' }, { status: 400 });
     }
 
-    // Build date filter
-    let dateFilter = sql`TRUE`;
-    if (dateFrom && dateTo) {
-      dateFilter = sql`timestamp >= ${dateFrom}::timestamp AND timestamp <= ${dateTo}::timestamp`;
-    } else if (dateFrom) {
-      dateFilter = sql`timestamp >= ${dateFrom}::timestamp`;
-    } else if (dateTo) {
-      dateFilter = sql`timestamp <= ${dateTo}::timestamp`;
-    }
-
     // Analyze each step
     const stepAnalysis: Array<{
       stepIndex: number;
@@ -66,22 +56,74 @@ export async function GET(
 
       if (stepType === 'event') {
         // Find visitors who triggered this event
-        visitorQuery = await sql`
-          SELECT DISTINCT visitor_id, MIN(timestamp) as first_occurrence
-          FROM events
-          WHERE event_type = ${stepValue}
-          AND ${dateFilter}
-          GROUP BY visitor_id
-        `;
+        if (dateFrom && dateTo) {
+          visitorQuery = await sql`
+            SELECT DISTINCT visitor_id, MIN(timestamp) as first_occurrence
+            FROM events
+            WHERE event_type = ${stepValue}
+            AND timestamp >= ${dateFrom}::timestamp
+            AND timestamp <= ${dateTo}::timestamp
+            GROUP BY visitor_id
+          `;
+        } else if (dateFrom) {
+          visitorQuery = await sql`
+            SELECT DISTINCT visitor_id, MIN(timestamp) as first_occurrence
+            FROM events
+            WHERE event_type = ${stepValue}
+            AND timestamp >= ${dateFrom}::timestamp
+            GROUP BY visitor_id
+          `;
+        } else if (dateTo) {
+          visitorQuery = await sql`
+            SELECT DISTINCT visitor_id, MIN(timestamp) as first_occurrence
+            FROM events
+            WHERE event_type = ${stepValue}
+            AND timestamp <= ${dateTo}::timestamp
+            GROUP BY visitor_id
+          `;
+        } else {
+          visitorQuery = await sql`
+            SELECT DISTINCT visitor_id, MIN(timestamp) as first_occurrence
+            FROM events
+            WHERE event_type = ${stepValue}
+            GROUP BY visitor_id
+          `;
+        }
       } else if (stepType === 'url') {
         // Find visitors who visited this URL
-        visitorQuery = await sql`
-          SELECT DISTINCT visitor_id, MIN(timestamp) as first_occurrence
-          FROM events
-          WHERE page_path LIKE ${stepValue}
-          AND ${dateFilter}
-          GROUP BY visitor_id
-        `;
+        if (dateFrom && dateTo) {
+          visitorQuery = await sql`
+            SELECT DISTINCT visitor_id, MIN(timestamp) as first_occurrence
+            FROM events
+            WHERE page_path LIKE ${stepValue}
+            AND timestamp >= ${dateFrom}::timestamp
+            AND timestamp <= ${dateTo}::timestamp
+            GROUP BY visitor_id
+          `;
+        } else if (dateFrom) {
+          visitorQuery = await sql`
+            SELECT DISTINCT visitor_id, MIN(timestamp) as first_occurrence
+            FROM events
+            WHERE page_path LIKE ${stepValue}
+            AND timestamp >= ${dateFrom}::timestamp
+            GROUP BY visitor_id
+          `;
+        } else if (dateTo) {
+          visitorQuery = await sql`
+            SELECT DISTINCT visitor_id, MIN(timestamp) as first_occurrence
+            FROM events
+            WHERE page_path LIKE ${stepValue}
+            AND timestamp <= ${dateTo}::timestamp
+            GROUP BY visitor_id
+          `;
+        } else {
+          visitorQuery = await sql`
+            SELECT DISTINCT visitor_id, MIN(timestamp) as first_occurrence
+            FROM events
+            WHERE page_path LIKE ${stepValue}
+            GROUP BY visitor_id
+          `;
+        }
       }
 
       const currentStepVisitors = new Map(

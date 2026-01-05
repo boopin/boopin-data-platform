@@ -64,9 +64,17 @@ export default function FunnelAnalysisPage() {
         `/api/funnels/${funnelId}/analyze?from=${dateFrom}&to=${dateTo}`
       );
       const data = await response.json();
-      setAnalysis(data);
+
+      // Check if the response is an error
+      if (data.error || !response.ok) {
+        console.error('Error from API:', data.error || 'Failed to fetch');
+        setAnalysis(null);
+      } else {
+        setAnalysis(data);
+      }
     } catch (error) {
       console.error('Error fetching analysis:', error);
+      setAnalysis(null);
     } finally {
       setLoading(false);
     }
