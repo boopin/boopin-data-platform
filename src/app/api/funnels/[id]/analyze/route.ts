@@ -91,7 +91,7 @@ export async function GET(
         // Check how many from previous step made it to this step
         const timeDeltas: number[] = [];
 
-        for (const visitorId of previousStepVisitors) {
+        Array.from(previousStepVisitors).forEach((visitorId) => {
           if (currentStepVisitors.has(visitorId)) {
             convertedFromPrevious++;
 
@@ -104,7 +104,7 @@ export async function GET(
               timeDeltas.push(timeDelta);
             }
           }
-        }
+        });
 
         const previousStepCount = previousStepVisitors.size;
         dropoffFromPrevious = previousStepCount - convertedFromPrevious;
