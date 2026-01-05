@@ -23,6 +23,7 @@ export default function WebhooksPage() {
   const [showCreateModal, setShowCreateModal] = useState(false);
   const [editingWebhook, setEditingWebhook] = useState<Webhook | null>(null);
   const [testingId, setTestingId] = useState<string | null>(null);
+  const [createdSecret, setCreatedSecret] = useState<string | null>(null);
 
   // Form state
   const [formData, setFormData] = useState({
@@ -32,11 +33,29 @@ export default function WebhooksPage() {
   });
 
   const availableEventTypes = [
-    'pageview',
+    'page_view',
     'click',
     'form_submit',
+    'form_start',
+    'form_abandon',
+    'identify',
     'signup',
+    'login',
+    'logout',
+    'product_view',
+    'add_to_cart',
+    'remove_from_cart',
+    'view_cart',
+    'begin_checkout',
+    'add_payment_info',
+    'add_shipping_info',
     'purchase',
+    'video_start',
+    'video_progress',
+    'video_complete',
+    'file_download',
+    'search',
+    'share',
     'custom_event',
   ];
 
@@ -70,8 +89,7 @@ export default function WebhooksPage() {
 
       if (res.ok) {
         const data = await res.json();
-        alert(`✅ Webhook created!\n\nSecret: ${data.secret}\n\n⚠️ Save this secret - it won't be shown again!`);
-        setShowCreateModal(false);
+        setCreatedSecret(data.secret);
         setFormData({ name: '', url: '', event_types: [] });
         fetchWebhooks();
       } else {
@@ -82,6 +100,16 @@ export default function WebhooksPage() {
       console.error('Failed to create webhook:', error);
       alert('Failed to create webhook');
     }
+  };
+
+  const copyToClipboard = (text: string) => {
+    navigator.clipboard.writeText(text);
+    alert('✅ Copied to clipboard!');
+  };
+
+  const closeSecretModal = () => {
+    setCreatedSecret(null);
+    setShowCreateModal(false);
   };
 
   const handleUpdate = async () => {
@@ -212,7 +240,7 @@ export default function WebhooksPage() {
   }
 
   return (
-    <div style={{ padding: '40px', maxWidth: '1400px', margin: '0 auto' }}>
+    <div style={{ padding: '40px', maxWidth: '1400px', margin: '0 auto', minHeight: '100vh', background: '#f9fafb' }}>
       {/* Navigation */}
       <div style={{
         background: 'linear-gradient(135deg, #667eea 0%, #764ba2 100%)',
@@ -400,10 +428,10 @@ export default function WebhooksPage() {
                 border: '1px solid #e2e8f0'
               }}
             >
-              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'start', marginBottom: '16px' }}>
-                <div style={{ flex: 1 }}>
-                  <div style={{ display: 'flex', alignItems: 'center', gap: '12px', marginBottom: '8px' }}>
-                    <h3 style={{ fontSize: '18px', fontWeight: 600, color: '#1a202c', margin: 0 }}>
+              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'start', marginBottom: '16px', gap: '16px' }}>
+                <div style={{ flex: 1, minWidth: 0 }}>
+                  <div style={{ display: 'flex', alignItems: 'center', gap: '12px', marginBottom: '8px', flexWrap: 'wrap' }}>
+                    <h3 style={{ fontSize: '18px', fontWeight: 600, color: '#1a202c', margin: 0, wordBreak: 'break-word' }}>
                       {webhook.name}
                     </h3>
                     <span style={{
@@ -716,6 +744,110 @@ export default function WebhooksPage() {
                 {editingWebhook ? 'Update Webhook' : 'Create Webhook'}
               </button>
             </div>
+          </div>
+        </div>
+      )}
+
+      {/* Secret Display Modal */}
+      {createdSecret && (
+        <div style={{
+          position: 'fixed',
+          top: 0,
+          left: 0,
+          right: 0,
+          bottom: 0,
+          background: 'rgba(0,0,0,0.7)',
+          display: 'flex',
+          alignItems: 'center',
+          justifyContent: 'center',
+          zIndex: 1001,
+          padding: '20px'
+        }}>
+          <div style={{
+            background: '#fff',
+            padding: '32px',
+            borderRadius: '12px',
+            maxWidth: '600px',
+            width: '100%',
+            boxShadow: '0 20px 60px rgba(0,0,0,0.3)'
+          }}>
+            <h2 style={{ fontSize: '24px', fontWeight: 600, marginBottom: '24px', color: '#1a202c' }}>
+              ✅ Webhook Created!
+            </h2>
+
+            <div style={{
+              background: '#fef3c7',
+              border: '2px solid #f59e0b',
+              borderRadius: '8px',
+              padding: '16px',
+              marginBottom: '24px'
+            }}>
+              <p style={{ color: '#92400e', fontWeight: 600, margin: '0 0 8px', fontSize: '14px' }}>
+                ⚠️ Save this secret now!
+              </p>
+              <p style={{ color: '#a16207', fontSize: '13px', margin: 0 }}>
+                This is the only time you'll see the full webhook secret. Store it securely - you'll need it to verify webhook signatures.
+              </p>
+            </div>
+
+            <div style={{ marginBottom: '24px' }}>
+              <label style={{ display: 'block', marginBottom: '8px', fontWeight: 600, color: '#2d3748', fontSize: '13px' }}>
+                Webhook Secret:
+              </label>
+              <div style={{
+                background: '#f7fafc',
+                padding: '16px',
+                borderRadius: '8px',
+                border: '1px solid #e2e8f0',
+                marginBottom: '12px'
+              }}>
+                <code style={{
+                  color: '#1a202c',
+                  fontSize: '13px',
+                  wordBreak: 'break-all',
+                  fontFamily: 'monospace'
+                }}>
+                  {createdSecret}
+                </code>
+              </div>
+              <button
+                onClick={() => copyToClipboard(createdSecret)}
+                style={{
+                  width: '100%',
+                  padding: '12px 24px',
+                  borderRadius: '8px',
+                  border: 'none',
+                  background: 'linear-gradient(135deg, #667eea 0%, #764ba2 100%)',
+                  color: '#fff',
+                  cursor: 'pointer',
+                  fontSize: '14px',
+                  fontWeight: 600,
+                  display: 'flex',
+                  alignItems: 'center',
+                  justifyContent: 'center',
+                  gap: '8px'
+                }}
+              >
+                📋 Copy Secret to Clipboard
+              </button>
+            </div>
+
+            <button
+              onClick={closeSecretModal}
+              style={{
+                width: '100%',
+                padding: '12px 24px',
+                borderRadius: '8px',
+                border: '1px solid #cbd5e0',
+                background: '#fff',
+                color: '#4a5568',
+                cursor: 'pointer',
+                fontSize: '14px',
+                fontWeight: 500
+              }}
+            >
+              Done - I've Saved the Secret
+            </button>
           </div>
         </div>
       )}
