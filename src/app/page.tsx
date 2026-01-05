@@ -312,6 +312,7 @@ export default function Dashboard() {
             <a href="/live" style={{ color: '#94a3b8', textDecoration: 'none', fontSize: '14px' }}>Live</a>
             <a href="/goals" style={{ color: '#94a3b8', textDecoration: 'none', fontSize: '14px' }}>Goals</a>
             <a href="/funnels" style={{ color: '#94a3b8', textDecoration: 'none', fontSize: '14px' }}>Funnels</a>
+            <a href="/cohorts" style={{ color: '#94a3b8', textDecoration: 'none', fontSize: '14px' }}>Cohorts</a>
             <a href="/settings/api-keys" style={{ color: '#94a3b8', textDecoration: 'none', fontSize: '14px' }}>API Keys</a>
             <a href="/settings/webhooks" style={{ color: '#94a3b8', textDecoration: 'none', fontSize: '14px' }}>Webhooks</a>
           </nav>
