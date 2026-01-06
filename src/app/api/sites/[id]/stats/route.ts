@@ -13,8 +13,8 @@ export async function GET(
 
     // Get visitor count
     const visitorCount = await sql`
-      SELECT COUNT(DISTINCT visitor_id) as count
-      FROM events
+      SELECT COUNT(*) as count
+      FROM visitors
       WHERE site_id = ${siteId}
     `;
 
@@ -25,33 +25,48 @@ export async function GET(
       WHERE site_id = ${siteId}
     `;
 
-    // Get page view count
+    // Get page view count (from events with event_type = 'page_view')
     const pageViewCount = await sql`
       SELECT COUNT(*) as count
-      FROM page_views
-      WHERE site_id = ${siteId}
+      FROM events
+      WHERE site_id = ${siteId} AND event_type = 'page_view'
     `;
 
-    // Get goals count
-    const goalsCount = await sql`
-      SELECT COUNT(*) as count
-      FROM goals
-      WHERE site_id = ${siteId}
-    `;
+    // Get goals count (use conditional query if table exists)
+    let goalsCount;
+    try {
+      goalsCount = await sql`
+        SELECT COUNT(*) as count
+        FROM goals
+        WHERE site_id = ${siteId}
+      `;
+    } catch {
+      goalsCount = [{ count: '0' }];
+    }
 
     // Get funnels count
-    const funnelsCount = await sql`
-      SELECT COUNT(*) as count
-      FROM funnels
-      WHERE site_id = ${siteId}
-    `;
+    let funnelsCount;
+    try {
+      funnelsCount = await sql`
+        SELECT COUNT(*) as count
+        FROM funnels
+        WHERE site_id = ${siteId}
+      `;
+    } catch {
+      funnelsCount = [{ count: '0' }];
+    }
 
     // Get cohorts count
-    const cohortsCount = await sql`
-      SELECT COUNT(*) as count
-      FROM cohorts
-      WHERE site_id = ${siteId}
-    `;
+    let cohortsCount;
+    try {
+      cohortsCount = await sql`
+        SELECT COUNT(*) as count
+        FROM cohorts
+        WHERE site_id = ${siteId}
+      `;
+    } catch {
+      cohortsCount = [{ count: '0' }];
+    }
 
     // Get last event timestamp
     const lastEvent = await sql`
