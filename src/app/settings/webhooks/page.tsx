@@ -317,6 +317,17 @@ export default function WebhooksPage() {
           }}>
             📊 Funnels
           </Link>
+          <Link href="/cohorts" style={{
+            color: '#fff',
+            textDecoration: 'none',
+            fontSize: '14px',
+            fontWeight: 500,
+            padding: '8px 16px',
+            borderRadius: '6px',
+            background: 'rgba(255,255,255,0.1)'
+          }}>
+            📈 Cohorts
+          </Link>
           <Link href="/reports" style={{
             color: '#fff',
             textDecoration: 'none',

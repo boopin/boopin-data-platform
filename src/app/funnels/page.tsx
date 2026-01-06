@@ -128,17 +128,49 @@ export default function FunnelsPage() {
   };
 
   return (
-    <div style={{ padding: '24px', maxWidth: '1400px', margin: '0 auto' }}>
-      {/* Header */}
-      <div style={{ marginBottom: '32px', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-        <div>
-          <h1 style={{ fontSize: '28px', fontWeight: 700, color: '#1a202c', marginBottom: '8px' }}>
-            📊 Funnel Analysis
-          </h1>
-          <p style={{ color: '#718096', fontSize: '14px' }}>
-            Create and analyze multi-step conversion funnels
-          </p>
+    <div style={{ minHeight: '100vh', background: 'linear-gradient(135deg, #0f172a 0%, #1e293b 50%, #0f172a 100%)', fontFamily: 'system-ui, sans-serif' }}>
+      {/* Navigation Header */}
+      <header style={{ borderBottom: '1px solid #334155', background: 'rgba(15,23,42,0.95)', padding: '16px 24px', position: 'sticky', top: 0, zIndex: 100 }}>
+        <div style={{ maxWidth: '1400px', margin: '0 auto', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+          <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
+            <Link href="/" style={{ textDecoration: 'none', display: 'flex', alignItems: 'center', gap: '12px' }}>
+              <div style={{ width: '40px', height: '40px', background: 'linear-gradient(135deg, #06b6d4, #3b82f6)', borderRadius: '10px', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+                <svg width="22" height="22" fill="none" stroke="white" strokeWidth="2" viewBox="0 0 24 24"><path d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z" /></svg>
+              </div>
+              <div>
+                <h1 style={{ margin: 0, fontSize: '20px', color: '#fff', fontWeight: 700 }}>Pulse Analytics</h1>
+                <p style={{ margin: 0, fontSize: '13px', color: '#64748b' }}>Funnel Analysis</p>
+              </div>
+            </Link>
+          </div>
+          <nav style={{ display: 'flex', gap: '16px' }}>
+            <Link href="/" style={{ color: '#94a3b8', textDecoration: 'none', fontSize: '14px' }}>Dashboard</Link>
+            <Link href="/visitors" style={{ color: '#94a3b8', textDecoration: 'none', fontSize: '14px' }}>Visitors</Link>
+            <Link href="/segments" style={{ color: '#94a3b8', textDecoration: 'none', fontSize: '14px' }}>Segments</Link>
+            <Link href="/reports" style={{ color: '#94a3b8', textDecoration: 'none', fontSize: '14px' }}>Reports</Link>
+            <Link href="/live" style={{ color: '#94a3b8', textDecoration: 'none', fontSize: '14px' }}>Live</Link>
+            <Link href="/goals" style={{ color: '#94a3b8', textDecoration: 'none', fontSize: '14px' }}>Goals</Link>
+            <Link href="/funnels" style={{ color: '#22d3ee', textDecoration: 'none', fontSize: '14px', fontWeight: 600 }}>Funnels</Link>
+            <Link href="/cohorts" style={{ color: '#94a3b8', textDecoration: 'none', fontSize: '14px' }}>Cohorts</Link>
+            <Link href="/settings/api-keys" style={{ color: '#94a3b8', textDecoration: 'none', fontSize: '14px' }}>API Keys</Link>
+            <Link href="/settings/webhooks" style={{ color: '#94a3b8', textDecoration: 'none', fontSize: '14px' }}>Webhooks</Link>
+          </nav>
         </div>
+      </header>
+
+      {/* Main Content */}
+      <div style={{ padding: '24px' }}>
+      <div style={{ maxWidth: '1400px', margin: '0 auto' }}>
+        {/* Header */}
+        <div style={{ marginBottom: '32px', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+          <div>
+            <h1 style={{ fontSize: '28px', fontWeight: 700, color: '#fff', marginBottom: '8px' }}>
+              📊 Funnel Analysis
+            </h1>
+            <p style={{ color: '#94a3b8', fontSize: '14px' }}>
+              Create and analyze multi-step conversion funnels
+            </p>
+          </div>
         <button
           onClick={() => setShowCreateModal(true)}
           style={{
@@ -495,6 +527,8 @@ export default function FunnelsPage() {
           </div>
         </div>
       )}
+      </div>
+      </div>
     </div>
   );
 }
