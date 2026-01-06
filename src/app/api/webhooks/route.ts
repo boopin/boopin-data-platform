@@ -259,8 +259,26 @@ export async function PATCH(request: NextRequest) {
         WHERE id = ${id}
       `;
 
+      // If response is not ok, provide error details
+      if (!response.ok) {
+        const errorMessage = `Webhook returned ${response.status} ${response.statusText}`;
+
+        await sql`
+          UPDATE webhooks
+          SET last_error = ${errorMessage}
+          WHERE id = ${id}
+        `;
+
+        return NextResponse.json({
+          success: false,
+          status: response.status,
+          statusText: response.statusText,
+          error: errorMessage
+        });
+      }
+
       return NextResponse.json({
-        success: response.ok,
+        success: true,
         status: response.status,
         statusText: response.statusText
       });
