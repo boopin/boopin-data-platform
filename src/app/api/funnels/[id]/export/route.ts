@@ -125,8 +125,8 @@ export async function GET(
       }
 
       const count = currentStepVisitors.size;
-      const conversionRate = i === 0 ? 100 : (count / stepResults[0].count) * 100;
-      const dropOffRate = i === 0 ? 0 : ((stepResults[i - 1].count - count) / stepResults[i - 1].count) * 100;
+      const conversionRate: number = i === 0 ? 100 : (count / stepResults[0].count) * 100;
+      const dropOffRate: number = i === 0 ? 0 : ((stepResults[i - 1].count - count) / stepResults[i - 1].count) * 100;
 
       stepResults.push({
         step: i + 1,
