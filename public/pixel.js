@@ -6,7 +6,7 @@
   // ============================================
 
   var BP = window._bp || [];
-  var apiKey = null;
+  var siteId = null;  // Changed from apiKey to siteId for multi-site support
   var endpoint = null;
   var anonymousId = null;
   var sessionId = null;
@@ -135,6 +135,7 @@
     var timeOnSite = Math.round((now - sessionStartTime) / 1000);
 
     var payload = {
+      siteId: siteId,  // Added for multi-site support
       anonymousId: anonymousId,
       sessionId: sessionId,
       eventType: eventType,
@@ -162,8 +163,8 @@
     fetch(endpoint, {
       method: 'POST',
       headers: {
-        'Content-Type': 'application/json',
-        'X-API-Key': apiKey
+        'Content-Type': 'application/json'
+        // Removed X-API-Key header - now using siteId in request body
       },
       body: JSON.stringify(payload),
       mode: 'cors'
@@ -757,7 +758,7 @@
       var cmd = args[0];
       
       if (cmd === 'init') {
-        apiKey = args[1];
+        siteId = args[1];  // Changed from apiKey to siteId
         
         // Auto-detect endpoint from script URL
         var scripts = document.getElementsByTagName('script');
