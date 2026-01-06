@@ -25,6 +25,8 @@ export default function SitesPage() {
   const [sites, setSites] = useState<Site[]>([]);
   const [loading, setLoading] = useState(true);
   const [showModal, setShowModal] = useState(false);
+  const [showTrackingCode, setShowTrackingCode] = useState(false);
+  const [selectedSite, setSelectedSite] = useState<Site | null>(null);
   const [editingSite, setEditingSite] = useState<Site | null>(null);
   const [siteStats, setSiteStats] = useState<Record<string, SiteStats>>({});
 
@@ -131,6 +133,74 @@ export default function SitesPage() {
     setShowModal(true);
   };
 
+  const showTrackingCodeModal = (site: Site) => {
+    setSelectedSite(site);
+    setShowTrackingCode(true);
+  };
+
+  const copyTrackingCode = () => {
+    if (!selectedSite) return;
+    const code = getTrackingCode(selectedSite.id);
+    navigator.clipboard.writeText(code);
+    alert('Tracking code copied to clipboard!');
+  };
+
+  const getTrackingCode = (siteId: string) => {
+    return `<!-- Pulse Analytics Tracking Code -->
+<script>
+(function() {
+  window.pulseAnalytics = window.pulseAnalytics || [];
+  const pulse = window.pulseAnalytics;
+
+  // Configuration
+  const SITE_ID = '${siteId}';
+  const API_ENDPOINT = '${typeof window !== 'undefined' ? window.location.origin : ''}/api/track';
+
+  // Generate or get anonymous ID
+  function getAnonymousId() {
+    let id = localStorage.getItem('pulse_anonymous_id');
+    if (!id) {
+      id = 'pulse_' + Math.random().toString(36).substr(2, 9) + Date.now();
+      localStorage.setItem('pulse_anonymous_id', id);
+    }
+    return id;
+  }
+
+  // Track function
+  pulse.track = function(eventType, properties = {}) {
+    const anonymousId = getAnonymousId();
+
+    fetch(API_ENDPOINT, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        'X-API-Key': 'web-tracking' // Optional: Add your API key
+      },
+      body: JSON.stringify({
+        siteId: SITE_ID,
+        anonymousId: anonymousId,
+        eventType: eventType,
+        properties: properties,
+        pageUrl: window.location.href,
+        pagePath: window.location.pathname,
+        pageTitle: document.title,
+        referrer: document.referrer,
+        userAgent: navigator.userAgent,
+        screenWidth: screen.width,
+        screenHeight: screen.height,
+        viewportWidth: window.innerWidth,
+        viewportHeight: window.innerHeight
+      })
+    }).catch(err => console.error('Pulse Analytics tracking error:', err));
+  };
+
+  // Auto-track page view
+  pulse.track('page_view');
+})();
+</script>
+<!-- End Pulse Analytics Tracking Code -->`  ;
+  };
+
   if (loading) {
     return (
       <div style={{ minHeight: '100vh', background: 'linear-gradient(135deg, #0f172a 0%, #1e293b 50%, #0f172a 100%)', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
@@ -210,6 +280,20 @@ export default function SitesPage() {
                         {site.name}
                       </h3>
                       <div style={{ display: 'flex', gap: '8px' }}>
+                        <button
+                          onClick={() => showTrackingCodeModal(site)}
+                          style={{
+                            padding: '4px 12px',
+                            background: '#10b98120',
+                            color: '#10b981',
+                            border: '1px solid #10b981',
+                            borderRadius: '4px',
+                            cursor: 'pointer',
+                            fontSize: '12px'
+                          }}
+                        >
+                          Code
+                        </button>
                         <button
                           onClick={() => handleEdit(site)}
                           style={{
@@ -419,6 +503,136 @@ export default function SitesPage() {
                 </button>
               </div>
             </form>
+          </div>
+        </div>
+      )}
+
+      {/* Tracking Code Modal */}
+      {showTrackingCode && selectedSite && (
+        <div
+          style={{
+            position: 'fixed',
+            top: 0,
+            left: 0,
+            right: 0,
+            bottom: 0,
+            background: 'rgba(0,0,0,0.7)',
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'center',
+            zIndex: 1000
+          }}
+          onClick={() => setShowTrackingCode(false)}
+        >
+          <div
+            style={{
+              background: '#1e293b',
+              borderRadius: '12px',
+              padding: '32px',
+              maxWidth: '700px',
+              width: '90%',
+              border: '1px solid #334155',
+              maxHeight: '80vh',
+              overflow: 'auto'
+            }}
+            onClick={(e) => e.stopPropagation()}
+          >
+            <h2 style={{ fontSize: '24px', fontWeight: 700, color: '#fff', marginBottom: '8px' }}>
+              Tracking Code for {selectedSite.name}
+            </h2>
+            <p style={{ color: '#94a3b8', fontSize: '14px', marginBottom: '24px' }}>
+              Add this code to your website&apos;s &lt;head&gt; section to start tracking visitors.
+            </p>
+
+            <div style={{ marginBottom: '20px' }}>
+              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '12px' }}>
+                <label style={{ fontSize: '14px', fontWeight: 600, color: '#94a3b8' }}>
+                  Site ID
+                </label>
+                <button
+                  onClick={() => {
+                    navigator.clipboard.writeText(selectedSite.id);
+                    alert('Site ID copied!');
+                  }}
+                  style={{
+                    padding: '4px 12px',
+                    background: '#334155',
+                    color: '#94a3b8',
+                    border: 'none',
+                    borderRadius: '4px',
+                    cursor: 'pointer',
+                    fontSize: '12px'
+                  }}
+                >
+                  Copy ID
+                </button>
+              </div>
+              <pre style={{
+                background: '#0f172a',
+                padding: '12px',
+                borderRadius: '6px',
+                color: '#22d3ee',
+                fontSize: '13px',
+                overflow: 'auto',
+                border: '1px solid #334155'
+              }}>
+                {selectedSite.id}
+              </pre>
+            </div>
+
+            <div style={{ marginBottom: '24px' }}>
+              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '12px' }}>
+                <label style={{ fontSize: '14px', fontWeight: 600, color: '#94a3b8' }}>
+                  Tracking Code
+                </label>
+                <button
+                  onClick={copyTrackingCode}
+                  style={{
+                    padding: '6px 16px',
+                    background: 'linear-gradient(135deg, #10b981 0%, #059669 100%)',
+                    color: '#fff',
+                    border: 'none',
+                    borderRadius: '6px',
+                    cursor: 'pointer',
+                    fontSize: '13px',
+                    fontWeight: 600
+                  }}
+                >
+                  📋 Copy Code
+                </button>
+              </div>
+              <pre style={{
+                background: '#0f172a',
+                padding: '16px',
+                borderRadius: '6px',
+                color: '#e2e8f0',
+                fontSize: '12px',
+                overflow: 'auto',
+                border: '1px solid #334155',
+                maxHeight: '400px',
+                lineHeight: '1.5'
+              }}>
+                {getTrackingCode(selectedSite.id)}
+              </pre>
+            </div>
+
+            <div style={{ display: 'flex', justifyContent: 'flex-end' }}>
+              <button
+                onClick={() => setShowTrackingCode(false)}
+                style={{
+                  padding: '10px 20px',
+                  background: '#334155',
+                  color: '#94a3b8',
+                  border: 'none',
+                  borderRadius: '6px',
+                  cursor: 'pointer',
+                  fontSize: '14px',
+                  fontWeight: 600
+                }}
+              >
+                Close
+              </button>
+            </div>
           </div>
         </div>
       )}

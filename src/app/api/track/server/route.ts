@@ -38,6 +38,7 @@ export async function POST(request: NextRequest) {
 
     const body = await request.json();
     const {
+      site_id,
       event_type,
       visitor_id,
       anonymous_id,
@@ -60,6 +61,13 @@ export async function POST(request: NextRequest) {
     } = body;
 
     // Validate required fields
+    if (!site_id) {
+      return NextResponse.json(
+        { error: 'site_id is required' },
+        { status: 400 }
+      );
+    }
+
     if (!event_type) {
       return NextResponse.json(
         { error: 'event_type is required' },
@@ -74,13 +82,19 @@ export async function POST(request: NextRequest) {
       );
     }
 
+    // Validate site exists
+    const siteCheck = await sql`SELECT id FROM sites WHERE id = ${site_id}`;
+    if (siteCheck.length === 0) {
+      return NextResponse.json({ error: 'Invalid site_id' }, { status: 400 });
+    }
+
     // Find or create visitor
     let finalVisitorId = visitor_id;
 
     if (!finalVisitorId && anonymous_id) {
-      // Check if anonymous visitor exists
+      // Check if anonymous visitor exists for this site
       const existingVisitor = await sql`
-        SELECT id FROM visitors WHERE anonymous_id = ${anonymous_id}
+        SELECT id FROM visitors WHERE anonymous_id = ${anonymous_id} AND site_id = ${site_id}
       `;
 
       if (existingVisitor.length > 0) {
@@ -88,8 +102,8 @@ export async function POST(request: NextRequest) {
       } else {
         // Create new visitor
         const newVisitor = await sql`
-          INSERT INTO visitors (anonymous_id, is_identified)
-          VALUES (${anonymous_id}, false)
+          INSERT INTO visitors (site_id, anonymous_id, is_identified)
+          VALUES (${site_id}, ${anonymous_id}, false)
           RETURNING id
         `;
         finalVisitorId = newVisitor[0].id;
@@ -101,6 +115,7 @@ export async function POST(request: NextRequest) {
 
     const result = await sql`
       INSERT INTO events (
+        site_id,
         visitor_id,
         event_type,
         page_path,
@@ -120,6 +135,7 @@ export async function POST(request: NextRequest) {
         properties,
         timestamp
       ) VALUES (
+        ${site_id},
         ${finalVisitorId},
         ${event_type},
         ${page_path || null},

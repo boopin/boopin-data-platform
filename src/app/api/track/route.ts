@@ -103,6 +103,7 @@ export async function POST(request: NextRequest) {
 
     const body = await request.json();
     const {
+      siteId,
       anonymousId,
       sessionId,
       eventType,
@@ -127,8 +128,14 @@ export async function POST(request: NextRequest) {
       utmContent
     } = body;
 
-    if (!anonymousId || !eventType) {
-      return NextResponse.json({ error: 'Missing required fields' }, { status: 400 });
+    if (!anonymousId || !eventType || !siteId) {
+      return NextResponse.json({ error: 'Missing required fields (siteId, anonymousId, eventType)' }, { status: 400 });
+    }
+
+    // Validate site exists
+    const siteCheck = await sql`SELECT id FROM sites WHERE id = ${siteId}`;
+    if (siteCheck.length === 0) {
+      return NextResponse.json({ error: 'Invalid site_id' }, { status: 400 });
     }
 
     // Parse user agent
@@ -139,8 +146,8 @@ export async function POST(request: NextRequest) {
 
     // Find or create visitor
     let visitor = await sql`
-      SELECT id, email, name, phone FROM visitors 
-      WHERE anonymous_id = ${anonymousId} AND client_id = ${clientId}
+      SELECT id, email, name, phone FROM visitors
+      WHERE anonymous_id = ${anonymousId} AND site_id = ${siteId}
     `;
 
     let visitorId: string;
@@ -149,8 +156,8 @@ export async function POST(request: NextRequest) {
     if (visitor.length === 0) {
       // Create new visitor
       const newVisitor = await sql`
-        INSERT INTO visitors (client_id, anonymous_id, first_seen_at, last_seen_at, visit_count, is_identified)
-        VALUES (${clientId}, ${anonymousId}, NOW(), NOW(), 1, false)
+        INSERT INTO visitors (site_id, anonymous_id, first_seen_at, last_seen_at, visit_count, is_identified)
+        VALUES (${siteId}, ${anonymousId}, NOW(), NOW(), 1, false)
         RETURNING id
       `;
       visitorId = newVisitor[0].id;
@@ -159,8 +166,8 @@ export async function POST(request: NextRequest) {
       visitorId = visitor[0].id;
       // Update last seen and visit count
       await sql`
-        UPDATE visitors 
-        SET last_seen_at = NOW(), 
+        UPDATE visitors
+        SET last_seen_at = NOW(),
             visit_count = visit_count + 1
         WHERE id = ${visitorId}
       `;
@@ -200,14 +207,14 @@ export async function POST(request: NextRequest) {
     // Insert event
     const result = await sql`
       INSERT INTO events (
-        client_id, visitor_id, session_id, event_type,
+        site_id, visitor_id, session_id, event_type,
         page_url, page_path, page_title, referrer,
         user_agent, browser, os, device_type,
         ip_address, country, city, region,
         utm_source, utm_medium, utm_campaign, utm_term, utm_content,
         properties
       ) VALUES (
-        ${clientId}, ${visitorId}, ${sessionId || null}, ${eventType},
+        ${siteId}, ${visitorId}, ${sessionId || null}, ${eventType},
         ${pageUrl || null}, ${pagePath || null}, ${pageTitle || null}, ${referrer || null},
         ${userAgent || null}, ${browser}, ${os}, ${deviceType},
         ${ip}, ${geo.country}, ${geo.city}, ${geo.region},
