@@ -66,6 +66,11 @@ export default function CohortAnalysisPage() {
     return '#64748b10';
   };
 
+  const handleExport = () => {
+    const url = `/api/cohorts/${cohortId}/export`;
+    window.location.href = url;
+  };
+
   if (loading) {
     return (
       <div style={{ minHeight: '100vh', background: 'linear-gradient(135deg, #0f172a 0%, #1e293b 50%, #0f172a 100%)', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
@@ -139,7 +144,7 @@ export default function CohortAnalysisPage() {
                 {analysis.cohort.description}
               </p>
             )}
-            <div style={{ marginTop: '12px', display: 'flex', gap: '12px' }}>
+            <div style={{ marginTop: '12px', display: 'flex', gap: '12px', alignItems: 'center', flexWrap: 'wrap' }}>
               <span style={{
                 fontSize: '13px',
                 padding: '6px 12px',
@@ -160,6 +165,24 @@ export default function CohortAnalysisPage() {
               }}>
                 {analysis.totalCohorts} total cohorts (showing {analysis.analysis.length})
               </span>
+              <button
+                onClick={handleExport}
+                style={{
+                  fontSize: '13px',
+                  padding: '6px 16px',
+                  background: 'linear-gradient(135deg, #10b981 0%, #059669 100%)',
+                  color: '#fff',
+                  border: 'none',
+                  borderRadius: '6px',
+                  cursor: 'pointer',
+                  fontWeight: 600,
+                  display: 'flex',
+                  alignItems: 'center',
+                  gap: '6px'
+                }}
+              >
+                📥 Export CSV
+              </button>
             </div>
           </div>
 

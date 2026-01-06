@@ -86,6 +86,11 @@ export default function FunnelAnalysisPage() {
     return `${Math.floor(seconds / 3600)}h ${Math.floor((seconds % 3600) / 60)}m`;
   };
 
+  const handleExport = () => {
+    const url = `/api/funnels/${funnelId}/export?from=${dateFrom}&to=${dateTo}`;
+    window.location.href = url;
+  };
+
   if (loading) {
     return (
       <div style={{ minHeight: '100vh', background: 'linear-gradient(135deg, #0f172a 0%, #1e293b 50%, #0f172a 100%)', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
@@ -206,22 +211,38 @@ export default function FunnelAnalysisPage() {
             }}
           />
         </div>
-        <button
-          onClick={fetchAnalysis}
-          style={{
-            marginTop: '20px',
-            padding: '8px 24px',
-            background: 'linear-gradient(135deg, #667eea 0%, #764ba2 100%)',
-            color: '#fff',
-            border: 'none',
-            borderRadius: '6px',
-            cursor: 'pointer',
-            fontSize: '14px',
-            fontWeight: 600
-          }}
-        >
-          Apply
-        </button>
+        <div style={{ display: 'flex', gap: '12px', marginTop: '20px' }}>
+          <button
+            onClick={fetchAnalysis}
+            style={{
+              padding: '8px 24px',
+              background: 'linear-gradient(135deg, #667eea 0%, #764ba2 100%)',
+              color: '#fff',
+              border: 'none',
+              borderRadius: '6px',
+              cursor: 'pointer',
+              fontSize: '14px',
+              fontWeight: 600
+            }}
+          >
+            Apply
+          </button>
+          <button
+            onClick={handleExport}
+            style={{
+              padding: '8px 24px',
+              background: 'linear-gradient(135deg, #10b981 0%, #059669 100%)',
+              color: '#fff',
+              border: 'none',
+              borderRadius: '6px',
+              cursor: 'pointer',
+              fontSize: '14px',
+              fontWeight: 600
+            }}
+          >
+            📥 Export CSV
+          </button>
+        </div>
       </div>
 
       {/* Overall Stats */}
