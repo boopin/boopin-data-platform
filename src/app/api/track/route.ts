@@ -257,7 +257,8 @@ export async function POST(request: NextRequest) {
     console.error('Error message:', error.message);
     return NextResponse.json({
       error: 'Internal server error',
-      details: process.env.NODE_ENV === 'development' ? error.message : undefined
+      details: error.message, // Temporarily always show for debugging
+      stack: error.stack?.split('\n').slice(0, 3).join('\n') // First 3 lines of stack
     }, { status: 500 });
   }
 }
