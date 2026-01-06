@@ -1,0 +1,187 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Pulse Analytics - Tracking Test Page</title>
+
+  <!-- PASTE YOUR TRACKING CODE HERE -->
+  <!--
+  Instructions:
+  1. Go to your Pulse Analytics /sites page
+  2. Click "Code" on your site
+  3. Copy the tracking code
+  4. Paste it below this comment, replacing the placeholder
+  -->
+
+  <!-- TRACKING CODE GOES HERE - REPLACE THIS COMMENT -->
+
+  <style>
+    body {
+      font-family: system-ui, -apple-system, sans-serif;
+      max-width: 800px;
+      margin: 50px auto;
+      padding: 20px;
+      background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+      color: white;
+    }
+    .container {
+      background: rgba(255, 255, 255, 0.1);
+      padding: 40px;
+      border-radius: 12px;
+      backdrop-filter: blur(10px);
+    }
+    h1 {
+      margin-top: 0;
+    }
+    button {
+      background: white;
+      color: #667eea;
+      border: none;
+      padding: 12px 24px;
+      font-size: 16px;
+      font-weight: 600;
+      border-radius: 6px;
+      cursor: pointer;
+      margin: 10px 10px 10px 0;
+      transition: transform 0.2s;
+    }
+    button:hover {
+      transform: scale(1.05);
+    }
+    button:active {
+      transform: scale(0.95);
+    }
+    .status {
+      margin-top: 20px;
+      padding: 15px;
+      background: rgba(255, 255, 255, 0.2);
+      border-radius: 6px;
+      font-size: 14px;
+    }
+    .success {
+      background: rgba(16, 185, 129, 0.3);
+    }
+    code {
+      background: rgba(0, 0, 0, 0.3);
+      padding: 2px 6px;
+      border-radius: 3px;
+      font-family: 'Courier New', monospace;
+    }
+  </style>
+</head>
+<body>
+  <div class="container">
+    <h1>🎯 Pulse Analytics Tracking Test</h1>
+    <p>This page tests your Pulse Analytics tracking pixel. The pixel should automatically track a <code>page_view</code> event when you load this page.</p>
+
+    <h2>Test Different Events</h2>
+    <p>Click these buttons to send custom events:</p>
+
+    <button onclick="trackButtonClick()">🖱️ Track Button Click</button>
+    <button onclick="trackFormSubmit()">📝 Track Form Submit</button>
+    <button onclick="trackPurchase()">💳 Track Purchase</button>
+    <button onclick="trackCustomEvent()">⚡ Track Custom Event</button>
+
+    <div id="status" class="status">
+      <strong>Status:</strong> Ready to test. Open your browser console (F12) to see tracking requests.
+    </div>
+
+    <h2>How to Verify</h2>
+    <ol>
+      <li><strong>Check Browser Console:</strong> Open DevTools (F12) and look for successful POST requests to <code>/api/track</code></li>
+      <li><strong>Check Dashboard:</strong> Go to your Pulse Analytics dashboard and look for new events in real-time</li>
+      <li><strong>Check Site Stats:</strong> Go to /sites page and verify the event count increases</li>
+    </ol>
+
+    <h2>What Gets Tracked</h2>
+    <ul>
+      <li>✅ Page URL and path</li>
+      <li>✅ Page title</li>
+      <li>✅ Referrer</li>
+      <li>✅ Screen resolution</li>
+      <li>✅ Viewport size</li>
+      <li>✅ User agent</li>
+      <li>✅ Site ID</li>
+      <li>✅ Anonymous visitor ID (stored in localStorage)</li>
+    </ul>
+  </div>
+
+  <script>
+    // Test functions
+    function trackButtonClick() {
+      if (typeof window.pulseAnalytics !== 'undefined' && window.pulseAnalytics.track) {
+        window.pulseAnalytics.track('button_click', {
+          button_name: 'Test Button Click',
+          timestamp: new Date().toISOString()
+        });
+        updateStatus('✅ Button click event sent!', 'success');
+      } else {
+        updateStatus('❌ Tracking code not loaded. Did you paste it in the <head> section?', 'error');
+      }
+    }
+
+    function trackFormSubmit() {
+      if (typeof window.pulseAnalytics !== 'undefined' && window.pulseAnalytics.track) {
+        window.pulseAnalytics.track('form_submit', {
+          form_name: 'Test Form',
+          timestamp: new Date().toISOString()
+        });
+        updateStatus('✅ Form submit event sent!', 'success');
+      } else {
+        updateStatus('❌ Tracking code not loaded. Did you paste it in the <head> section?', 'error');
+      }
+    }
+
+    function trackPurchase() {
+      if (typeof window.pulseAnalytics !== 'undefined' && window.pulseAnalytics.track) {
+        window.pulseAnalytics.track('purchase', {
+          product: 'Test Product',
+          amount: 99.99,
+          currency: 'USD',
+          timestamp: new Date().toISOString()
+        });
+        updateStatus('✅ Purchase event sent!', 'success');
+      } else {
+        updateStatus('❌ Tracking code not loaded. Did you paste it in the <head> section?', 'error');
+      }
+    }
+
+    function trackCustomEvent() {
+      if (typeof window.pulseAnalytics !== 'undefined' && window.pulseAnalytics.track) {
+        window.pulseAnalytics.track('custom_test_event', {
+          custom_property: 'test_value',
+          number: 42,
+          timestamp: new Date().toISOString()
+        });
+        updateStatus('✅ Custom event sent!', 'success');
+      } else {
+        updateStatus('❌ Tracking code not loaded. Did you paste it in the <head> section?', 'error');
+      }
+    }
+
+    function updateStatus(message, type) {
+      const statusDiv = document.getElementById('status');
+      statusDiv.innerHTML = '<strong>Status:</strong> ' + message;
+      statusDiv.className = 'status ' + type;
+
+      // Reset after 3 seconds
+      setTimeout(() => {
+        statusDiv.innerHTML = '<strong>Status:</strong> Ready to test. Open your browser console (F12) to see tracking requests.';
+        statusDiv.className = 'status';
+      }, 3000);
+    }
+
+    // Check if tracking code is loaded
+    window.addEventListener('load', () => {
+      setTimeout(() => {
+        if (typeof window.pulseAnalytics !== 'undefined' && window.pulseAnalytics.track) {
+          updateStatus('✅ Tracking code loaded successfully! Page view should be tracked.', 'success');
+        } else {
+          updateStatus('⚠️ Tracking code not detected. Make sure to paste it in the <head> section.', 'error');
+        }
+      }, 1000);
+    });
+  </script>
+</body>
+</html>
