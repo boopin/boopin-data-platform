@@ -2,6 +2,7 @@
 
 import { useEffect, useState } from 'react';
 import Link from 'next/link';
+import { useSite } from '@/contexts/SiteContext';
 
 interface Webhook {
   id: string;
@@ -18,6 +19,7 @@ interface Webhook {
 }
 
 export default function WebhooksPage() {
+  const { selectedSite, loading: siteLoading } = useSite();
   const [webhooks, setWebhooks] = useState<Webhook[]>([]);
   const [loading, setLoading] = useState(true);
   const [showCreateModal, setShowCreateModal] = useState(false);
@@ -60,12 +62,16 @@ export default function WebhooksPage() {
   ];
 
   useEffect(() => {
-    fetchWebhooks();
-  }, []);
+    if (selectedSite) {
+      fetchWebhooks();
+    }
+  }, [selectedSite]);
 
   const fetchWebhooks = async () => {
+    if (!selectedSite) return;
+
     try {
-      const res = await fetch('/api/webhooks');
+      const res = await fetch(`/api/webhooks?site_id=${selectedSite.id}`);
       const data = await res.json();
       setWebhooks(data.webhooks || []);
     } catch (error) {
@@ -76,6 +82,8 @@ export default function WebhooksPage() {
   };
 
   const handleCreate = async () => {
+    if (!selectedSite) return;
+
     try {
       const res = await fetch('/api/webhooks', {
         method: 'POST',
@@ -84,6 +92,7 @@ export default function WebhooksPage() {
           name: formData.name,
           url: formData.url,
           event_types: formData.event_types.length > 0 ? formData.event_types : null,
+          site_id: selectedSite.id,
         }),
       });
 
@@ -113,7 +122,7 @@ export default function WebhooksPage() {
   };
 
   const handleUpdate = async () => {
-    if (!editingWebhook) return;
+    if (!editingWebhook || !selectedSite) return;
 
     try {
       const res = await fetch('/api/webhooks', {
@@ -124,6 +133,7 @@ export default function WebhooksPage() {
           name: formData.name,
           url: formData.url,
           event_types: formData.event_types.length > 0 ? formData.event_types : null,
+          site_id: selectedSite.id,
         }),
       });
 
@@ -144,9 +154,10 @@ export default function WebhooksPage() {
 
   const handleDelete = async (id: string) => {
     if (!confirm('Are you sure you want to delete this webhook?')) return;
+    if (!selectedSite) return;
 
     try {
-      const res = await fetch(`/api/webhooks?id=${id}`, {
+      const res = await fetch(`/api/webhooks?id=${id}&site_id=${selectedSite.id}`, {
         method: 'DELETE',
       });
 
@@ -163,6 +174,8 @@ export default function WebhooksPage() {
   };
 
   const handleToggleActive = async (webhook: Webhook) => {
+    if (!selectedSite) return;
+
     try {
       const res = await fetch('/api/webhooks', {
         method: 'PUT',
@@ -170,6 +183,7 @@ export default function WebhooksPage() {
         body: JSON.stringify({
           id: webhook.id,
           is_active: !webhook.is_active,
+          site_id: selectedSite.id,
         }),
       });
 
@@ -185,12 +199,17 @@ export default function WebhooksPage() {
   };
 
   const handleTest = async (id: string) => {
+    if (!selectedSite) return;
+
     setTestingId(id);
     try {
       const res = await fetch('/api/webhooks', {
         method: 'PATCH',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ id }),
+        body: JSON.stringify({
+          id,
+          site_id: selectedSite.id,
+        }),
       });
 
       const data = await res.json();
@@ -231,10 +250,18 @@ export default function WebhooksPage() {
     }));
   };
 
-  if (loading) {
+  if (siteLoading || loading) {
     return (
       <div style={{ padding: '40px', textAlign: 'center' }}>
-        <div style={{ fontSize: '18px', color: '#666' }}>Loading webhooks...</div>
+        <div style={{ fontSize: '18px', color: '#666' }}>Loading...</div>
+      </div>
+    );
+  }
+
+  if (!selectedSite) {
+    return (
+      <div style={{ padding: '40px', textAlign: 'center' }}>
+        <div style={{ fontSize: '18px', color: '#666' }}>No site selected. Please select a site first.</div>
       </div>
     );
   }
