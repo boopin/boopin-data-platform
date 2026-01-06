@@ -5,10 +5,10 @@ export const dynamic = 'force-dynamic';
 
 export async function GET(
   request: NextRequest,
-  { params }: { params: { id: string } }
+  { params }: { params: Promise<{ id: string }> }
 ) {
   try {
-    const funnelId = params.id;
+    const { id: funnelId } = await params;
     const { searchParams } = new URL(request.url);
     const dateFrom = searchParams.get('from');
     const dateTo = searchParams.get('to');
@@ -18,11 +18,11 @@ export async function GET(
       SELECT * FROM funnels WHERE id = ${funnelId}
     `;
 
-    if (funnelResult.rows.length === 0) {
+    if (funnelResult.length === 0) {
       return NextResponse.json({ error: 'Funnel not found' }, { status: 404 });
     }
 
-    const funnel = funnelResult.rows[0];
+    const funnel = funnelResult[0];
 
     // Calculate funnel analysis (same logic as analyze endpoint)
     const steps = funnel.steps as Array<{ type: string; value: string }>;
@@ -109,7 +109,7 @@ export async function GET(
       }
 
       let currentStepVisitors = new Map<string, Date>();
-      visitorQuery.rows.forEach((row: any) => {
+      visitorQuery.forEach((row: any) => {
         currentStepVisitors.set(row.visitor_id, new Date(row.first_occurrence));
       });
 
