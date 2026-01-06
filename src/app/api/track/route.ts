@@ -85,7 +85,14 @@ export async function POST(request: NextRequest) {
 
     // Rate limiting
     if (isRateLimited(ip)) {
-      return NextResponse.json({ error: 'Rate limited' }, { status: 429 });
+      return NextResponse.json({ error: 'Rate limited' }, {
+        status: 429,
+        headers: {
+          'Access-Control-Allow-Origin': '*',
+          'Access-Control-Allow-Methods': 'POST, OPTIONS',
+          'Access-Control-Allow-Headers': 'Content-Type',
+        }
+      });
     }
 
     const body = await request.json();
@@ -116,13 +123,27 @@ export async function POST(request: NextRequest) {
     } = body;
 
     if (!anonymousId || !eventType || !siteId) {
-      return NextResponse.json({ error: 'Missing required fields (siteId, anonymousId, eventType)' }, { status: 400 });
+      return NextResponse.json({ error: 'Missing required fields (siteId, anonymousId, eventType)' }, {
+        status: 400,
+        headers: {
+          'Access-Control-Allow-Origin': '*',
+          'Access-Control-Allow-Methods': 'POST, OPTIONS',
+          'Access-Control-Allow-Headers': 'Content-Type',
+        }
+      });
     }
 
     // Validate site exists
     const siteCheck = await sql`SELECT id FROM sites WHERE id = ${siteId}`;
     if (siteCheck.length === 0) {
-      return NextResponse.json({ error: 'Invalid site_id' }, { status: 400 });
+      return NextResponse.json({ error: 'Invalid site_id' }, {
+        status: 400,
+        headers: {
+          'Access-Control-Allow-Origin': '*',
+          'Access-Control-Allow-Methods': 'POST, OPTIONS',
+          'Access-Control-Allow-Headers': 'Content-Type',
+        }
+      });
     }
 
     // Parse user agent
@@ -249,6 +270,12 @@ export async function POST(request: NextRequest) {
       success: true,
       visitorId,
       isNewVisitor
+    }, {
+      headers: {
+        'Access-Control-Allow-Origin': '*',
+        'Access-Control-Allow-Methods': 'POST, OPTIONS',
+        'Access-Control-Allow-Headers': 'Content-Type',
+      }
     });
 
   } catch (error: any) {
@@ -259,7 +286,14 @@ export async function POST(request: NextRequest) {
       error: 'Internal server error',
       details: error.message, // Temporarily always show for debugging
       stack: error.stack?.split('\n').slice(0, 3).join('\n') // First 3 lines of stack
-    }, { status: 500 });
+    }, {
+      status: 500,
+      headers: {
+        'Access-Control-Allow-Origin': '*',
+        'Access-Control-Allow-Methods': 'POST, OPTIONS',
+        'Access-Control-Allow-Headers': 'Content-Type',
+      }
+    });
   }
 }
 
