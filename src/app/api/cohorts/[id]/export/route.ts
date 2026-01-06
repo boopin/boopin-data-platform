@@ -134,12 +134,12 @@ export async function GET(
 
     // Generate CSV
     // Headers: Cohort Period, Cohort Size, Day 1, Day 7, Day 14, etc.
-    const periodHeaders = retentionPeriods.map(p => `Day ${p}`).join(',');
+    const periodHeaders = retentionPeriods.map((p: number) => `Day ${p}`).join(',');
     const csvHeaders = `Cohort Period,Cohort Size,${periodHeaders}`;
 
-    const csvRows = cohortAnalysis.map(cohortData => {
+    const csvRows = cohortAnalysis.map((cohortData: any) => {
       const periodValues = cohortData.retentionData
-        .map(retention => `"${retention.retentionRate}% (${retention.visitorsReturned}/${cohortData.cohortSize})"`)
+        .map((retention: any) => `"${retention.retentionRate}% (${retention.visitorsReturned}/${cohortData.cohortSize})"`)
         .join(',');
       return `${cohortData.cohortPeriod},${cohortData.cohortSize},${periodValues}`;
     }).join('\n');
