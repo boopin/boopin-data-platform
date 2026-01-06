@@ -129,35 +129,46 @@ export async function POST(request: NextRequest) {
     const { browser, os, deviceType } = parseUserAgent(userAgent || '');
 
     // Get geolocation
-    const geo = await getGeolocation(ip);
+    let geo;
+    try {
+      geo = await getGeolocation(ip);
+    } catch (geoError: any) {
+      console.error('Geolocation error:', geoError.message);
+      geo = { country: null, city: null, region: null };
+    }
 
     // Find or create visitor
-    let visitor = await sql`
-      SELECT id, email, name, phone FROM visitors
-      WHERE anonymous_id = ${anonymousId} AND site_id = ${siteId}
-    `;
-
     let visitorId: string;
     let isNewVisitor = false;
 
-    if (visitor.length === 0) {
-      // Create new visitor
-      const newVisitor = await sql`
-        INSERT INTO visitors (site_id, anonymous_id, first_seen_at, last_seen_at, visit_count, is_identified)
-        VALUES (${siteId}, ${anonymousId}, NOW(), NOW(), 1, false)
-        RETURNING id
+    try {
+      let visitor = await sql`
+        SELECT id, email, name, phone FROM visitors
+        WHERE anonymous_id = ${anonymousId} AND site_id = ${siteId}
       `;
-      visitorId = newVisitor[0].id;
-      isNewVisitor = true;
-    } else {
-      visitorId = visitor[0].id;
-      // Update last seen and visit count
-      await sql`
-        UPDATE visitors
-        SET last_seen_at = NOW(),
-            visit_count = visit_count + 1
-        WHERE id = ${visitorId}
-      `;
+
+      if (visitor.length === 0) {
+        // Create new visitor
+        const newVisitor = await sql`
+          INSERT INTO visitors (site_id, anonymous_id, first_seen_at, last_seen_at, visit_count, is_identified)
+          VALUES (${siteId}, ${anonymousId}, NOW(), NOW(), 1, false)
+          RETURNING id
+        `;
+        visitorId = newVisitor[0].id;
+        isNewVisitor = true;
+      } else {
+        visitorId = visitor[0].id;
+        // Update last seen and visit count
+        await sql`
+          UPDATE visitors
+          SET last_seen_at = NOW(),
+              visit_count = visit_count + 1
+          WHERE id = ${visitorId}
+        `;
+      }
+    } catch (visitorError: any) {
+      console.error('Visitor creation/update error:', visitorError.message);
+      throw new Error(`Visitor error: ${visitorError.message}`);
     }
 
     // Handle identify event - update visitor with user info
@@ -192,24 +203,31 @@ export async function POST(request: NextRequest) {
     };
 
     // Insert event
-    const result = await sql`
-      INSERT INTO events (
-        site_id, visitor_id, session_id, event_type,
-        page_url, page_path, page_title, referrer,
-        user_agent, browser, os, device_type,
-        ip_address, country, city, region,
-        utm_source, utm_medium, utm_campaign, utm_term, utm_content,
-        properties
-      ) VALUES (
-        ${siteId}, ${visitorId}, ${sessionId || null}, ${eventType},
-        ${pageUrl || null}, ${pagePath || null}, ${pageTitle || null}, ${referrer || null},
-        ${userAgent || null}, ${browser}, ${os}, ${deviceType},
-        ${ip}, ${geo.country}, ${geo.city}, ${geo.region},
-        ${utmSource || null}, ${utmMedium || null}, ${utmCampaign || null}, ${utmTerm || null}, ${utmContent || null},
-        ${JSON.stringify(enhancedProperties)}
-      )
-      RETURNING id, timestamp
-    `;
+    let result;
+    try {
+      result = await sql`
+        INSERT INTO events (
+          site_id, visitor_id, session_id, event_type,
+          page_url, page_path, page_title, referrer,
+          user_agent, browser, os, device_type,
+          ip_address, country, city, region,
+          utm_source, utm_medium, utm_campaign, utm_term, utm_content,
+          properties
+        ) VALUES (
+          ${siteId}, ${visitorId}, ${sessionId || null}, ${eventType},
+          ${pageUrl || null}, ${pagePath || null}, ${pageTitle || null}, ${referrer || null},
+          ${userAgent || null}, ${browser}, ${os}, ${deviceType},
+          ${ip}, ${geo.country}, ${geo.city}, ${geo.region},
+          ${utmSource || null}, ${utmMedium || null}, ${utmCampaign || null}, ${utmTerm || null}, ${utmContent || null},
+          ${JSON.stringify(enhancedProperties)}
+        )
+        RETURNING id, timestamp
+      `;
+    } catch (eventError: any) {
+      console.error('Event insertion error:', eventError.message);
+      console.error('Event data:', { siteId, visitorId, eventType });
+      throw new Error(`Event insertion error: ${eventError.message}`);
+    }
 
     // Trigger webhooks (fire-and-forget)
     try {
@@ -233,9 +251,14 @@ export async function POST(request: NextRequest) {
       isNewVisitor
     });
 
-  } catch (error) {
+  } catch (error: any) {
     console.error('Track error:', error);
-    return NextResponse.json({ error: 'Internal server error' }, { status: 500 });
+    console.error('Error stack:', error.stack);
+    console.error('Error message:', error.message);
+    return NextResponse.json({
+      error: 'Internal server error',
+      details: process.env.NODE_ENV === 'development' ? error.message : undefined
+    }, { status: 500 });
   }
 }
 
@@ -253,6 +276,19 @@ export async function OPTIONS() {
 // Trigger webhooks for this event
 async function triggerWebhooks(eventType: string, eventData: any) {
   try {
+    // Check if webhooks table exists first
+    const tableCheck = await sql`
+      SELECT EXISTS (
+        SELECT FROM information_schema.tables
+        WHERE table_name = 'webhooks'
+      )
+    `;
+
+    if (!tableCheck[0].exists) {
+      // Webhooks table doesn't exist yet, skip silently
+      return;
+    }
+
     // Get all active webhooks for this event type
     const webhooks = await sql`
       SELECT * FROM webhooks
