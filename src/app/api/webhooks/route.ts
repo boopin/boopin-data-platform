@@ -265,16 +265,19 @@ export async function PATCH(request: NextRequest) {
         statusText: response.statusText
       });
     } catch (error: any) {
+      // Better error handling
+      const errorMessage = error?.message || error?.toString() || 'Unknown error occurred';
+
       // Update error
       await sql`
         UPDATE webhooks
-        SET last_error = ${error.message}
+        SET last_error = ${errorMessage}
         WHERE id = ${id}
       `;
 
       return NextResponse.json({
         success: false,
-        error: error.message
+        error: errorMessage
       }, { status: 500 });
     }
   } catch (error) {
