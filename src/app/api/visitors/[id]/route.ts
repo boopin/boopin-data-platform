@@ -10,22 +10,29 @@ export async function GET(
 ) {
   try {
     const { id: visitorId } = await params;
+    const { searchParams } = new URL(request.url);
+    const siteId = searchParams.get('site_id');
 
-    // Get visitor info
+    // Site ID is required for multi-site support
+    if (!siteId) {
+      return NextResponse.json({ error: 'site_id is required' }, { status: 400 });
+    }
+
+    // Get visitor info (with site_id validation)
     const visitorResult = await sql`
-      SELECT 
-        id, 
-        anonymous_id, 
-        email, 
-        name, 
-        phone, 
-        first_seen_at, 
-        last_seen_at, 
-        visit_count, 
+      SELECT
+        id,
+        anonymous_id,
+        email,
+        name,
+        phone,
+        first_seen_at,
+        last_seen_at,
+        visit_count,
         is_identified,
         properties
       FROM visitors
-      WHERE id = ${visitorId}
+      WHERE id = ${visitorId} AND site_id = ${siteId}
     `;
 
     if (visitorResult.length === 0) {
@@ -34,9 +41,9 @@ export async function GET(
 
     const visitor = visitorResult[0];
 
-    // Get all events for this visitor
+    // Get all events for this visitor (also filtered by site_id for extra security)
     const events = await sql`
-      SELECT 
+      SELECT
         id,
         event_type,
         page_path,
@@ -53,11 +60,11 @@ export async function GET(
         properties,
         timestamp
       FROM events
-      WHERE visitor_id = ${visitorId}
+      WHERE visitor_id = ${visitorId} AND site_id = ${siteId}
       ORDER BY timestamp DESC
     `;
 
-    return NextResponse.json({ 
+    return NextResponse.json({
       visitor,
       events,
       total_events: events.length

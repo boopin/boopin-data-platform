@@ -10,14 +10,20 @@ export async function GET(
   try {
     const { id: funnelId } = await params;
     const { searchParams } = new URL(request.url);
+    const siteId = searchParams.get('site_id');
     const dateFrom = searchParams.get('from');
     const dateTo = searchParams.get('to');
+
+    // Site ID is required for multi-site support
+    if (!siteId) {
+      return NextResponse.json({ error: 'site_id is required' }, { status: 400 });
+    }
 
     // Get the funnel definition
     const funnelResult = await sql`
       SELECT id, name, description, steps
       FROM funnels
-      WHERE id = ${funnelId}
+      WHERE id = ${funnelId} AND site_id = ${siteId}
     `;
 
     if (funnelResult.length === 0) {
@@ -63,6 +69,7 @@ export async function GET(
             WHERE event_type = ${stepValue}
             AND timestamp >= ${dateFrom}::timestamp
             AND timestamp <= ${dateTo}::timestamp
+            AND site_id = ${siteId}
             GROUP BY visitor_id
           `;
         } else if (dateFrom) {
@@ -71,6 +78,7 @@ export async function GET(
             FROM events
             WHERE event_type = ${stepValue}
             AND timestamp >= ${dateFrom}::timestamp
+            AND site_id = ${siteId}
             GROUP BY visitor_id
           `;
         } else if (dateTo) {
@@ -79,6 +87,7 @@ export async function GET(
             FROM events
             WHERE event_type = ${stepValue}
             AND timestamp <= ${dateTo}::timestamp
+            AND site_id = ${siteId}
             GROUP BY visitor_id
           `;
         } else {
@@ -86,6 +95,7 @@ export async function GET(
             SELECT DISTINCT visitor_id, MIN(timestamp) as first_occurrence
             FROM events
             WHERE event_type = ${stepValue}
+            AND site_id = ${siteId}
             GROUP BY visitor_id
           `;
         }
@@ -98,6 +108,7 @@ export async function GET(
             WHERE page_path LIKE ${stepValue}
             AND timestamp >= ${dateFrom}::timestamp
             AND timestamp <= ${dateTo}::timestamp
+            AND site_id = ${siteId}
             GROUP BY visitor_id
           `;
         } else if (dateFrom) {
@@ -106,6 +117,7 @@ export async function GET(
             FROM events
             WHERE page_path LIKE ${stepValue}
             AND timestamp >= ${dateFrom}::timestamp
+            AND site_id = ${siteId}
             GROUP BY visitor_id
           `;
         } else if (dateTo) {
@@ -114,6 +126,7 @@ export async function GET(
             FROM events
             WHERE page_path LIKE ${stepValue}
             AND timestamp <= ${dateTo}::timestamp
+            AND site_id = ${siteId}
             GROUP BY visitor_id
           `;
         } else {
@@ -121,6 +134,7 @@ export async function GET(
             SELECT DISTINCT visitor_id, MIN(timestamp) as first_occurrence
             FROM events
             WHERE page_path LIKE ${stepValue}
+            AND site_id = ${siteId}
             GROUP BY visitor_id
           `;
         }

@@ -6,8 +6,16 @@ export const revalidate = 0;
 
 export async function GET(request: NextRequest) {
   try {
+    const { searchParams } = new URL(request.url);
+    const siteId = searchParams.get('site_id');
+
+    // Site ID is required for multi-site support
+    if (!siteId) {
+      return NextResponse.json({ error: 'site_id is required' }, { status: 400 });
+    }
+
     const visitors = await sql`
-      SELECT 
+      SELECT
         id,
         anonymous_id,
         email,
@@ -18,6 +26,7 @@ export async function GET(request: NextRequest) {
         visit_count,
         is_identified
       FROM visitors
+      WHERE site_id = ${siteId}
       ORDER BY last_seen_at DESC
       LIMIT 500
     `;

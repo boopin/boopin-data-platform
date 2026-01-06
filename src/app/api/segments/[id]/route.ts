@@ -10,11 +10,18 @@ export async function GET(
 ) {
   try {
     const segmentId = params.id;
+    const { searchParams } = new URL(request.url);
+    const siteId = searchParams.get('site_id');
+
+    // Site ID is required for multi-site support
+    if (!siteId) {
+      return NextResponse.json({ error: 'site_id is required' }, { status: 400 });
+    }
 
     const segmentResult = await sql`
       SELECT id, name, description, rules, created_at, updated_at
       FROM segments
-      WHERE id = ${segmentId}
+      WHERE id = ${segmentId} AND site_id = ${siteId}
     `;
 
     if (segmentResult.length === 0) {
@@ -28,11 +35,13 @@ export async function GET(
     const visitors = await sql`
       SELECT id, anonymous_id, email, name, phone, first_seen_at, last_seen_at, visit_count, is_identified
       FROM visitors
+      WHERE site_id = ${siteId}
     `;
 
     const events = await sql`
       SELECT visitor_id, event_type, page_path, device_type, country, city, utm_source, timestamp
       FROM events
+      WHERE site_id = ${siteId}
     `;
 
     // Group events by visitor
@@ -68,12 +77,17 @@ export async function PUT(
   try {
     const segmentId = params.id;
     const body = await request.json();
-    const { name, description, rules } = body;
+    const { name, description, rules, site_id } = body;
+
+    // Site ID is required for multi-site support
+    if (!site_id) {
+      return NextResponse.json({ error: 'site_id is required' }, { status: 400 });
+    }
 
     const result = await sql`
       UPDATE segments
       SET name = ${name}, description = ${description || ''}, rules = ${JSON.stringify(rules)}, updated_at = NOW()
-      WHERE id = ${segmentId}
+      WHERE id = ${segmentId} AND site_id = ${site_id}
       RETURNING id, name, description, rules, updated_at
     `;
 
@@ -95,8 +109,15 @@ export async function DELETE(
 ) {
   try {
     const segmentId = params.id;
+    const { searchParams } = new URL(request.url);
+    const siteId = searchParams.get('site_id');
 
-    await sql`DELETE FROM segments WHERE id = ${segmentId}`;
+    // Site ID is required for multi-site support
+    if (!siteId) {
+      return NextResponse.json({ error: 'site_id is required' }, { status: 400 });
+    }
+
+    await sql`DELETE FROM segments WHERE id = ${segmentId} AND site_id = ${siteId}`;
 
     return NextResponse.json({ success: true });
   } catch (error) {

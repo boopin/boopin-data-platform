@@ -22,13 +22,22 @@ async function ensureFunnelsTable() {
 }
 
 // GET - List all funnels
-export async function GET() {
+export async function GET(request: NextRequest) {
   try {
     await ensureFunnelsTable();
+
+    const { searchParams } = new URL(request.url);
+    const siteId = searchParams.get('site_id');
+
+    // Site ID is required for multi-site support
+    if (!siteId) {
+      return NextResponse.json({ error: 'site_id is required' }, { status: 400 });
+    }
 
     const funnels = await sql`
       SELECT id, name, description, steps, created_at, updated_at
       FROM funnels
+      WHERE site_id = ${siteId}
       ORDER BY created_at DESC
     `;
 
@@ -45,7 +54,12 @@ export async function POST(request: NextRequest) {
     await ensureFunnelsTable();
 
     const body = await request.json();
-    const { name, description, steps } = body;
+    const { name, description, steps, site_id } = body;
+
+    // Site ID is required for multi-site support
+    if (!site_id) {
+      return NextResponse.json({ error: 'site_id is required' }, { status: 400 });
+    }
 
     if (!name || !steps || !Array.isArray(steps) || steps.length < 2) {
       return NextResponse.json(
@@ -55,8 +69,8 @@ export async function POST(request: NextRequest) {
     }
 
     const result = await sql`
-      INSERT INTO funnels (name, description, steps)
-      VALUES (${name}, ${description || null}, ${JSON.stringify(steps)})
+      INSERT INTO funnels (name, description, steps, site_id)
+      VALUES (${name}, ${description || null}, ${JSON.stringify(steps)}, ${site_id})
       RETURNING *
     `;
 
@@ -71,10 +85,15 @@ export async function POST(request: NextRequest) {
 export async function PUT(request: NextRequest) {
   try {
     const body = await request.json();
-    const { id, name, description, steps } = body;
+    const { id, name, description, steps, site_id } = body;
 
     if (!id) {
       return NextResponse.json({ error: 'Funnel ID is required' }, { status: 400 });
+    }
+
+    // Site ID is required for multi-site support
+    if (!site_id) {
+      return NextResponse.json({ error: 'site_id is required' }, { status: 400 });
     }
 
     const result = await sql`
@@ -84,7 +103,7 @@ export async function PUT(request: NextRequest) {
         description = COALESCE(${description}, description),
         steps = COALESCE(${steps ? JSON.stringify(steps) : null}, steps),
         updated_at = CURRENT_TIMESTAMP
-      WHERE id = ${id}
+      WHERE id = ${id} AND site_id = ${site_id}
       RETURNING *
     `;
 
@@ -104,13 +123,19 @@ export async function DELETE(request: NextRequest) {
   try {
     const { searchParams } = new URL(request.url);
     const id = searchParams.get('id');
+    const siteId = searchParams.get('site_id');
 
     if (!id) {
       return NextResponse.json({ error: 'Funnel ID is required' }, { status: 400 });
     }
 
+    // Site ID is required for multi-site support
+    if (!siteId) {
+      return NextResponse.json({ error: 'site_id is required' }, { status: 400 });
+    }
+
     const result = await sql`
-      DELETE FROM funnels WHERE id = ${id} RETURNING *
+      DELETE FROM funnels WHERE id = ${id} AND site_id = ${siteId} RETURNING *
     `;
 
     if (result.length === 0) {

@@ -89,20 +89,20 @@ function calculateDateRanges(mode: string, customFrom?: string, customTo?: strin
   }
 }
 
-async function getStats(from: Date, to: Date) {
+async function getStats(from: Date, to: Date, siteId: string) {
   const result = await sql`
     SELECT
-      (SELECT COUNT(DISTINCT visitor_id) FROM events WHERE timestamp >= ${from.toISOString()} AND timestamp <= ${to.toISOString()}) as total_visitors,
-      (SELECT COUNT(*) FROM events WHERE event_type = 'page_view' AND timestamp >= ${from.toISOString()} AND timestamp <= ${to.toISOString()}) as total_page_views,
-      (SELECT COUNT(*) FROM events WHERE timestamp >= ${from.toISOString()} AND timestamp <= ${to.toISOString()}) as total_events,
-      (SELECT COUNT(DISTINCT visitor_id) FROM events e JOIN visitors v ON e.visitor_id = v.id WHERE v.is_identified = true AND e.timestamp >= ${from.toISOString()} AND e.timestamp <= ${to.toISOString()}) as identified_visitors,
-      (SELECT COUNT(*) FROM events WHERE event_type = 'form_submit' AND timestamp >= ${from.toISOString()} AND timestamp <= ${to.toISOString()}) as form_submits,
-      (SELECT COUNT(*) FROM events WHERE event_type = 'purchase' AND timestamp >= ${from.toISOString()} AND timestamp <= ${to.toISOString()}) as purchases,
-      (SELECT COUNT(*) FROM events WHERE event_type = 'add_to_cart' AND timestamp >= ${from.toISOString()} AND timestamp <= ${to.toISOString()}) as add_to_carts,
-      (SELECT COUNT(*) FROM events WHERE event_type = 'cart_abandon' AND timestamp >= ${from.toISOString()} AND timestamp <= ${to.toISOString()}) as cart_abandons,
-      (SELECT COUNT(*) FROM events WHERE event_type = 'form_start' AND timestamp >= ${from.toISOString()} AND timestamp <= ${to.toISOString()}) as form_starts,
-      (SELECT COUNT(*) FROM events WHERE event_type = 'sign_up' AND timestamp >= ${from.toISOString()} AND timestamp <= ${to.toISOString()}) as signups,
-      (SELECT COUNT(*) FROM events WHERE event_type = 'login' AND timestamp >= ${from.toISOString()} AND timestamp <= ${to.toISOString()}) as logins
+      (SELECT COUNT(DISTINCT visitor_id) FROM events WHERE timestamp >= ${from.toISOString()} AND timestamp <= ${to.toISOString()} AND site_id = ${siteId}) as total_visitors,
+      (SELECT COUNT(*) FROM events WHERE event_type = 'page_view' AND timestamp >= ${from.toISOString()} AND timestamp <= ${to.toISOString()} AND site_id = ${siteId}) as total_page_views,
+      (SELECT COUNT(*) FROM events WHERE timestamp >= ${from.toISOString()} AND timestamp <= ${to.toISOString()} AND site_id = ${siteId}) as total_events,
+      (SELECT COUNT(DISTINCT visitor_id) FROM events e JOIN visitors v ON e.visitor_id = v.id WHERE v.is_identified = true AND e.timestamp >= ${from.toISOString()} AND e.timestamp <= ${to.toISOString()} AND e.site_id = ${siteId}) as identified_visitors,
+      (SELECT COUNT(*) FROM events WHERE event_type = 'form_submit' AND timestamp >= ${from.toISOString()} AND timestamp <= ${to.toISOString()} AND site_id = ${siteId}) as form_submits,
+      (SELECT COUNT(*) FROM events WHERE event_type = 'purchase' AND timestamp >= ${from.toISOString()} AND timestamp <= ${to.toISOString()} AND site_id = ${siteId}) as purchases,
+      (SELECT COUNT(*) FROM events WHERE event_type = 'add_to_cart' AND timestamp >= ${from.toISOString()} AND timestamp <= ${to.toISOString()} AND site_id = ${siteId}) as add_to_carts,
+      (SELECT COUNT(*) FROM events WHERE event_type = 'cart_abandon' AND timestamp >= ${from.toISOString()} AND timestamp <= ${to.toISOString()} AND site_id = ${siteId}) as cart_abandons,
+      (SELECT COUNT(*) FROM events WHERE event_type = 'form_start' AND timestamp >= ${from.toISOString()} AND timestamp <= ${to.toISOString()} AND site_id = ${siteId}) as form_starts,
+      (SELECT COUNT(*) FROM events WHERE event_type = 'sign_up' AND timestamp >= ${from.toISOString()} AND timestamp <= ${to.toISOString()} AND site_id = ${siteId}) as signups,
+      (SELECT COUNT(*) FROM events WHERE event_type = 'login' AND timestamp >= ${from.toISOString()} AND timestamp <= ${to.toISOString()} AND site_id = ${siteId}) as logins
   `;
 
   const deviceBreakdown = await sql`
@@ -111,6 +111,7 @@ async function getStats(from: Date, to: Date) {
     WHERE device_type IS NOT NULL
     AND timestamp >= ${from.toISOString()}
     AND timestamp <= ${to.toISOString()}
+    AND site_id = ${siteId}
     GROUP BY device_type
     ORDER BY count DESC
   `;
@@ -122,6 +123,7 @@ async function getStats(from: Date, to: Date) {
     AND page_path IS NOT NULL
     AND timestamp >= ${from.toISOString()}
     AND timestamp <= ${to.toISOString()}
+    AND site_id = ${siteId}
     GROUP BY page_path
     ORDER BY count DESC
     LIMIT 10
@@ -133,6 +135,7 @@ async function getStats(from: Date, to: Date) {
     WHERE event_type = 'page_view'
     AND timestamp >= ${from.toISOString()}
     AND timestamp <= ${to.toISOString()}
+    AND site_id = ${siteId}
     GROUP BY COALESCE(utm_source, 'Direct')
     ORDER BY count DESC
     LIMIT 10
@@ -144,6 +147,7 @@ async function getStats(from: Date, to: Date) {
     WHERE country IS NOT NULL
     AND timestamp >= ${from.toISOString()}
     AND timestamp <= ${to.toISOString()}
+    AND site_id = ${siteId}
     GROUP BY country
     ORDER BY count DESC
     LIMIT 10
@@ -186,14 +190,20 @@ function calculateChange(current: number, previous: number): { value: number; pe
 export async function GET(request: NextRequest) {
   try {
     const { searchParams } = new URL(request.url);
+    const siteId = searchParams.get('site_id');
     const mode = searchParams.get('mode') || 'wow';
     const customFrom = searchParams.get('from');
     const customTo = searchParams.get('to');
 
+    // Site ID is required for multi-site support
+    if (!siteId) {
+      return NextResponse.json({ error: 'site_id is required' }, { status: 400 });
+    }
+
     const { current, comparison } = calculateDateRanges(mode, customFrom || undefined, customTo || undefined);
 
-    const currentStats = await getStats(current.from, current.to);
-    const comparisonStats = await getStats(comparison.from, comparison.to);
+    const currentStats = await getStats(current.from, current.to, siteId);
+    const comparisonStats = await getStats(comparison.from, comparison.to, siteId);
 
     return NextResponse.json({
       mode,

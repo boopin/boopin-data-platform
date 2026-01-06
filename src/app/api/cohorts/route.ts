@@ -24,8 +24,17 @@ export async function GET(request: NextRequest) {
   try {
     await ensureCohortsTable();
 
+    const { searchParams } = new URL(request.url);
+    const siteId = searchParams.get('site_id');
+
+    // Site ID is required for multi-site support
+    if (!siteId) {
+      return NextResponse.json({ error: 'site_id is required' }, { status: 400 });
+    }
+
     const cohorts = await sql`
       SELECT * FROM cohorts
+      WHERE site_id = ${siteId}
       ORDER BY created_at DESC
     `;
 
@@ -41,7 +50,12 @@ export async function POST(request: NextRequest) {
   try {
     await ensureCohortsTable();
 
-    const { name, description, cohort_type, date_field, interval_type, retention_periods } = await request.json();
+    const { name, description, cohort_type, date_field, interval_type, retention_periods, site_id } = await request.json();
+
+    // Site ID is required for multi-site support
+    if (!site_id) {
+      return NextResponse.json({ error: 'site_id is required' }, { status: 400 });
+    }
 
     if (!name || !cohort_type || !date_field || !interval_type) {
       return NextResponse.json(
@@ -54,14 +68,15 @@ export async function POST(request: NextRequest) {
     const periods = retention_periods || [1, 7, 14, 30, 60, 90];
 
     const result = await sql`
-      INSERT INTO cohorts (name, description, cohort_type, date_field, interval_type, retention_periods)
+      INSERT INTO cohorts (name, description, cohort_type, date_field, interval_type, retention_periods, site_id)
       VALUES (
         ${name},
         ${description || null},
         ${cohort_type},
         ${date_field},
         ${interval_type},
-        ${periods}
+        ${periods},
+        ${site_id}
       )
       RETURNING *
     `;
@@ -78,9 +93,15 @@ export async function PUT(request: NextRequest) {
   try {
     const { searchParams } = new URL(request.url);
     const id = searchParams.get('id');
+    const siteId = searchParams.get('site_id');
 
     if (!id) {
       return NextResponse.json({ error: 'Cohort ID is required' }, { status: 400 });
+    }
+
+    // Site ID is required for multi-site support
+    if (!siteId) {
+      return NextResponse.json({ error: 'site_id is required' }, { status: 400 });
     }
 
     const { name, description, retention_periods } = await request.json();
@@ -92,7 +113,7 @@ export async function PUT(request: NextRequest) {
         description = COALESCE(${description || null}, description),
         retention_periods = COALESCE(${retention_periods || null}, retention_periods),
         updated_at = CURRENT_TIMESTAMP
-      WHERE id = ${id}
+      WHERE id = ${id} AND site_id = ${siteId}
       RETURNING *
     `;
 
@@ -112,14 +133,20 @@ export async function DELETE(request: NextRequest) {
   try {
     const { searchParams } = new URL(request.url);
     const id = searchParams.get('id');
+    const siteId = searchParams.get('site_id');
 
     if (!id) {
       return NextResponse.json({ error: 'Cohort ID is required' }, { status: 400 });
     }
 
+    // Site ID is required for multi-site support
+    if (!siteId) {
+      return NextResponse.json({ error: 'site_id is required' }, { status: 400 });
+    }
+
     await sql`
       DELETE FROM cohorts
-      WHERE id = ${id}
+      WHERE id = ${id} AND site_id = ${siteId}
     `;
 
     return NextResponse.json({ success: true });

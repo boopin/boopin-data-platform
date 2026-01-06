@@ -24,12 +24,20 @@ async function ensureGoalsTable() {
 }
 
 // GET - List all goals with completion stats
-export async function GET() {
+export async function GET(request: NextRequest) {
   try {
     await ensureGoalsTable();
 
+    const { searchParams } = new URL(request.url);
+    const siteId = searchParams.get('site_id');
+
+    // Site ID is required for multi-site support
+    if (!siteId) {
+      return NextResponse.json({ error: 'site_id is required' }, { status: 400 });
+    }
+
     const goals = await sql`
-      SELECT * FROM goals ORDER BY created_at DESC
+      SELECT * FROM goals WHERE site_id = ${siteId} ORDER BY created_at DESC
     `;
 
     // Get completion stats for each goal
@@ -54,7 +62,7 @@ export async function GET() {
               COUNT(*) FILTER (WHERE timestamp >= ${weekAgo.toISOString()}) as week,
               COUNT(*) FILTER (WHERE timestamp >= ${monthAgo.toISOString()}) as month
             FROM events
-            WHERE event_type = ${goal.target_value}
+            WHERE event_type = ${goal.target_value} AND site_id = ${siteId}
           `;
           completions = parseInt(results[0]?.total) || 0;
           completionsToday = parseInt(results[0]?.today) || 0;
@@ -71,6 +79,7 @@ export async function GET() {
             FROM events
             WHERE event_type = 'page_view'
             AND page_path = ${goal.target_value}
+            AND site_id = ${siteId}
           `;
           completions = parseInt(results[0]?.total) || 0;
           completionsToday = parseInt(results[0]?.today) || 0;
@@ -103,7 +112,12 @@ export async function POST(request: NextRequest) {
     await ensureGoalsTable();
 
     const body = await request.json();
-    const { name, description, type, target_value } = body;
+    const { name, description, type, target_value, site_id } = body;
+
+    // Site ID is required for multi-site support
+    if (!site_id) {
+      return NextResponse.json({ error: 'site_id is required' }, { status: 400 });
+    }
 
     if (!name || !type || !target_value) {
       return NextResponse.json(
@@ -120,8 +134,8 @@ export async function POST(request: NextRequest) {
     }
 
     const result = await sql`
-      INSERT INTO goals (name, description, type, target_value)
-      VALUES (${name}, ${description || null}, ${type}, ${target_value})
+      INSERT INTO goals (name, description, type, target_value, site_id)
+      VALUES (${name}, ${description || null}, ${type}, ${target_value}, ${site_id})
       RETURNING *
     `;
 
@@ -136,10 +150,15 @@ export async function POST(request: NextRequest) {
 export async function PUT(request: NextRequest) {
   try {
     const body = await request.json();
-    const { id, name, description, type, target_value } = body;
+    const { id, name, description, type, target_value, site_id } = body;
 
     if (!id) {
       return NextResponse.json({ error: 'Missing goal ID' }, { status: 400 });
+    }
+
+    // Site ID is required for multi-site support
+    if (!site_id) {
+      return NextResponse.json({ error: 'site_id is required' }, { status: 400 });
     }
 
     const result = await sql`
@@ -150,7 +169,7 @@ export async function PUT(request: NextRequest) {
         type = COALESCE(${type}, type),
         target_value = COALESCE(${target_value}, target_value),
         updated_at = CURRENT_TIMESTAMP
-      WHERE id = ${id}
+      WHERE id = ${id} AND site_id = ${site_id}
       RETURNING *
     `;
 
@@ -170,13 +189,19 @@ export async function DELETE(request: NextRequest) {
   try {
     const { searchParams } = new URL(request.url);
     const id = searchParams.get('id');
+    const siteId = searchParams.get('site_id');
 
     if (!id) {
       return NextResponse.json({ error: 'Missing goal ID' }, { status: 400 });
     }
 
+    // Site ID is required for multi-site support
+    if (!siteId) {
+      return NextResponse.json({ error: 'site_id is required' }, { status: 400 });
+    }
+
     const result = await sql`
-      DELETE FROM goals WHERE id = ${id} RETURNING *
+      DELETE FROM goals WHERE id = ${id} AND site_id = ${siteId} RETURNING *
     `;
 
     if (result.length === 0) {

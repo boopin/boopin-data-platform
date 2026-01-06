@@ -9,11 +9,18 @@ export async function GET(
 ) {
   try {
     const { id: cohortId } = await params;
+    const { searchParams } = new URL(request.url);
+    const siteId = searchParams.get('site_id');
+
+    // Site ID is required for multi-site support
+    if (!siteId) {
+      return NextResponse.json({ error: 'site_id is required' }, { status: 400 });
+    }
 
     // Get cohort definition
     const cohortResult = await sql`
       SELECT * FROM cohorts
-      WHERE id = ${cohortId}
+      WHERE id = ${cohortId} AND site_id = ${siteId}
     `;
 
     if (cohortResult.length === 0) {
@@ -29,6 +36,7 @@ export async function GET(
         visitor_id,
         MIN(timestamp) as first_seen
       FROM events
+      WHERE site_id = ${siteId}
       GROUP BY visitor_id
       ORDER BY first_seen
     `;
@@ -110,6 +118,7 @@ export async function GET(
           WHERE visitor_id = ANY(${visitorIds})
           AND timestamp >= ${periodStartDate.toISOString()}
           AND timestamp < ${periodEndDate.toISOString()}
+          AND site_id = ${siteId}
         `;
 
         const visitorsReturned = parseInt(returnedVisitors[0]?.count || '0');

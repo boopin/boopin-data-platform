@@ -7,18 +7,27 @@ export const dynamic = 'force-dynamic';
 const CLIENT_ID = '2a5aa0ae-69bb-4606-bfdb-beaae49d3344';
 
 // Get all segments with user counts
-export async function GET() {
+export async function GET(request: NextRequest) {
   try {
+    const { searchParams } = new URL(request.url);
+    const siteId = searchParams.get('site_id');
+
+    // Site ID is required for multi-site support
+    if (!siteId) {
+      return NextResponse.json({ error: 'site_id is required' }, { status: 400 });
+    }
+
     const segments = await sql`
       SELECT id, name, description, rules, created_at, updated_at, visitor_count, is_active
       FROM segments
+      WHERE site_id = ${siteId}
       ORDER BY created_at DESC
     `;
 
     // Calculate user count for each segment
     const segmentsWithCounts = await Promise.all(
       segments.map(async (segment: Record<string, unknown>) => {
-        const count = await getSegmentUserCount(segment.rules as object[]);
+        const count = await getSegmentUserCount(segment.rules as object[], siteId);
         return { ...segment, user_count: count };
       })
     );
@@ -34,7 +43,12 @@ export async function GET() {
 export async function POST(request: NextRequest) {
   try {
     const body = await request.json();
-    const { name, description, rules } = body;
+    const { name, description, rules, site_id } = body;
+
+    // Site ID is required for multi-site support
+    if (!site_id) {
+      return NextResponse.json({ error: 'site_id is required' }, { status: 400 });
+    }
 
     if (!name || !rules) {
       return NextResponse.json({ error: 'Name and rules are required' }, { status: 400 });
@@ -43,12 +57,13 @@ export async function POST(request: NextRequest) {
     const rulesJson = JSON.stringify(rules);
 
     const result = await sql`
-      INSERT INTO segments (client_id, name, description, rules)
+      INSERT INTO segments (client_id, name, description, rules, site_id)
       VALUES (
-        ${CLIENT_ID}::uuid, 
-        ${name}, 
-        ${description || ''}, 
-        ${rulesJson}::jsonb
+        ${CLIENT_ID}::uuid,
+        ${name},
+        ${description || ''},
+        ${rulesJson}::jsonb,
+        ${site_id}
       )
       RETURNING id, name, description, rules, created_at, is_active
     `;
@@ -56,20 +71,21 @@ export async function POST(request: NextRequest) {
     return NextResponse.json({ segment: result[0] }, { status: 201 });
   } catch (error) {
     console.error('Create segment error:', error);
-    return NextResponse.json({ 
+    return NextResponse.json({
       error: 'Failed to create segment',
       details: String(error)
     }, { status: 500 });
   }
 }
 
-async function getSegmentUserCount(rules: object[]): Promise<number> {
+async function getSegmentUserCount(rules: object[], siteId: string): Promise<number> {
   try {
-    const visitors = await sql`SELECT id, is_identified, email, phone FROM visitors`;
+    const visitors = await sql`SELECT id, is_identified, email, phone FROM visitors WHERE site_id = ${siteId}`;
     const events = await sql`
-      SELECT visitor_id, event_type, page_path, device_type, country, city, 
+      SELECT visitor_id, event_type, page_path, device_type, country, city,
              utm_source, timestamp
       FROM events
+      WHERE site_id = ${siteId}
     `;
 
     const visitorEvents: Record<string, Record<string, unknown>[]> = {};
