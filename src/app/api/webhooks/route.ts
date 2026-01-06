@@ -16,12 +16,26 @@ async function ensureWebhooksTable() {
         event_types JSONB,
         secret VARCHAR(255),
         is_active BOOLEAN DEFAULT true,
+        site_id UUID REFERENCES sites(id) ON DELETE CASCADE,
         created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
         last_triggered_at TIMESTAMP,
         total_triggers INTEGER DEFAULT 0,
         last_status INTEGER,
         last_error TEXT
       )
+    `;
+
+    // Add site_id column if it doesn't exist (for existing tables)
+    await sql`
+      DO $$
+      BEGIN
+        IF NOT EXISTS (
+          SELECT 1 FROM information_schema.columns
+          WHERE table_name = 'webhooks' AND column_name = 'site_id'
+        ) THEN
+          ALTER TABLE webhooks ADD COLUMN site_id UUID REFERENCES sites(id) ON DELETE CASCADE;
+        END IF;
+      END $$;
     `;
   } catch (error) {
     console.error('Error creating webhooks table:', error);
