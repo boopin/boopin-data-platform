@@ -14,7 +14,58 @@
   4. Paste it below this comment, replacing the placeholder
   -->
 
-  <!-- TRACKING CODE GOES HERE - REPLACE THIS COMMENT -->
+  <!-- Pulse Analytics Tracking Code -->
+  <script>
+  (function() {
+    window.pulseAnalytics = window.pulseAnalytics || [];
+    const pulse = window.pulseAnalytics;
+
+    // Configuration
+    const SITE_ID = '00000000-0000-0000-0000-000000000001';
+    const API_ENDPOINT = 'https://pulse-analytics-data-platform.vercel.app/api/track';
+
+    // Generate or get anonymous ID
+    function getAnonymousId() {
+      let id = localStorage.getItem('pulse_anonymous_id');
+      if (!id) {
+        id = 'pulse_' + Math.random().toString(36).substr(2, 9) + Date.now();
+        localStorage.setItem('pulse_anonymous_id', id);
+      }
+      return id;
+    }
+
+    // Track function
+    pulse.track = function(eventType, properties = {}) {
+      const anonymousId = getAnonymousId();
+
+      fetch(API_ENDPOINT, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json'
+        },
+        body: JSON.stringify({
+          siteId: SITE_ID,
+          anonymousId: anonymousId,
+          eventType: eventType,
+          properties: properties,
+          pageUrl: window.location.href,
+          pagePath: window.location.pathname,
+          pageTitle: document.title,
+          referrer: document.referrer,
+          userAgent: navigator.userAgent,
+          screenWidth: screen.width,
+          screenHeight: screen.height,
+          viewportWidth: window.innerWidth,
+          viewportHeight: window.innerHeight
+        })
+      }).catch(err => console.error('Pulse Analytics tracking error:', err));
+    };
+
+    // Auto-track page view
+    pulse.track('page_view');
+  })();
+  </script>
+  <!-- End Pulse Analytics Tracking Code -->
 
   <style>
     body {

@@ -88,19 +88,6 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ error: 'Rate limited' }, { status: 429 });
     }
 
-    // API Key validation
-    const apiKey = request.headers.get('x-api-key');
-    if (!apiKey) {
-      return NextResponse.json({ error: 'Missing API key' }, { status: 401 });
-    }
-
-    // Validate API key against clients table
-    const clients = await sql`SELECT id FROM clients WHERE api_key = ${apiKey} AND is_active = true`;
-    if (clients.length === 0) {
-      return NextResponse.json({ error: 'Invalid API key' }, { status: 401 });
-    }
-    const clientId = clients[0].id;
-
     const body = await request.json();
     const {
       siteId,

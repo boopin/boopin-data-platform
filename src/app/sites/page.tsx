@@ -173,8 +173,7 @@ export default function SitesPage() {
     fetch(API_ENDPOINT, {
       method: 'POST',
       headers: {
-        'Content-Type': 'application/json',
-        'X-API-Key': 'web-tracking' // Optional: Add your API key
+        'Content-Type': 'application/json'
       },
       body: JSON.stringify({
         siteId: SITE_ID,
