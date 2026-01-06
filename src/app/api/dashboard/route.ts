@@ -7,9 +7,15 @@ export const revalidate = 0;
 export async function GET(request: NextRequest) {
   try {
     const { searchParams } = new URL(request.url);
+    const siteId = searchParams.get('site_id');
     const country = searchParams.get('country');
     const eventType = searchParams.get('eventType');
     const dateFrom = searchParams.get('dateFrom');
+
+    // Site ID is required for multi-site support
+    if (!siteId) {
+      return NextResponse.json({ error: 'site_id is required' }, { status: 400 });
+    }
 
     // For filtered queries, we'll use conditional logic
     // Base stats (always unfiltered for visitor count)
@@ -28,15 +34,15 @@ export async function GET(request: NextRequest) {
     if (!country && !eventType && !dateFrom) {
       // No filters - use simple queries
       statsResult = await sql`
-        SELECT 
-          (SELECT COUNT(*) FROM visitors) as total_visitors,
-          (SELECT COUNT(*) FROM events WHERE event_type = 'page_view') as total_page_views,
-          (SELECT COUNT(*) FROM events) as total_events,
-          (SELECT COUNT(*) FROM visitors WHERE is_identified = true) as identified_visitors
+        SELECT
+          (SELECT COUNT(*) FROM visitors WHERE site_id = ${siteId}) as total_visitors,
+          (SELECT COUNT(*) FROM events WHERE event_type = 'page_view' AND site_id = ${siteId}) as total_page_views,
+          (SELECT COUNT(*) FROM events WHERE site_id = ${siteId}) as total_events,
+          (SELECT COUNT(*) FROM visitors WHERE is_identified = true AND site_id = ${siteId}) as identified_visitors
       `;
 
       recentEvents = await sql`
-        SELECT 
+        SELECT
           e.id, e.event_type, e.page_path, e.page_url, e.timestamp,
           e.visitor_id, e.user_agent, e.device_type, e.ip_address,
           e.referrer, e.utm_source, e.utm_medium, e.utm_campaign,
@@ -44,6 +50,7 @@ export async function GET(request: NextRequest) {
           v.email, v.name, e.browser, e.os
         FROM events e
         LEFT JOIN visitors v ON e.visitor_id = v.id
+        WHERE e.site_id = ${siteId}
         ORDER BY e.timestamp DESC
         LIMIT 100
       `;
