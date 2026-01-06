@@ -107,10 +107,10 @@ export async function GET(request: NextRequest) {
       // Date filter only
       statsResult = await sql`
         SELECT 
-          (SELECT COUNT(*) FROM visitors) as total_visitors,
-          (SELECT COUNT(*) FROM events WHERE event_type = 'page_view' AND timestamp >= ${dateFrom}::timestamp) as total_page_views,
-          (SELECT COUNT(*) FROM events WHERE timestamp >= ${dateFrom}::timestamp) as total_events,
-          (SELECT COUNT(*) FROM visitors WHERE is_identified = true) as identified_visitors
+          (SELECT COUNT(*) FROM visitors WHERE site_id = ${siteId}) as total_visitors,
+          (SELECT COUNT(*) FROM events WHERE event_type = 'page_view' AND timestamp >= ${dateFrom}::timestamp AND site_id = ${siteId}) as total_page_views,
+          (SELECT COUNT(*) FROM events WHERE timestamp >= ${dateFrom}::timestamp AND site_id = ${siteId}) as total_events,
+          (SELECT COUNT(*) FROM visitors WHERE is_identified = true AND site_id = ${siteId}) as identified_visitors
       `;
 
       recentEvents = await sql`
@@ -122,56 +122,56 @@ export async function GET(request: NextRequest) {
           v.email, v.name, e.browser, e.os
         FROM events e
         LEFT JOIN visitors v ON e.visitor_id = v.id
-        WHERE e.timestamp >= ${dateFrom}::timestamp
+        WHERE e.timestamp >= ${dateFrom}::timestamp AND e.site_id = ${siteId}
         ORDER BY e.timestamp DESC
         LIMIT 100
       `;
 
       deviceBreakdown = await sql`
         SELECT device_type, COUNT(*) as count
-        FROM events WHERE device_type IS NOT NULL AND timestamp >= ${dateFrom}::timestamp
+        FROM events WHERE device_type IS NOT NULL AND timestamp >= ${dateFrom}::timestamp AND site_id = ${siteId}
         GROUP BY device_type ORDER BY count DESC
       `;
 
       browserBreakdown = await sql`
         SELECT browser as name, COUNT(*) as count
-        FROM events WHERE browser IS NOT NULL AND timestamp >= ${dateFrom}::timestamp
+        FROM events WHERE browser IS NOT NULL AND timestamp >= ${dateFrom}::timestamp AND site_id = ${siteId}
         GROUP BY browser ORDER BY count DESC LIMIT 10
       `;
 
       osBreakdown = await sql`
         SELECT os as name, COUNT(*) as count
-        FROM events WHERE os IS NOT NULL AND timestamp >= ${dateFrom}::timestamp
+        FROM events WHERE os IS NOT NULL AND timestamp >= ${dateFrom}::timestamp AND site_id = ${siteId}
         GROUP BY os ORDER BY count DESC LIMIT 10
       `;
 
       topPages = await sql`
         SELECT page_path, COUNT(*) as count
-        FROM events WHERE event_type = 'page_view' AND page_path IS NOT NULL AND timestamp >= ${dateFrom}::timestamp
+        FROM events WHERE event_type = 'page_view' AND page_path IS NOT NULL AND timestamp >= ${dateFrom}::timestamp AND site_id = ${siteId}
         GROUP BY page_path ORDER BY count DESC LIMIT 10
       `;
 
       eventBreakdown = await sql`
         SELECT event_type, COUNT(*) as count
-        FROM events WHERE timestamp >= ${dateFrom}::timestamp
+        FROM events WHERE timestamp >= ${dateFrom}::timestamp AND site_id = ${siteId}
         GROUP BY event_type ORDER BY count DESC
       `;
 
       trafficSources = await sql`
         SELECT COALESCE(utm_source, 'Direct') as source, COUNT(*) as count
-        FROM events WHERE event_type = 'page_view' AND timestamp >= ${dateFrom}::timestamp
+        FROM events WHERE event_type = 'page_view' AND timestamp >= ${dateFrom}::timestamp AND site_id = ${siteId}
         GROUP BY COALESCE(utm_source, 'Direct') ORDER BY count DESC LIMIT 10
       `;
 
       countryBreakdown = await sql`
         SELECT country, COUNT(*) as count
-        FROM events WHERE country IS NOT NULL AND timestamp >= ${dateFrom}::timestamp
+        FROM events WHERE country IS NOT NULL AND timestamp >= ${dateFrom}::timestamp AND site_id = ${siteId}
         GROUP BY country ORDER BY count DESC LIMIT 20
       `;
 
       cityBreakdown = await sql`
         SELECT city, country, COUNT(*) as count
-        FROM events WHERE city IS NOT NULL AND timestamp >= ${dateFrom}::timestamp
+        FROM events WHERE city IS NOT NULL AND timestamp >= ${dateFrom}::timestamp AND site_id = ${siteId}
         GROUP BY city, country ORDER BY count DESC LIMIT 20
       `;
 
@@ -179,10 +179,10 @@ export async function GET(request: NextRequest) {
       // Country filter only
       statsResult = await sql`
         SELECT 
-          (SELECT COUNT(*) FROM visitors) as total_visitors,
-          (SELECT COUNT(*) FROM events WHERE event_type = 'page_view' AND country = ${country}) as total_page_views,
-          (SELECT COUNT(*) FROM events WHERE country = ${country}) as total_events,
-          (SELECT COUNT(*) FROM visitors WHERE is_identified = true) as identified_visitors
+          (SELECT COUNT(*) FROM visitors WHERE site_id = ${siteId}) as total_visitors,
+          (SELECT COUNT(*) FROM events WHERE event_type = 'page_view' AND country = ${country} AND site_id = ${siteId}) as total_page_views,
+          (SELECT COUNT(*) FROM events WHERE country = ${country} AND site_id = ${siteId}) as total_events,
+          (SELECT COUNT(*) FROM visitors WHERE is_identified = true AND site_id = ${siteId}) as identified_visitors
       `;
 
       recentEvents = await sql`
@@ -194,67 +194,67 @@ export async function GET(request: NextRequest) {
           v.email, v.name, e.browser, e.os
         FROM events e
         LEFT JOIN visitors v ON e.visitor_id = v.id
-        WHERE e.country = ${country}
+        WHERE e.country = ${country} AND e.site_id = ${siteId}
         ORDER BY e.timestamp DESC
         LIMIT 100
       `;
 
       deviceBreakdown = await sql`
         SELECT device_type, COUNT(*) as count
-        FROM events WHERE device_type IS NOT NULL AND country = ${country}
+        FROM events WHERE device_type IS NOT NULL AND country = ${country} AND site_id = ${siteId}
         GROUP BY device_type ORDER BY count DESC
       `;
 
       browserBreakdown = await sql`
         SELECT browser as name, COUNT(*) as count
-        FROM events WHERE browser IS NOT NULL AND country = ${country}
+        FROM events WHERE browser IS NOT NULL AND country = ${country} AND site_id = ${siteId}
         GROUP BY browser ORDER BY count DESC LIMIT 10
       `;
 
       osBreakdown = await sql`
         SELECT os as name, COUNT(*) as count
-        FROM events WHERE os IS NOT NULL AND country = ${country}
+        FROM events WHERE os IS NOT NULL AND country = ${country} AND site_id = ${siteId}
         GROUP BY os ORDER BY count DESC LIMIT 10
       `;
 
       topPages = await sql`
         SELECT page_path, COUNT(*) as count
-        FROM events WHERE event_type = 'page_view' AND page_path IS NOT NULL AND country = ${country}
+        FROM events WHERE event_type = 'page_view' AND page_path IS NOT NULL AND country = ${country} AND site_id = ${siteId}
         GROUP BY page_path ORDER BY count DESC LIMIT 10
       `;
 
       eventBreakdown = await sql`
         SELECT event_type, COUNT(*) as count
-        FROM events WHERE country = ${country}
+        FROM events WHERE country = ${country} AND site_id = ${siteId}
         GROUP BY event_type ORDER BY count DESC
       `;
 
       trafficSources = await sql`
         SELECT COALESCE(utm_source, 'Direct') as source, COUNT(*) as count
-        FROM events WHERE event_type = 'page_view' AND country = ${country}
+        FROM events WHERE event_type = 'page_view' AND country = ${country} AND site_id = ${siteId}
         GROUP BY COALESCE(utm_source, 'Direct') ORDER BY count DESC LIMIT 10
       `;
 
       countryBreakdown = await sql`
         SELECT country, COUNT(*) as count
-        FROM events WHERE country IS NOT NULL AND country = ${country}
+        FROM events WHERE country IS NOT NULL AND country = ${country} AND site_id = ${siteId}
         GROUP BY country ORDER BY count DESC LIMIT 20
       `;
 
       cityBreakdown = await sql`
         SELECT city, country, COUNT(*) as count
-        FROM events WHERE city IS NOT NULL AND country = ${country}
+        FROM events WHERE city IS NOT NULL AND country = ${country} AND site_id = ${siteId}
         GROUP BY city, country ORDER BY count DESC LIMIT 20
       `;
 
     } else if (eventType && !country && !dateFrom) {
       // Event type filter only
       statsResult = await sql`
-        SELECT 
-          (SELECT COUNT(*) FROM visitors) as total_visitors,
-          (SELECT COUNT(*) FROM events WHERE event_type = 'page_view') as total_page_views,
-          (SELECT COUNT(*) FROM events WHERE event_type = ${eventType}) as total_events,
-          (SELECT COUNT(*) FROM visitors WHERE is_identified = true) as identified_visitors
+        SELECT
+          (SELECT COUNT(*) FROM visitors WHERE site_id = ${siteId}) as total_visitors,
+          (SELECT COUNT(*) FROM events WHERE event_type = 'page_view' AND site_id = ${siteId}) as total_page_views,
+          (SELECT COUNT(*) FROM events WHERE event_type = ${eventType} AND site_id = ${siteId}) as total_events,
+          (SELECT COUNT(*) FROM visitors WHERE is_identified = true AND site_id = ${siteId}) as identified_visitors
       `;
 
       recentEvents = await sql`
@@ -266,56 +266,56 @@ export async function GET(request: NextRequest) {
           v.email, v.name, e.browser, e.os
         FROM events e
         LEFT JOIN visitors v ON e.visitor_id = v.id
-        WHERE e.event_type = ${eventType}
+        WHERE e.event_type = ${eventType} AND e.site_id = ${siteId}
         ORDER BY e.timestamp DESC
         LIMIT 100
       `;
 
       deviceBreakdown = await sql`
         SELECT device_type, COUNT(*) as count
-        FROM events WHERE device_type IS NOT NULL AND event_type = ${eventType}
+        FROM events WHERE device_type IS NOT NULL AND event_type = ${eventType} AND site_id = ${siteId}
         GROUP BY device_type ORDER BY count DESC
       `;
 
       browserBreakdown = await sql`
         SELECT browser as name, COUNT(*) as count
-        FROM events WHERE browser IS NOT NULL AND event_type = ${eventType}
+        FROM events WHERE browser IS NOT NULL AND event_type = ${eventType} AND site_id = ${siteId}
         GROUP BY browser ORDER BY count DESC LIMIT 10
       `;
 
       osBreakdown = await sql`
         SELECT os as name, COUNT(*) as count
-        FROM events WHERE os IS NOT NULL AND event_type = ${eventType}
+        FROM events WHERE os IS NOT NULL AND event_type = ${eventType} AND site_id = ${siteId}
         GROUP BY os ORDER BY count DESC LIMIT 10
       `;
 
       topPages = await sql`
         SELECT page_path, COUNT(*) as count
-        FROM events WHERE event_type = ${eventType} AND page_path IS NOT NULL
+        FROM events WHERE event_type = ${eventType} AND site_id = ${siteId} AND page_path IS NOT NULL
         GROUP BY page_path ORDER BY count DESC LIMIT 10
       `;
 
       eventBreakdown = await sql`
         SELECT event_type, COUNT(*) as count
-        FROM events WHERE event_type = ${eventType}
+        FROM events WHERE event_type = ${eventType} AND site_id = ${siteId}
         GROUP BY event_type ORDER BY count DESC
       `;
 
       trafficSources = await sql`
         SELECT COALESCE(utm_source, 'Direct') as source, COUNT(*) as count
-        FROM events WHERE event_type = ${eventType}
+        FROM events WHERE event_type = ${eventType} AND site_id = ${siteId}
         GROUP BY COALESCE(utm_source, 'Direct') ORDER BY count DESC LIMIT 10
       `;
 
       countryBreakdown = await sql`
         SELECT country, COUNT(*) as count
-        FROM events WHERE country IS NOT NULL AND event_type = ${eventType}
+        FROM events WHERE country IS NOT NULL AND event_type = ${eventType} AND site_id = ${siteId}
         GROUP BY country ORDER BY count DESC LIMIT 20
       `;
 
       cityBreakdown = await sql`
         SELECT city, country, COUNT(*) as count
-        FROM events WHERE city IS NOT NULL AND event_type = ${eventType}
+        FROM events WHERE city IS NOT NULL AND event_type = ${eventType} AND site_id = ${siteId}
         GROUP BY city, country ORDER BY count DESC LIMIT 20
       `;
 
@@ -323,10 +323,10 @@ export async function GET(request: NextRequest) {
       // Date + Country filter
       statsResult = await sql`
         SELECT 
-          (SELECT COUNT(*) FROM visitors) as total_visitors,
-          (SELECT COUNT(*) FROM events WHERE event_type = 'page_view' AND timestamp >= ${dateFrom}::timestamp AND country = ${country}) as total_page_views,
-          (SELECT COUNT(*) FROM events WHERE timestamp >= ${dateFrom}::timestamp AND country = ${country}) as total_events,
-          (SELECT COUNT(*) FROM visitors WHERE is_identified = true) as identified_visitors
+          (SELECT COUNT(*) FROM visitors WHERE site_id = ${siteId}) as total_visitors,
+          (SELECT COUNT(*) FROM events WHERE event_type = 'page_view' AND timestamp >= ${dateFrom}::timestamp AND site_id = ${siteId} AND country = ${country} AND site_id = ${siteId}) as total_page_views,
+          (SELECT COUNT(*) FROM events WHERE timestamp >= ${dateFrom}::timestamp AND site_id = ${siteId} AND country = ${country} AND site_id = ${siteId}) as total_events,
+          (SELECT COUNT(*) FROM visitors WHERE is_identified = true AND site_id = ${siteId}) as identified_visitors
       `;
 
       recentEvents = await sql`
@@ -345,49 +345,49 @@ export async function GET(request: NextRequest) {
 
       deviceBreakdown = await sql`
         SELECT device_type, COUNT(*) as count
-        FROM events WHERE device_type IS NOT NULL AND timestamp >= ${dateFrom}::timestamp AND country = ${country}
+        FROM events WHERE device_type IS NOT NULL AND timestamp >= ${dateFrom}::timestamp AND site_id = ${siteId} AND country = ${country} AND site_id = ${siteId}
         GROUP BY device_type ORDER BY count DESC
       `;
 
       browserBreakdown = await sql`
         SELECT browser as name, COUNT(*) as count
-        FROM events WHERE browser IS NOT NULL AND timestamp >= ${dateFrom}::timestamp AND country = ${country}
+        FROM events WHERE browser IS NOT NULL AND timestamp >= ${dateFrom}::timestamp AND site_id = ${siteId} AND country = ${country} AND site_id = ${siteId}
         GROUP BY browser ORDER BY count DESC LIMIT 10
       `;
 
       osBreakdown = await sql`
         SELECT os as name, COUNT(*) as count
-        FROM events WHERE os IS NOT NULL AND timestamp >= ${dateFrom}::timestamp AND country = ${country}
+        FROM events WHERE os IS NOT NULL AND timestamp >= ${dateFrom}::timestamp AND site_id = ${siteId} AND country = ${country} AND site_id = ${siteId}
         GROUP BY os ORDER BY count DESC LIMIT 10
       `;
 
       topPages = await sql`
         SELECT page_path, COUNT(*) as count
-        FROM events WHERE event_type = 'page_view' AND page_path IS NOT NULL AND timestamp >= ${dateFrom}::timestamp AND country = ${country}
+        FROM events WHERE event_type = 'page_view' AND page_path IS NOT NULL AND timestamp >= ${dateFrom}::timestamp AND site_id = ${siteId} AND country = ${country} AND site_id = ${siteId}
         GROUP BY page_path ORDER BY count DESC LIMIT 10
       `;
 
       eventBreakdown = await sql`
         SELECT event_type, COUNT(*) as count
-        FROM events WHERE timestamp >= ${dateFrom}::timestamp AND country = ${country}
+        FROM events WHERE timestamp >= ${dateFrom}::timestamp AND site_id = ${siteId} AND country = ${country} AND site_id = ${siteId}
         GROUP BY event_type ORDER BY count DESC
       `;
 
       trafficSources = await sql`
         SELECT COALESCE(utm_source, 'Direct') as source, COUNT(*) as count
-        FROM events WHERE event_type = 'page_view' AND timestamp >= ${dateFrom}::timestamp AND country = ${country}
+        FROM events WHERE event_type = 'page_view' AND timestamp >= ${dateFrom}::timestamp AND site_id = ${siteId} AND country = ${country} AND site_id = ${siteId}
         GROUP BY COALESCE(utm_source, 'Direct') ORDER BY count DESC LIMIT 10
       `;
 
       countryBreakdown = await sql`
         SELECT country, COUNT(*) as count
-        FROM events WHERE country IS NOT NULL AND timestamp >= ${dateFrom}::timestamp AND country = ${country}
+        FROM events WHERE country IS NOT NULL AND timestamp >= ${dateFrom}::timestamp AND site_id = ${siteId} AND country = ${country} AND site_id = ${siteId}
         GROUP BY country ORDER BY count DESC LIMIT 20
       `;
 
       cityBreakdown = await sql`
         SELECT city, country, COUNT(*) as count
-        FROM events WHERE city IS NOT NULL AND timestamp >= ${dateFrom}::timestamp AND country = ${country}
+        FROM events WHERE city IS NOT NULL AND timestamp >= ${dateFrom}::timestamp AND site_id = ${siteId} AND country = ${country} AND site_id = ${siteId}
         GROUP BY city, country ORDER BY count DESC LIMIT 20
       `;
 
@@ -395,10 +395,10 @@ export async function GET(request: NextRequest) {
       // Date + Event Type filter
       statsResult = await sql`
         SELECT 
-          (SELECT COUNT(*) FROM visitors) as total_visitors,
-          (SELECT COUNT(*) FROM events WHERE event_type = 'page_view' AND timestamp >= ${dateFrom}::timestamp) as total_page_views,
-          (SELECT COUNT(*) FROM events WHERE timestamp >= ${dateFrom}::timestamp AND event_type = ${eventType}) as total_events,
-          (SELECT COUNT(*) FROM visitors WHERE is_identified = true) as identified_visitors
+          (SELECT COUNT(*) FROM visitors WHERE site_id = ${siteId}) as total_visitors,
+          (SELECT COUNT(*) FROM events WHERE event_type = 'page_view' AND timestamp >= ${dateFrom}::timestamp AND site_id = ${siteId}) as total_page_views,
+          (SELECT COUNT(*) FROM events WHERE timestamp >= ${dateFrom}::timestamp AND site_id = ${siteId} AND event_type = ${eventType} AND site_id = ${siteId}) as total_events,
+          (SELECT COUNT(*) FROM visitors WHERE is_identified = true AND site_id = ${siteId}) as identified_visitors
       `;
 
       recentEvents = await sql`
@@ -417,49 +417,49 @@ export async function GET(request: NextRequest) {
 
       deviceBreakdown = await sql`
         SELECT device_type, COUNT(*) as count
-        FROM events WHERE device_type IS NOT NULL AND timestamp >= ${dateFrom}::timestamp AND event_type = ${eventType}
+        FROM events WHERE device_type IS NOT NULL AND timestamp >= ${dateFrom}::timestamp AND site_id = ${siteId} AND event_type = ${eventType} AND site_id = ${siteId}
         GROUP BY device_type ORDER BY count DESC
       `;
 
       browserBreakdown = await sql`
         SELECT browser as name, COUNT(*) as count
-        FROM events WHERE browser IS NOT NULL AND timestamp >= ${dateFrom}::timestamp AND event_type = ${eventType}
+        FROM events WHERE browser IS NOT NULL AND timestamp >= ${dateFrom}::timestamp AND site_id = ${siteId} AND event_type = ${eventType} AND site_id = ${siteId}
         GROUP BY browser ORDER BY count DESC LIMIT 10
       `;
 
       osBreakdown = await sql`
         SELECT os as name, COUNT(*) as count
-        FROM events WHERE os IS NOT NULL AND timestamp >= ${dateFrom}::timestamp AND event_type = ${eventType}
+        FROM events WHERE os IS NOT NULL AND timestamp >= ${dateFrom}::timestamp AND site_id = ${siteId} AND event_type = ${eventType} AND site_id = ${siteId}
         GROUP BY os ORDER BY count DESC LIMIT 10
       `;
 
       topPages = await sql`
         SELECT page_path, COUNT(*) as count
-        FROM events WHERE event_type = ${eventType} AND page_path IS NOT NULL AND timestamp >= ${dateFrom}::timestamp
+        FROM events WHERE event_type = ${eventType} AND site_id = ${siteId} AND page_path IS NOT NULL AND timestamp >= ${dateFrom}::timestamp AND site_id = ${siteId}
         GROUP BY page_path ORDER BY count DESC LIMIT 10
       `;
 
       eventBreakdown = await sql`
         SELECT event_type, COUNT(*) as count
-        FROM events WHERE timestamp >= ${dateFrom}::timestamp AND event_type = ${eventType}
+        FROM events WHERE timestamp >= ${dateFrom}::timestamp AND site_id = ${siteId} AND event_type = ${eventType} AND site_id = ${siteId}
         GROUP BY event_type ORDER BY count DESC
       `;
 
       trafficSources = await sql`
         SELECT COALESCE(utm_source, 'Direct') as source, COUNT(*) as count
-        FROM events WHERE event_type = ${eventType} AND timestamp >= ${dateFrom}::timestamp
+        FROM events WHERE event_type = ${eventType} AND site_id = ${siteId} AND timestamp >= ${dateFrom}::timestamp AND site_id = ${siteId}
         GROUP BY COALESCE(utm_source, 'Direct') ORDER BY count DESC LIMIT 10
       `;
 
       countryBreakdown = await sql`
         SELECT country, COUNT(*) as count
-        FROM events WHERE country IS NOT NULL AND timestamp >= ${dateFrom}::timestamp AND event_type = ${eventType}
+        FROM events WHERE country IS NOT NULL AND timestamp >= ${dateFrom}::timestamp AND site_id = ${siteId} AND event_type = ${eventType} AND site_id = ${siteId}
         GROUP BY country ORDER BY count DESC LIMIT 20
       `;
 
       cityBreakdown = await sql`
         SELECT city, country, COUNT(*) as count
-        FROM events WHERE city IS NOT NULL AND timestamp >= ${dateFrom}::timestamp AND event_type = ${eventType}
+        FROM events WHERE city IS NOT NULL AND timestamp >= ${dateFrom}::timestamp AND site_id = ${siteId} AND event_type = ${eventType} AND site_id = ${siteId}
         GROUP BY city, country ORDER BY count DESC LIMIT 20
       `;
 
@@ -467,10 +467,10 @@ export async function GET(request: NextRequest) {
       // Country + Event Type filter
       statsResult = await sql`
         SELECT 
-          (SELECT COUNT(*) FROM visitors) as total_visitors,
-          (SELECT COUNT(*) FROM events WHERE event_type = 'page_view' AND country = ${country}) as total_page_views,
-          (SELECT COUNT(*) FROM events WHERE country = ${country} AND event_type = ${eventType}) as total_events,
-          (SELECT COUNT(*) FROM visitors WHERE is_identified = true) as identified_visitors
+          (SELECT COUNT(*) FROM visitors WHERE site_id = ${siteId}) as total_visitors,
+          (SELECT COUNT(*) FROM events WHERE event_type = 'page_view' AND country = ${country} AND site_id = ${siteId}) as total_page_views,
+          (SELECT COUNT(*) FROM events WHERE country = ${country} AND site_id = ${siteId} AND event_type = ${eventType} AND site_id = ${siteId}) as total_events,
+          (SELECT COUNT(*) FROM visitors WHERE is_identified = true AND site_id = ${siteId}) as identified_visitors
       `;
 
       recentEvents = await sql`
@@ -489,49 +489,49 @@ export async function GET(request: NextRequest) {
 
       deviceBreakdown = await sql`
         SELECT device_type, COUNT(*) as count
-        FROM events WHERE device_type IS NOT NULL AND country = ${country} AND event_type = ${eventType}
+        FROM events WHERE device_type IS NOT NULL AND country = ${country} AND site_id = ${siteId} AND event_type = ${eventType} AND site_id = ${siteId}
         GROUP BY device_type ORDER BY count DESC
       `;
 
       browserBreakdown = await sql`
         SELECT browser as name, COUNT(*) as count
-        FROM events WHERE browser IS NOT NULL AND country = ${country} AND event_type = ${eventType}
+        FROM events WHERE browser IS NOT NULL AND country = ${country} AND site_id = ${siteId} AND event_type = ${eventType} AND site_id = ${siteId}
         GROUP BY browser ORDER BY count DESC LIMIT 10
       `;
 
       osBreakdown = await sql`
         SELECT os as name, COUNT(*) as count
-        FROM events WHERE os IS NOT NULL AND country = ${country} AND event_type = ${eventType}
+        FROM events WHERE os IS NOT NULL AND country = ${country} AND site_id = ${siteId} AND event_type = ${eventType} AND site_id = ${siteId}
         GROUP BY os ORDER BY count DESC LIMIT 10
       `;
 
       topPages = await sql`
         SELECT page_path, COUNT(*) as count
-        FROM events WHERE event_type = ${eventType} AND page_path IS NOT NULL AND country = ${country}
+        FROM events WHERE event_type = ${eventType} AND site_id = ${siteId} AND page_path IS NOT NULL AND country = ${country} AND site_id = ${siteId}
         GROUP BY page_path ORDER BY count DESC LIMIT 10
       `;
 
       eventBreakdown = await sql`
         SELECT event_type, COUNT(*) as count
-        FROM events WHERE country = ${country} AND event_type = ${eventType}
+        FROM events WHERE country = ${country} AND site_id = ${siteId} AND event_type = ${eventType} AND site_id = ${siteId}
         GROUP BY event_type ORDER BY count DESC
       `;
 
       trafficSources = await sql`
         SELECT COALESCE(utm_source, 'Direct') as source, COUNT(*) as count
-        FROM events WHERE event_type = ${eventType} AND country = ${country}
+        FROM events WHERE event_type = ${eventType} AND site_id = ${siteId} AND country = ${country} AND site_id = ${siteId}
         GROUP BY COALESCE(utm_source, 'Direct') ORDER BY count DESC LIMIT 10
       `;
 
       countryBreakdown = await sql`
         SELECT country, COUNT(*) as count
-        FROM events WHERE country IS NOT NULL AND country = ${country} AND event_type = ${eventType}
+        FROM events WHERE country IS NOT NULL AND country = ${country} AND site_id = ${siteId} AND event_type = ${eventType} AND site_id = ${siteId}
         GROUP BY country ORDER BY count DESC LIMIT 20
       `;
 
       cityBreakdown = await sql`
         SELECT city, country, COUNT(*) as count
-        FROM events WHERE city IS NOT NULL AND country = ${country} AND event_type = ${eventType}
+        FROM events WHERE city IS NOT NULL AND country = ${country} AND site_id = ${siteId} AND event_type = ${eventType} AND site_id = ${siteId}
         GROUP BY city, country ORDER BY count DESC LIMIT 20
       `;
 
@@ -539,10 +539,10 @@ export async function GET(request: NextRequest) {
       // All three filters
       statsResult = await sql`
         SELECT 
-          (SELECT COUNT(*) FROM visitors) as total_visitors,
-          (SELECT COUNT(*) FROM events WHERE event_type = 'page_view' AND timestamp >= ${dateFrom}::timestamp AND country = ${country}) as total_page_views,
-          (SELECT COUNT(*) FROM events WHERE timestamp >= ${dateFrom}::timestamp AND country = ${country} AND event_type = ${eventType}) as total_events,
-          (SELECT COUNT(*) FROM visitors WHERE is_identified = true) as identified_visitors
+          (SELECT COUNT(*) FROM visitors WHERE site_id = ${siteId}) as total_visitors,
+          (SELECT COUNT(*) FROM events WHERE event_type = 'page_view' AND timestamp >= ${dateFrom}::timestamp AND site_id = ${siteId} AND country = ${country} AND site_id = ${siteId}) as total_page_views,
+          (SELECT COUNT(*) FROM events WHERE timestamp >= ${dateFrom}::timestamp AND site_id = ${siteId} AND country = ${country} AND site_id = ${siteId} AND event_type = ${eventType} AND site_id = ${siteId}) as total_events,
+          (SELECT COUNT(*) FROM visitors WHERE is_identified = true AND site_id = ${siteId}) as identified_visitors
       `;
 
       recentEvents = await sql`
@@ -561,49 +561,49 @@ export async function GET(request: NextRequest) {
 
       deviceBreakdown = await sql`
         SELECT device_type, COUNT(*) as count
-        FROM events WHERE device_type IS NOT NULL AND timestamp >= ${dateFrom}::timestamp AND country = ${country} AND event_type = ${eventType}
+        FROM events WHERE device_type IS NOT NULL AND timestamp >= ${dateFrom}::timestamp AND site_id = ${siteId} AND country = ${country} AND site_id = ${siteId} AND event_type = ${eventType} AND site_id = ${siteId}
         GROUP BY device_type ORDER BY count DESC
       `;
 
       browserBreakdown = await sql`
         SELECT browser as name, COUNT(*) as count
-        FROM events WHERE browser IS NOT NULL AND timestamp >= ${dateFrom}::timestamp AND country = ${country} AND event_type = ${eventType}
+        FROM events WHERE browser IS NOT NULL AND timestamp >= ${dateFrom}::timestamp AND site_id = ${siteId} AND country = ${country} AND site_id = ${siteId} AND event_type = ${eventType} AND site_id = ${siteId}
         GROUP BY browser ORDER BY count DESC LIMIT 10
       `;
 
       osBreakdown = await sql`
         SELECT os as name, COUNT(*) as count
-        FROM events WHERE os IS NOT NULL AND timestamp >= ${dateFrom}::timestamp AND country = ${country} AND event_type = ${eventType}
+        FROM events WHERE os IS NOT NULL AND timestamp >= ${dateFrom}::timestamp AND site_id = ${siteId} AND country = ${country} AND site_id = ${siteId} AND event_type = ${eventType} AND site_id = ${siteId}
         GROUP BY os ORDER BY count DESC LIMIT 10
       `;
 
       topPages = await sql`
         SELECT page_path, COUNT(*) as count
-        FROM events WHERE event_type = ${eventType} AND page_path IS NOT NULL AND timestamp >= ${dateFrom}::timestamp AND country = ${country}
+        FROM events WHERE event_type = ${eventType} AND site_id = ${siteId} AND page_path IS NOT NULL AND timestamp >= ${dateFrom}::timestamp AND site_id = ${siteId} AND country = ${country} AND site_id = ${siteId}
         GROUP BY page_path ORDER BY count DESC LIMIT 10
       `;
 
       eventBreakdown = await sql`
         SELECT event_type, COUNT(*) as count
-        FROM events WHERE timestamp >= ${dateFrom}::timestamp AND country = ${country} AND event_type = ${eventType}
+        FROM events WHERE timestamp >= ${dateFrom}::timestamp AND site_id = ${siteId} AND country = ${country} AND site_id = ${siteId} AND event_type = ${eventType} AND site_id = ${siteId}
         GROUP BY event_type ORDER BY count DESC
       `;
 
       trafficSources = await sql`
         SELECT COALESCE(utm_source, 'Direct') as source, COUNT(*) as count
-        FROM events WHERE event_type = ${eventType} AND timestamp >= ${dateFrom}::timestamp AND country = ${country}
+        FROM events WHERE event_type = ${eventType} AND site_id = ${siteId} AND timestamp >= ${dateFrom}::timestamp AND site_id = ${siteId} AND country = ${country} AND site_id = ${siteId}
         GROUP BY COALESCE(utm_source, 'Direct') ORDER BY count DESC LIMIT 10
       `;
 
       countryBreakdown = await sql`
         SELECT country, COUNT(*) as count
-        FROM events WHERE country IS NOT NULL AND timestamp >= ${dateFrom}::timestamp AND country = ${country} AND event_type = ${eventType}
+        FROM events WHERE country IS NOT NULL AND timestamp >= ${dateFrom}::timestamp AND site_id = ${siteId} AND country = ${country} AND site_id = ${siteId} AND event_type = ${eventType} AND site_id = ${siteId}
         GROUP BY country ORDER BY count DESC LIMIT 20
       `;
 
       cityBreakdown = await sql`
         SELECT city, country, COUNT(*) as count
-        FROM events WHERE city IS NOT NULL AND timestamp >= ${dateFrom}::timestamp AND country = ${country} AND event_type = ${eventType}
+        FROM events WHERE city IS NOT NULL AND timestamp >= ${dateFrom}::timestamp AND site_id = ${siteId} AND country = ${country} AND site_id = ${siteId} AND event_type = ${eventType} AND site_id = ${siteId}
         GROUP BY city, country ORDER BY count DESC LIMIT 20
       `;
     }
@@ -621,10 +621,10 @@ export async function GET(request: NextRequest) {
 
     // Get filter options (always unfiltered)
     const countries = await sql`
-      SELECT DISTINCT country FROM events WHERE country IS NOT NULL ORDER BY country
+      SELECT DISTINCT country FROM events WHERE country IS NOT NULL  AND site_id = ${siteId} ORDER BY country
     `;
     const eventTypes = await sql`
-      SELECT DISTINCT event_type FROM events ORDER BY event_type
+      SELECT DISTINCT event_type FROM events WHERE site_id = ${siteId} ORDER BY event_type
     `;
 
     return NextResponse.json({
