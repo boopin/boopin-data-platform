@@ -6,12 +6,18 @@ export const dynamic = 'force-dynamic';
 export async function POST(request: NextRequest) {
   try {
     const body = await request.json();
-    const { rules } = body;
+    const { rules, site_id } = body;
 
-    const visitors = await sql`SELECT id, is_identified FROM visitors`;
+    // Site ID is required for multi-site support
+    if (!site_id) {
+      return NextResponse.json({ error: 'site_id is required' }, { status: 400 });
+    }
+
+    const visitors = await sql`SELECT id, is_identified FROM visitors WHERE site_id = ${site_id}`;
     const events = await sql`
       SELECT visitor_id, event_type, page_path, device_type, country, city, utm_source, timestamp
       FROM events
+      WHERE site_id = ${site_id}
     `;
 
     const visitorEvents: Record<string, Record<string, unknown>[]> = {};

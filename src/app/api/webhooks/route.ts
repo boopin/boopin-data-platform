@@ -29,12 +29,20 @@ async function ensureWebhooksTable() {
 }
 
 // GET - List all webhooks
-export async function GET() {
+export async function GET(request: NextRequest) {
   try {
     await ensureWebhooksTable();
 
+    const { searchParams } = new URL(request.url);
+    const siteId = searchParams.get('site_id');
+
+    // Site ID is required for multi-site support
+    if (!siteId) {
+      return NextResponse.json({ error: 'site_id is required' }, { status: 400 });
+    }
+
     const webhooks = await sql`
-      SELECT * FROM webhooks ORDER BY created_at DESC
+      SELECT * FROM webhooks WHERE site_id = ${siteId} ORDER BY created_at DESC
     `;
 
     return NextResponse.json({ webhooks });
@@ -50,7 +58,12 @@ export async function POST(request: NextRequest) {
     await ensureWebhooksTable();
 
     const body = await request.json();
-    const { name, url, event_types } = body;
+    const { name, url, event_types, site_id } = body;
+
+    // Site ID is required for multi-site support
+    if (!site_id) {
+      return NextResponse.json({ error: 'site_id is required' }, { status: 400 });
+    }
 
     if (!name || !url) {
       return NextResponse.json(
@@ -73,12 +86,13 @@ export async function POST(request: NextRequest) {
     const secret = crypto.randomBytes(32).toString('hex');
 
     const result = await sql`
-      INSERT INTO webhooks (name, url, event_types, secret)
+      INSERT INTO webhooks (name, url, event_types, secret, site_id)
       VALUES (
         ${name},
         ${url},
         ${event_types ? JSON.stringify(event_types) : null},
-        ${secret}
+        ${secret},
+        ${site_id}
       )
       RETURNING *
     `;
@@ -97,10 +111,15 @@ export async function POST(request: NextRequest) {
 export async function PUT(request: NextRequest) {
   try {
     const body = await request.json();
-    const { id, name, url, event_types, is_active } = body;
+    const { id, name, url, event_types, is_active, site_id } = body;
 
     if (!id) {
       return NextResponse.json({ error: 'Webhook ID is required' }, { status: 400 });
+    }
+
+    // Site ID is required for multi-site support
+    if (!site_id) {
+      return NextResponse.json({ error: 'site_id is required' }, { status: 400 });
     }
 
     // Validate URL if provided
@@ -122,7 +141,7 @@ export async function PUT(request: NextRequest) {
         url = COALESCE(${url}, url),
         event_types = COALESCE(${event_types ? JSON.stringify(event_types) : null}, event_types),
         is_active = COALESCE(${is_active}, is_active)
-      WHERE id = ${id}
+      WHERE id = ${id} AND site_id = ${site_id}
       RETURNING *
     `;
 
@@ -142,13 +161,19 @@ export async function DELETE(request: NextRequest) {
   try {
     const { searchParams } = new URL(request.url);
     const id = searchParams.get('id');
+    const siteId = searchParams.get('site_id');
 
     if (!id) {
       return NextResponse.json({ error: 'Webhook ID is required' }, { status: 400 });
     }
 
+    // Site ID is required for multi-site support
+    if (!siteId) {
+      return NextResponse.json({ error: 'site_id is required' }, { status: 400 });
+    }
+
     const result = await sql`
-      DELETE FROM webhooks WHERE id = ${id} RETURNING *
+      DELETE FROM webhooks WHERE id = ${id} AND site_id = ${siteId} RETURNING *
     `;
 
     if (result.length === 0) {
@@ -166,15 +191,20 @@ export async function DELETE(request: NextRequest) {
 export async function PATCH(request: NextRequest) {
   try {
     const body = await request.json();
-    const { id } = body;
+    const { id, site_id } = body;
 
     if (!id) {
       return NextResponse.json({ error: 'Webhook ID is required' }, { status: 400 });
     }
 
+    // Site ID is required for multi-site support
+    if (!site_id) {
+      return NextResponse.json({ error: 'site_id is required' }, { status: 400 });
+    }
+
     // Get webhook
     const webhooks = await sql`
-      SELECT * FROM webhooks WHERE id = ${id}
+      SELECT * FROM webhooks WHERE id = ${id} AND site_id = ${site_id}
     `;
 
     if (webhooks.length === 0) {

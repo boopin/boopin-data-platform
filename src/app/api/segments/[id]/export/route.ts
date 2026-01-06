@@ -10,13 +10,20 @@ export async function GET(
 ) {
   try {
     const { id: segmentId } = await params;
-    const format = request.nextUrl.searchParams.get('format') || 'csv';
+    const { searchParams } = request.nextUrl;
+    const format = searchParams.get('format') || 'csv';
+    const siteId = searchParams.get('site_id');
+
+    // Site ID is required for multi-site support
+    if (!siteId) {
+      return NextResponse.json({ error: 'site_id is required' }, { status: 400 });
+    }
 
     // Get segment
     const segmentResult = await sql`
       SELECT id, name, description, rules
       FROM segments
-      WHERE id = ${segmentId}
+      WHERE id = ${segmentId} AND site_id = ${siteId}
     `;
 
     if (segmentResult.length === 0) {
@@ -30,11 +37,13 @@ export async function GET(
     const visitors = await sql`
       SELECT id, anonymous_id, email, name, phone, first_seen_at, last_seen_at, visit_count, is_identified
       FROM visitors
+      WHERE site_id = ${siteId}
     `;
 
     const events = await sql`
       SELECT visitor_id, event_type, page_path, device_type, country, city, utm_source, timestamp
       FROM events
+      WHERE site_id = ${siteId}
     `;
 
     // Group events by visitor
