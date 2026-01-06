@@ -57,48 +57,49 @@ export async function GET(request: NextRequest) {
 
       deviceBreakdown = await sql`
         SELECT device_type, COUNT(*) as count
-        FROM events WHERE device_type IS NOT NULL
+        FROM events WHERE device_type IS NOT NULL AND site_id = ${siteId}
         GROUP BY device_type ORDER BY count DESC
       `;
 
       browserBreakdown = await sql`
         SELECT browser as name, COUNT(*) as count
-        FROM events WHERE browser IS NOT NULL
+        FROM events WHERE browser IS NOT NULL AND site_id = ${siteId}
         GROUP BY browser ORDER BY count DESC LIMIT 10
       `;
 
       osBreakdown = await sql`
         SELECT os as name, COUNT(*) as count
-        FROM events WHERE os IS NOT NULL
+        FROM events WHERE os IS NOT NULL AND site_id = ${siteId}
         GROUP BY os ORDER BY count DESC LIMIT 10
       `;
 
       topPages = await sql`
         SELECT page_path, COUNT(*) as count
-        FROM events WHERE event_type = 'page_view' AND page_path IS NOT NULL
+        FROM events WHERE event_type = 'page_view' AND page_path IS NOT NULL AND site_id = ${siteId}
         GROUP BY page_path ORDER BY count DESC LIMIT 10
       `;
 
       eventBreakdown = await sql`
         SELECT event_type, COUNT(*) as count
-        FROM events GROUP BY event_type ORDER BY count DESC
+        FROM events WHERE site_id = ${siteId}
+        GROUP BY event_type ORDER BY count DESC
       `;
 
       trafficSources = await sql`
         SELECT COALESCE(utm_source, 'Direct') as source, COUNT(*) as count
-        FROM events WHERE event_type = 'page_view'
+        FROM events WHERE event_type = 'page_view' AND site_id = ${siteId}
         GROUP BY COALESCE(utm_source, 'Direct') ORDER BY count DESC LIMIT 10
       `;
 
       countryBreakdown = await sql`
         SELECT country, COUNT(*) as count
-        FROM events WHERE country IS NOT NULL
+        FROM events WHERE country IS NOT NULL AND site_id = ${siteId}
         GROUP BY country ORDER BY count DESC LIMIT 20
       `;
 
       cityBreakdown = await sql`
         SELECT city, country, COUNT(*) as count
-        FROM events WHERE city IS NOT NULL
+        FROM events WHERE city IS NOT NULL AND site_id = ${siteId}
         GROUP BY city, country ORDER BY count DESC LIMIT 20
       `;
 
