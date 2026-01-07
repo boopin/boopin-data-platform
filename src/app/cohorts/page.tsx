@@ -2,6 +2,7 @@
 
 import { useState, useEffect } from 'react';
 import Link from 'next/link';
+import { useSite } from '../../contexts/SiteContext';
 
 interface Cohort {
   id: string;
@@ -16,6 +17,7 @@ interface Cohort {
 }
 
 export default function CohortsPage() {
+  const { selectedSite, loading: siteLoading } = useSite();
   const [cohorts, setCohorts] = useState<Cohort[]>([]);
   const [loading, setLoading] = useState(true);
   const [showCreateModal, setShowCreateModal] = useState(false);
@@ -30,11 +32,13 @@ export default function CohortsPage() {
 
   useEffect(() => {
     fetchCohorts();
-  }, []);
+  }, [selectedSite]);
 
   const fetchCohorts = async () => {
+    if (!selectedSite) return;
+
     try {
-      const response = await fetch('/api/cohorts');
+      const response = await fetch(`/api/cohorts?site_id=${selectedSite.id}`);
       const data = await response.json();
       setCohorts(data.cohorts || []);
     } catch (error) {
@@ -45,6 +49,8 @@ export default function CohortsPage() {
   };
 
   const createCohort = async () => {
+    if (!selectedSite) return;
+
     try {
       if (!newCohort.name.trim()) {
         alert('Please enter a cohort name');
@@ -54,7 +60,10 @@ export default function CohortsPage() {
       const response = await fetch('/api/cohorts', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(newCohort)
+        body: JSON.stringify({
+          ...newCohort,
+          site_id: selectedSite.id
+        })
       });
 
       if (response.ok) {
@@ -80,9 +89,10 @@ export default function CohortsPage() {
 
   const deleteCohort = async (id: string) => {
     if (!confirm('Are you sure you want to delete this cohort?')) return;
+    if (!selectedSite) return;
 
     try {
-      await fetch(`/api/cohorts?id=${id}`, { method: 'DELETE' });
+      await fetch(`/api/cohorts?id=${id}&site_id=${selectedSite.id}`, { method: 'DELETE' });
       fetchCohorts();
     } catch (error) {
       console.error('Error deleting cohort:', error);

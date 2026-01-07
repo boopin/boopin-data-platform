@@ -2,6 +2,7 @@
 
 import { useEffect, useState } from 'react';
 import Link from 'next/link';
+import { useSite } from '../../contexts/SiteContext';
 
 interface Visitor {
   id: string;
@@ -17,6 +18,7 @@ interface Visitor {
 }
 
 export default function VisitorsPage() {
+  const { selectedSite, loading: siteLoading } = useSite();
   const [visitors, setVisitors] = useState<Visitor[]>([]);
   const [loading, setLoading] = useState(true);
   const [filter, setFilter] = useState<'all' | 'identified' | 'anonymous'>('all');
@@ -24,8 +26,10 @@ export default function VisitorsPage() {
 
   useEffect(() => {
     async function fetchVisitors() {
+      if (!selectedSite) return;
+
       try {
-        const res = await fetch('/api/visitors');
+        const res = await fetch(`/api/visitors?site_id=${selectedSite.id}`);
         const data = await res.json();
         setVisitors(data.visitors || []);
       } catch (err) {
@@ -35,7 +39,7 @@ export default function VisitorsPage() {
       }
     }
     fetchVisitors();
-  }, []);
+  }, [selectedSite]);
 
   const formatDateTime = (timestamp: string) => {
     return new Date(timestamp).toLocaleDateString('en-US', { 
@@ -64,10 +68,18 @@ export default function VisitorsPage() {
   const identifiedCount = visitors.filter(v => v.is_identified).length;
   const anonymousCount = visitors.filter(v => !v.is_identified).length;
 
-  if (loading) {
+  if (siteLoading || loading) {
     return (
       <div style={{ minHeight: '100vh', background: 'linear-gradient(135deg, #0f172a 0%, #1e293b 100%)', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
         <p style={{ color: '#94a3b8' }}>Loading visitors...</p>
+      </div>
+    );
+  }
+
+  if (!selectedSite) {
+    return (
+      <div style={{ minHeight: '100vh', background: 'linear-gradient(135deg, #0f172a 0%, #1e293b 100%)', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+        <p style={{ color: '#94a3b8' }}>No site selected. Please select a site from the dashboard.</p>
       </div>
     );
   }

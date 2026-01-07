@@ -2,6 +2,7 @@
 
 import { useState, useEffect } from 'react';
 import Link from 'next/link';
+import { useSite } from '../../contexts/SiteContext';
 
 interface FunnelStep {
   name: string;
@@ -19,6 +20,7 @@ interface Funnel {
 }
 
 export default function FunnelsPage() {
+  const { selectedSite, loading: siteLoading } = useSite();
   const [funnels, setFunnels] = useState<Funnel[]>([]);
   const [loading, setLoading] = useState(true);
   const [showCreateModal, setShowCreateModal] = useState(false);
@@ -33,11 +35,13 @@ export default function FunnelsPage() {
 
   useEffect(() => {
     fetchFunnels();
-  }, []);
+  }, [selectedSite]);
 
   const fetchFunnels = async () => {
+    if (!selectedSite) return;
+
     try {
-      const response = await fetch('/api/funnels');
+      const response = await fetch(`/api/funnels?site_id=${selectedSite.id}`);
       const data = await response.json();
       setFunnels(data.funnels || []);
     } catch (error) {
@@ -48,6 +52,8 @@ export default function FunnelsPage() {
   };
 
   const createFunnel = async () => {
+    if (!selectedSite) return;
+
     try {
       // Validate
       if (!newFunnel.name.trim()) {
@@ -67,7 +73,8 @@ export default function FunnelsPage() {
         body: JSON.stringify({
           name: newFunnel.name,
           description: newFunnel.description,
-          steps: validSteps
+          steps: validSteps,
+          site_id: selectedSite.id
         })
       });
 
@@ -94,9 +101,10 @@ export default function FunnelsPage() {
 
   const deleteFunnel = async (id: string) => {
     if (!confirm('Are you sure you want to delete this funnel?')) return;
+    if (!selectedSite) return;
 
     try {
-      await fetch(`/api/funnels?id=${id}`, { method: 'DELETE' });
+      await fetch(`/api/funnels?id=${id}&site_id=${selectedSite.id}`, { method: 'DELETE' });
       fetchFunnels();
     } catch (error) {
       console.error('Error deleting funnel:', error);

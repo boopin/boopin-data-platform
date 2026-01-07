@@ -1,6 +1,7 @@
 'use client';
 import { useEffect, useState } from 'react';
 import Link from 'next/link';
+import { useSite } from '../../contexts/SiteContext';
 
 interface Goal {
   id: string;
@@ -19,6 +20,7 @@ interface Goal {
 }
 
 export default function GoalsPage() {
+  const { selectedSite, loading: siteLoading } = useSite();
   const [goals, setGoals] = useState<Goal[]>([]);
   const [loading, setLoading] = useState(true);
   const [showModal, setShowModal] = useState(false);
@@ -31,8 +33,10 @@ export default function GoalsPage() {
   });
 
   const fetchGoals = async () => {
+    if (!selectedSite) return;
+
     try {
-      const response = await fetch('/api/goals');
+      const response = await fetch(`/api/goals?site_id=${selectedSite.id}`);
       if (!response.ok) throw new Error('Failed to fetch');
       const result = await response.json();
       setGoals(result.goals || []);
@@ -45,17 +49,18 @@ export default function GoalsPage() {
 
   useEffect(() => {
     fetchGoals();
-  }, []);
+  }, [selectedSite]);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
+    if (!selectedSite) return;
 
     try {
       const url = '/api/goals';
       const method = editingGoal ? 'PUT' : 'POST';
       const body = editingGoal
-        ? { ...formData, id: editingGoal.id }
-        : formData;
+        ? { ...formData, id: editingGoal.id, site_id: selectedSite.id }
+        : { ...formData, site_id: selectedSite.id };
 
       const response = await fetch(url, {
         method,
@@ -88,9 +93,10 @@ export default function GoalsPage() {
 
   const handleDelete = async (id: string) => {
     if (!confirm('Are you sure you want to delete this goal?')) return;
+    if (!selectedSite) return;
 
     try {
-      const response = await fetch(`/api/goals?id=${id}`, { method: 'DELETE' });
+      const response = await fetch(`/api/goals?id=${id}&site_id=${selectedSite.id}`, { method: 'DELETE' });
       if (!response.ok) throw new Error('Failed to delete');
       fetchGoals();
     } catch (error) {
@@ -105,12 +111,23 @@ export default function GoalsPage() {
     setShowModal(true);
   };
 
-  if (loading) {
+  if (siteLoading || loading) {
     return (
       <div style={{ minHeight: '100vh', background: 'linear-gradient(135deg, #0f172a 0%, #1e293b 100%)', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
         <div style={{ textAlign: 'center', color: '#e2e8f0' }}>
           <div style={{ fontSize: '48px', marginBottom: '16px' }}>🎯</div>
           <p>Loading goals...</p>
+        </div>
+      </div>
+    );
+  }
+
+  if (!selectedSite) {
+    return (
+      <div style={{ minHeight: '100vh', background: 'linear-gradient(135deg, #0f172a 0%, #1e293b 100%)', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+        <div style={{ textAlign: 'center', color: '#e2e8f0' }}>
+          <div style={{ fontSize: '48px', marginBottom: '16px' }}>🎯</div>
+          <p>No site selected. Please select a site from the dashboard.</p>
         </div>
       </div>
     );

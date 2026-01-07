@@ -1,6 +1,7 @@
 'use client';
 import { useEffect, useState } from 'react';
 import Link from 'next/link';
+import { useSite } from '../../contexts/SiteContext';
 
 interface Stats {
   totalVisitors: number;
@@ -54,6 +55,7 @@ interface ReportData {
 }
 
 export default function ReportsPage() {
+  const { selectedSite, loading: siteLoading } = useSite();
   const [data, setData] = useState<ReportData | null>(null);
   const [loading, setLoading] = useState(true);
   const [mode, setMode] = useState<string>('wow');
@@ -62,9 +64,14 @@ export default function ReportsPage() {
 
   useEffect(() => {
     const fetchData = async () => {
+      if (!selectedSite) return;
+
       try {
         setLoading(true);
-        const params = new URLSearchParams({ mode });
+        const params = new URLSearchParams({
+          mode,
+          site_id: selectedSite.id
+        });
         if (mode === 'custom' && customFrom && customTo) {
           params.append('from', customFrom);
           params.append('to', customTo);
@@ -83,7 +90,7 @@ export default function ReportsPage() {
     if (mode !== 'custom' || (customFrom && customTo)) {
       fetchData();
     }
-  }, [mode, customFrom, customTo]);
+  }, [mode, customFrom, customTo, selectedSite]);
 
   const formatDate = (dateString: string) => {
     return new Date(dateString).toLocaleDateString('en-US', {

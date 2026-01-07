@@ -2,6 +2,7 @@
 
 import { useEffect, useState } from 'react';
 import Link from 'next/link';
+import { useSite } from '../../contexts/SiteContext';
 
 interface Segment {
   id: string;
@@ -14,13 +15,16 @@ interface Segment {
 }
 
 export default function SegmentsPage() {
+  const { selectedSite, loading: siteLoading } = useSite();
   const [segments, setSegments] = useState<Segment[]>([]);
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
     async function fetchSegments() {
+      if (!selectedSite) return;
+
       try {
-        const res = await fetch('/api/segments');
+        const res = await fetch(`/api/segments?site_id=${selectedSite.id}`);
         const data = await res.json();
         setSegments(data.segments || []);
       } catch (err) {
@@ -30,13 +34,14 @@ export default function SegmentsPage() {
       }
     }
     fetchSegments();
-  }, []);
+  }, [selectedSite]);
 
   const handleDelete = async (id: string) => {
     if (!confirm('Are you sure you want to delete this segment?')) return;
-    
+    if (!selectedSite) return;
+
     try {
-      await fetch(`/api/segments/${id}`, { method: 'DELETE' });
+      await fetch(`/api/segments/${id}?site_id=${selectedSite.id}`, { method: 'DELETE' });
       setSegments(segments.filter(s => s.id !== id));
     } catch (err) {
       console.error(err);
@@ -49,10 +54,18 @@ export default function SegmentsPage() {
     });
   };
 
-  if (loading) {
+  if (siteLoading || loading) {
     return (
       <div style={{ minHeight: '100vh', background: 'linear-gradient(135deg, #0f172a 0%, #1e293b 100%)', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
         <p style={{ color: '#94a3b8' }}>Loading...</p>
+      </div>
+    );
+  }
+
+  if (!selectedSite) {
+    return (
+      <div style={{ minHeight: '100vh', background: 'linear-gradient(135deg, #0f172a 0%, #1e293b 100%)', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+        <p style={{ color: '#94a3b8' }}>No site selected. Please select a site from the dashboard.</p>
       </div>
     );
   }

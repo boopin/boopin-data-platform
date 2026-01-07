@@ -1,6 +1,7 @@
 'use client';
 import { useEffect, useState } from 'react';
 import { useParams, useSearchParams } from 'next/navigation';
+import { useSite } from '../../../contexts/SiteContext';
 
 interface VisitorData {
   visitor: {
@@ -44,6 +45,7 @@ interface IdentityRecord {
 }
 
 export default function VisitorProfilePage() {
+  const { selectedSite, loading: siteLoading } = useSite();
   const params = useParams();
   const searchParams = useSearchParams();
   const [data, setData] = useState<VisitorData | null>(null);
@@ -56,8 +58,10 @@ export default function VisitorProfilePage() {
 
   useEffect(() => {
     const fetchVisitor = async () => {
+      if (!selectedSite) return;
+
       try {
-        const response = await fetch(`/api/visitors/${params.id}`);
+        const response = await fetch(`/api/visitors/${params.id}?site_id=${selectedSite.id}`);
         if (!response.ok) throw new Error('Visitor not found');
         const result = await response.json();
         setData(result);
@@ -72,7 +76,7 @@ export default function VisitorProfilePage() {
     if (params.id) {
       fetchVisitor();
     }
-  }, [params.id]);
+  }, [params.id, selectedSite]);
 
   // Extract all identity events and build history
   const getIdentityHistory = (): IdentityRecord[] => {
