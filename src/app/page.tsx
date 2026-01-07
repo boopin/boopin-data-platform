@@ -1,6 +1,7 @@
 'use client';
 import { useEffect, useState } from 'react';
 import SiteSelector from '../components/SiteSelector';
+import Navigation from '../components/Navigation';
 import { useSite } from '../contexts/SiteContext';
 
 interface DashboardData {
@@ -310,19 +311,7 @@ export default function Dashboard() {
           <p style={{ margin: '4px 0 0', color: '#94a3b8', fontSize: '14px' }}>Real-time visitor intelligence</p>
         </div>
         <div style={{ display: 'flex', alignItems: 'center', gap: '24px' }}>
-          <nav style={{ display: 'flex', gap: '16px' }}>
-            <a href="/" style={{ color: '#22d3ee', textDecoration: 'none', fontSize: '14px', fontWeight: 600 }}>Dashboard</a>
-            <a href="/visitors" style={{ color: '#94a3b8', textDecoration: 'none', fontSize: '14px' }}>Visitors</a>
-            <a href="/segments" style={{ color: '#94a3b8', textDecoration: 'none', fontSize: '14px' }}>Segments</a>
-            <a href="/reports" style={{ color: '#94a3b8', textDecoration: 'none', fontSize: '14px' }}>Reports</a>
-            <a href="/live" style={{ color: '#94a3b8', textDecoration: 'none', fontSize: '14px' }}>Live</a>
-            <a href="/goals" style={{ color: '#94a3b8', textDecoration: 'none', fontSize: '14px' }}>Goals</a>
-            <a href="/funnels" style={{ color: '#94a3b8', textDecoration: 'none', fontSize: '14px' }}>Funnels</a>
-            <a href="/cohorts" style={{ color: '#94a3b8', textDecoration: 'none', fontSize: '14px' }}>Cohorts</a>
-            <a href="/sites" style={{ color: '#94a3b8', textDecoration: 'none', fontSize: '14px' }}>Sites</a>
-            <a href="/settings/api-keys" style={{ color: '#94a3b8', textDecoration: 'none', fontSize: '14px' }}>API Keys</a>
-            <a href="/settings/webhooks" style={{ color: '#94a3b8', textDecoration: 'none', fontSize: '14px' }}>Webhooks</a>
-          </nav>
+          <Navigation />
           <SiteSelector />
           <div style={{ textAlign: 'right' }}>
             <p style={{ color: '#e2e8f0', margin: 0, fontSize: '14px', fontWeight: 500 }}>{currentTime.toLocaleTimeString()}</p>
