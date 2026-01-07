@@ -3,6 +3,7 @@
 import { useEffect, useState } from 'react';
 import Link from 'next/link';
 import { useSite } from '../../contexts/SiteContext';
+import Navigation from '../../components/Navigation';
 
 interface ErrorEvent {
   id: string;
@@ -108,13 +109,7 @@ export default function ErrorsPage() {
               </div>
             </Link>
           </div>
-          <nav style={{ display: 'flex', gap: '16px' }}>
-            <Link href="/" style={{ color: '#94a3b8', textDecoration: 'none', fontSize: '14px' }}>Dashboard</Link>
-            <Link href="/visitors" style={{ color: '#94a3b8', textDecoration: 'none', fontSize: '14px' }}>Visitors</Link>
-            <Link href="/errors" style={{ color: '#22d3ee', textDecoration: 'none', fontSize: '14px', fontWeight: 600 }}>Errors</Link>
-            <Link href="/goals" style={{ color: '#94a3b8', textDecoration: 'none', fontSize: '14px' }}>Goals</Link>
-            <Link href="/funnels" style={{ color: '#94a3b8', textDecoration: 'none', fontSize: '14px' }}>Funnels</Link>
-          </nav>
+          <Navigation />
         </div>
       </header>
 
