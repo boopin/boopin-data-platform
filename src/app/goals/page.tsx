@@ -111,6 +111,44 @@ export default function GoalsPage() {
     setShowModal(true);
   };
 
+  const exportToCSV = () => {
+    const headers = ['Name', 'Type', 'Target Value', 'Description', 'Total Completions', 'Today', 'This Week', 'This Month', 'Created'];
+    const rows = goals.map(g => [
+      g.name,
+      g.type,
+      g.target_value,
+      g.description || '',
+      g.stats?.completions || 0,
+      g.stats?.completionsToday || 0,
+      g.stats?.completionsThisWeek || 0,
+      g.stats?.completionsThisMonth || 0,
+      new Date(g.created_at).toLocaleDateString()
+    ]);
+
+    const csvContent = [
+      headers.join(','),
+      ...rows.map(row => row.map(cell => `"${cell}"`).join(','))
+    ].join('\n');
+
+    const blob = new Blob([csvContent], { type: 'text/csv' });
+    const url = window.URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = `goals-${new Date().toISOString().split('T')[0]}.csv`;
+    a.click();
+    window.URL.revokeObjectURL(url);
+  };
+
+  const exportToJSON = () => {
+    const blob = new Blob([JSON.stringify(goals, null, 2)], { type: 'application/json' });
+    const url = window.URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = `goals-${new Date().toISOString().split('T')[0]}.json`;
+    a.click();
+    window.URL.revokeObjectURL(url);
+  };
+
   if (siteLoading || loading) {
     return (
       <div style={{ minHeight: '100vh', background: 'linear-gradient(135deg, #0f172a 0%, #1e293b 100%)', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
@@ -173,21 +211,53 @@ export default function GoalsPage() {
               Track conversions and important events
             </p>
           </div>
-          <button
-            onClick={handleNewGoal}
-            style={{
-              background: 'linear-gradient(135deg, #06b6d4, #3b82f6)',
-              color: '#fff',
-              border: 'none',
-              borderRadius: '8px',
-              padding: '12px 24px',
-              fontSize: '14px',
-              fontWeight: 600,
-              cursor: 'pointer'
-            }}
-          >
-            + New Goal
-          </button>
+          <div style={{ display: 'flex', gap: '8px' }}>
+            <button
+              onClick={exportToCSV}
+              style={{
+                background: '#10b981',
+                color: '#fff',
+                border: 'none',
+                borderRadius: '8px',
+                padding: '10px 16px',
+                fontSize: '13px',
+                fontWeight: 600,
+                cursor: 'pointer'
+              }}
+            >
+              📊 CSV
+            </button>
+            <button
+              onClick={exportToJSON}
+              style={{
+                background: '#6366f1',
+                color: '#fff',
+                border: 'none',
+                borderRadius: '8px',
+                padding: '10px 16px',
+                fontSize: '13px',
+                fontWeight: 600,
+                cursor: 'pointer'
+              }}
+            >
+              📦 JSON
+            </button>
+            <button
+              onClick={handleNewGoal}
+              style={{
+                background: 'linear-gradient(135deg, #06b6d4, #3b82f6)',
+                color: '#fff',
+                border: 'none',
+                borderRadius: '8px',
+                padding: '12px 24px',
+                fontSize: '14px',
+                fontWeight: 600,
+                cursor: 'pointer'
+              }}
+            >
+              + New Goal
+            </button>
+          </div>
         </div>
 
         {/* Goals Grid */}

@@ -178,6 +178,42 @@
   }
 
   // ============================================
+  // AUTO-TRACKING: JAVASCRIPT ERRORS
+  // ============================================
+
+  function trackErrors() {
+    // Track runtime errors
+    window.addEventListener('error', function(event) {
+      var error = event.error || {};
+
+      sendEvent('javascript_error', {
+        message: event.message || 'Unknown error',
+        stack: error.stack || null,
+        filename: event.filename || null,
+        lineno: event.lineno || null,
+        colno: event.colno || null,
+        error_type: error.name || 'Error',
+        user_agent: navigator.userAgent,
+        page_url: window.location.href
+      });
+    });
+
+    // Track unhandled promise rejections
+    window.addEventListener('unhandledrejection', function(event) {
+      var reason = event.reason || {};
+
+      sendEvent('javascript_error', {
+        message: reason.message || event.reason || 'Unhandled Promise Rejection',
+        stack: reason.stack || null,
+        error_type: 'UnhandledPromiseRejection',
+        user_agent: navigator.userAgent,
+        page_url: window.location.href,
+        promise_rejection: true
+      });
+    });
+  }
+
+  // ============================================
   // AUTO-TRACKING: PAGE VIEWS
   // ============================================
 
@@ -793,7 +829,8 @@
         trackTime();
         trackPageLeave();
         trackCartAbandonment();
-        
+        trackErrors();  // Added error tracking
+
         console.log('[PulseAnalytics] Initialized successfully');
         
       } else if (cmd === 'track') {

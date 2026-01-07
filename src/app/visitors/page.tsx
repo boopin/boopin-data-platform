@@ -42,9 +42,59 @@ export default function VisitorsPage() {
   }, [selectedSite]);
 
   const formatDateTime = (timestamp: string) => {
-    return new Date(timestamp).toLocaleDateString('en-US', { 
+    return new Date(timestamp).toLocaleDateString('en-US', {
       month: 'short', day: 'numeric', hour: '2-digit', minute: '2-digit'
     });
+  };
+
+  const exportToCSV = () => {
+    const headers = ['ID', 'Anonymous ID', 'Name', 'Email', 'Phone', 'Type', 'Visit Count', 'First Seen', 'Last Seen'];
+    const rows = filteredVisitors.map(v => [
+      v.id,
+      v.anonymous_id,
+      v.name || '',
+      v.email || '',
+      v.phone || '',
+      v.is_identified ? 'Identified' : 'Anonymous',
+      v.visit_count,
+      v.first_seen_at,
+      v.last_seen_at
+    ]);
+
+    const csvContent = [
+      headers.join(','),
+      ...rows.map(row => row.map(cell => `"${cell}"`).join(','))
+    ].join('\n');
+
+    const blob = new Blob([csvContent], { type: 'text/csv' });
+    const url = window.URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = `visitors-${new Date().toISOString().split('T')[0]}.csv`;
+    a.click();
+    window.URL.revokeObjectURL(url);
+  };
+
+  const exportToJSON = () => {
+    const data = filteredVisitors.map(v => ({
+      id: v.id,
+      anonymous_id: v.anonymous_id,
+      name: v.name,
+      email: v.email,
+      phone: v.phone,
+      is_identified: v.is_identified,
+      visit_count: v.visit_count,
+      first_seen_at: v.first_seen_at,
+      last_seen_at: v.last_seen_at
+    }));
+
+    const blob = new Blob([JSON.stringify(data, null, 2)], { type: 'application/json' });
+    const url = window.URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = `visitors-${new Date().toISOString().split('T')[0]}.json`;
+    a.click();
+    window.URL.revokeObjectURL(url);
   };
 
   const filteredVisitors = visitors.filter(v => {
@@ -117,11 +167,51 @@ export default function VisitorsPage() {
 
       <main style={{ maxWidth: '1400px', margin: '0 auto', padding: '24px' }}>
         {/* Page Header */}
-        <div style={{ marginBottom: '24px' }}>
-          <h2 style={{ margin: 0, fontSize: '24px', color: '#fff', fontWeight: 700 }}>👥 All Visitors</h2>
-          <p style={{ margin: '8px 0 0', color: '#94a3b8', fontSize: '14px' }}>
-            {visitors.length} total visitors • {identifiedCount} identified • {anonymousCount} anonymous
-          </p>
+        <div style={{ marginBottom: '24px', display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start' }}>
+          <div>
+            <h2 style={{ margin: 0, fontSize: '24px', color: '#fff', fontWeight: 700 }}>👥 All Visitors</h2>
+            <p style={{ margin: '8px 0 0', color: '#94a3b8', fontSize: '14px' }}>
+              {visitors.length} total visitors • {identifiedCount} identified • {anonymousCount} anonymous
+            </p>
+          </div>
+          <div style={{ display: 'flex', gap: '8px' }}>
+            <button
+              onClick={exportToCSV}
+              style={{
+                background: '#10b981',
+                color: '#fff',
+                border: 'none',
+                borderRadius: '8px',
+                padding: '10px 16px',
+                fontSize: '13px',
+                fontWeight: 600,
+                cursor: 'pointer',
+                display: 'flex',
+                alignItems: 'center',
+                gap: '6px'
+              }}
+            >
+              📊 Export CSV
+            </button>
+            <button
+              onClick={exportToJSON}
+              style={{
+                background: '#6366f1',
+                color: '#fff',
+                border: 'none',
+                borderRadius: '8px',
+                padding: '10px 16px',
+                fontSize: '13px',
+                fontWeight: 600,
+                cursor: 'pointer',
+                display: 'flex',
+                alignItems: 'center',
+                gap: '6px'
+              }}
+            >
+              📦 Export JSON
+            </button>
+          </div>
         </div>
 
         {/* Filters */}
