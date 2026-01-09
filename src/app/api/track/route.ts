@@ -1,5 +1,6 @@
 import { sql } from '../../../lib/db';
 import { NextRequest, NextResponse } from 'next/server';
+import { hashEmail, hashPhone, hashIP } from '../../../lib/hash';
 
 export const dynamic = 'force-dynamic';
 
@@ -192,18 +193,22 @@ export async function POST(request: NextRequest) {
       throw new Error(`Visitor error: ${visitorError.message}`);
     }
 
-    // Handle identify event - update visitor with user info
+    // Handle identify event - update visitor with user info (HASHED FOR PRIVACY)
     if (eventType === 'identify' || eventType === 'lead_form') {
       const email = properties.email || properties.user_id || null;
       const name = properties.name || null;
       const phone = properties.phone || null;
 
-      if (email || name || phone) {
+      // Hash PII data before storing
+      const emailHash = hashEmail(email);
+      const phoneHash = hashPhone(phone);
+
+      if (emailHash || name || phoneHash) {
         await sql`
-          UPDATE visitors 
-          SET email = COALESCE(${email}, email),
+          UPDATE visitors
+          SET email = COALESCE(${emailHash}, email),
               name = COALESCE(${name}, name),
-              phone = COALESCE(${phone}, phone),
+              phone = COALESCE(${phoneHash}, phone),
               is_identified = true
           WHERE id = ${visitorId}
         `;
@@ -223,6 +228,9 @@ export async function POST(request: NextRequest) {
       scroll_depth: scrollDepth
     };
 
+    // Hash IP address for privacy
+    const ipHash = hashIP(ip);
+
     // Insert event
     let result;
     try {
@@ -238,7 +246,7 @@ export async function POST(request: NextRequest) {
           ${siteId}, ${visitorId}, ${sessionId || null}, ${eventType},
           ${pageUrl || null}, ${pagePath || null}, ${pageTitle || null}, ${referrer || null},
           ${userAgent || null}, ${browser}, ${os}, ${deviceType},
-          ${ip}, ${geo.country}, ${geo.city}, ${geo.region},
+          ${ipHash}, ${geo.country}, ${geo.city}, ${geo.region},
           ${utmSource || null}, ${utmMedium || null}, ${utmCampaign || null}, ${utmTerm || null}, ${utmContent || null},
           ${JSON.stringify(enhancedProperties)}
         )

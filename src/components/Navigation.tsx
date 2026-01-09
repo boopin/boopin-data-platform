@@ -55,7 +55,7 @@ export default function Navigation() {
   ];
 
   return (
-    <nav style={{ display: 'flex', gap: '8px', alignItems: 'center' }}>
+    <nav style={{ display: 'flex', gap: '4px', alignItems: 'center' }}>
       {navItems.map((item) => {
         if (item.standalone) {
           return (
@@ -63,13 +63,14 @@ export default function Navigation() {
               key={item.path}
               href={item.path!}
               style={{
-                color: isActive(item.path!) ? '#22d3ee' : '#94a3b8',
+                color: isActive(item.path!) ? '#2563eb' : '#64748b',
                 textDecoration: 'none',
                 fontSize: '14px',
-                fontWeight: isActive(item.path!) ? 600 : 400,
-                padding: '8px 12px',
-                borderRadius: '6px',
-                transition: 'all 0.2s'
+                fontWeight: isActive(item.path!) ? 600 : 500,
+                padding: '8px 16px',
+                borderRadius: '8px',
+                transition: 'all 0.2s',
+                background: isActive(item.path!) ? '#eff6ff' : 'transparent'
               }}
             >
               {item.label}
@@ -89,13 +90,13 @@ export default function Navigation() {
           >
             <button
               style={{
-                color: isDropdownHighlighted ? '#22d3ee' : '#94a3b8',
-                background: 'transparent',
+                color: isDropdownHighlighted ? '#2563eb' : '#64748b',
+                background: isDropdownHighlighted ? '#eff6ff' : 'transparent',
                 border: 'none',
                 fontSize: '14px',
-                fontWeight: isDropdownHighlighted ? 600 : 400,
-                padding: '8px 12px',
-                borderRadius: '6px',
+                fontWeight: isDropdownHighlighted ? 600 : 500,
+                padding: '8px 16px',
+                borderRadius: '8px',
                 cursor: 'pointer',
                 display: 'flex',
                 alignItems: 'center',
@@ -124,13 +125,13 @@ export default function Navigation() {
                   position: 'absolute',
                   top: '100%',
                   left: 0,
-                  marginTop: '4px',
-                  background: '#1e293b',
-                  border: '1px solid #334155',
-                  borderRadius: '8px',
+                  marginTop: '8px',
+                  background: '#ffffff',
+                  border: '1px solid #e2e8f0',
+                  borderRadius: '12px',
                   padding: '8px',
-                  minWidth: '180px',
-                  boxShadow: '0 4px 6px rgba(0, 0, 0, 0.3)',
+                  minWidth: '200px',
+                  boxShadow: '0 10px 25px rgba(0, 0, 0, 0.1), 0 4px 10px rgba(0, 0, 0, 0.06)',
                   zIndex: 1000
                 }}
               >
@@ -140,18 +141,18 @@ export default function Navigation() {
                     href={subItem.path}
                     style={{
                       display: 'block',
-                      color: isActive(subItem.path) ? '#22d3ee' : '#e2e8f0',
+                      color: isActive(subItem.path) ? '#2563eb' : '#475569',
                       textDecoration: 'none',
                       fontSize: '14px',
-                      fontWeight: isActive(subItem.path) ? 600 : 400,
-                      padding: '10px 12px',
-                      borderRadius: '6px',
-                      background: isActive(subItem.path) ? '#334155' : 'transparent',
+                      fontWeight: isActive(subItem.path) ? 600 : 500,
+                      padding: '10px 14px',
+                      borderRadius: '8px',
+                      background: isActive(subItem.path) ? '#eff6ff' : 'transparent',
                       transition: 'all 0.2s'
                     }}
                     onMouseEnter={(e) => {
                       if (!isActive(subItem.path)) {
-                        e.currentTarget.style.background = '#334155';
+                        e.currentTarget.style.background = '#f8fafc';
                       }
                     }}
                     onMouseLeave={(e) => {

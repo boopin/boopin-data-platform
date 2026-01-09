@@ -2,6 +2,7 @@
 import { useEffect, useState } from 'react';
 import SiteSelector from '../components/SiteSelector';
 import Navigation from '../components/Navigation';
+import Logo from '../components/Logo';
 import { useSite } from '../contexts/SiteContext';
 
 interface DashboardData {
@@ -254,33 +255,35 @@ export default function Dashboard() {
 
   // Styles
   const selectStyle = {
-    padding: '8px 12px',
+    padding: '10px 14px',
     borderRadius: '8px',
-    border: '1px solid #334155',
-    background: '#0f172a',
-    color: '#e2e8f0',
-    fontSize: '13px',
+    border: '1px solid #cbd5e1',
+    background: '#ffffff',
+    color: '#1e293b',
+    fontSize: '14px',
     cursor: 'pointer',
-    outline: 'none'
+    outline: 'none',
+    fontWeight: 500
   };
 
   const buttonStyle = {
-    padding: '8px 16px',
+    padding: '10px 18px',
     borderRadius: '8px',
     border: 'none',
-    background: '#3b82f6',
+    background: '#2563eb',
     color: 'white',
-    fontSize: '13px',
+    fontSize: '14px',
     cursor: 'pointer',
-    fontWeight: 500
+    fontWeight: 600,
+    boxShadow: '0 1px 2px rgba(0, 0, 0, 0.05)'
   };
 
   if (loading) {
     return (
-      <div style={{ minHeight: '100vh', background: 'linear-gradient(135deg, #0f172a 0%, #1e293b 100%)', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
-        <div style={{ textAlign: 'center', color: '#e2e8f0' }}>
+      <div style={{ minHeight: '100vh', background: '#f8fafc', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+        <div style={{ textAlign: 'center', color: '#475569' }}>
           <div style={{ fontSize: '48px', marginBottom: '16px' }}>📊</div>
-          <p>Loading dashboard...</p>
+          <p style={{ fontSize: '16px', fontWeight: 500 }}>Loading dashboard...</p>
         </div>
       </div>
     );
@@ -288,11 +291,11 @@ export default function Dashboard() {
 
   if (error) {
     return (
-      <div style={{ minHeight: '100vh', background: 'linear-gradient(135deg, #0f172a 0%, #1e293b 100%)', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
-        <div style={{ textAlign: 'center', color: '#ef4444' }}>
+      <div style={{ minHeight: '100vh', background: '#f8fafc', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+        <div style={{ textAlign: 'center', padding: '48px', background: '#ffffff', borderRadius: '16px', boxShadow: '0 4px 6px rgba(0, 0, 0, 0.05)', border: '1px solid #e2e8f0' }}>
           <div style={{ fontSize: '48px', marginBottom: '16px' }}>⚠️</div>
-          <p>{error}</p>
-          <button onClick={fetchData} style={{ marginTop: '16px', ...buttonStyle }}>
+          <p style={{ color: '#ef4444', fontSize: '16px', fontWeight: 500 }}>{error}</p>
+          <button onClick={fetchData} style={{ marginTop: '24px', ...buttonStyle }}>
             Retry
           </button>
         </div>
@@ -301,36 +304,46 @@ export default function Dashboard() {
   }
 
   return (
-    <div style={{ minHeight: '100vh', background: 'linear-gradient(135deg, #0f172a 0%, #1e293b 100%)', padding: '24px' }}>
+    <div style={{ minHeight: '100vh', background: '#f8fafc' }}>
       {/* Header */}
-      <header style={{ marginBottom: '24px', display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: '16px' }}>
-        <div>
-          <h1 style={{ margin: 0, fontSize: '28px', fontWeight: 700, color: '#f8fafc' }}>
-            📊 Pulse Analytics
-          </h1>
-          <p style={{ margin: '4px 0 0', color: '#94a3b8', fontSize: '14px' }}>Real-time visitor intelligence</p>
-        </div>
-        <div style={{ display: 'flex', alignItems: 'center', gap: '24px' }}>
-          <Navigation />
-          <SiteSelector />
-          <div style={{ textAlign: 'right' }}>
-            <p style={{ color: '#e2e8f0', margin: 0, fontSize: '14px', fontWeight: 500 }}>{currentTime.toLocaleTimeString()}</p>
-            <p style={{ color: '#22d3ee', margin: '2px 0 0', fontSize: '11px' }}>● Live • Updated {Math.round((currentTime.getTime() - lastUpdated.getTime()) / 1000)}s ago</p>
+      <header style={{
+        background: '#ffffff',
+        borderBottom: '1px solid #e2e8f0',
+        padding: '16px 32px',
+        position: 'sticky',
+        top: 0,
+        zIndex: 100,
+        boxShadow: '0 1px 2px rgba(0, 0, 0, 0.05)'
+      }}>
+        <div style={{ maxWidth: '1600px', margin: '0 auto', display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: '16px' }}>
+          <Logo />
+          <div style={{ display: 'flex', alignItems: 'center', gap: '24px' }}>
+            <Navigation />
+            <div style={{ height: '24px', width: '1px', background: '#e2e8f0' }} />
+            <SiteSelector />
+            <div style={{ height: '24px', width: '1px', background: '#e2e8f0' }} />
+            <div style={{ textAlign: 'right' }}>
+              <p style={{ color: '#1e293b', margin: 0, fontSize: '13px', fontWeight: 500 }}>{currentTime.toLocaleTimeString()}</p>
+              <p style={{ color: '#10b981', margin: '2px 0 0', fontSize: '11px', fontWeight: 500 }}>● Live • Updated {Math.round((currentTime.getTime() - lastUpdated.getTime()) / 1000)}s ago</p>
+            </div>
           </div>
         </div>
       </header>
 
+      <main style={{ maxWidth: '1600px', margin: '0 auto', padding: '32px' }}>
+
       {/* Filters Row */}
-      <div style={{ 
-        display: 'flex', 
-        gap: '12px', 
-        marginBottom: '24px', 
+      <div style={{
+        display: 'flex',
+        gap: '12px',
+        marginBottom: '32px',
         flexWrap: 'wrap',
         alignItems: 'center',
-        background: '#1e293b',
-        padding: '16px',
+        background: '#ffffff',
+        padding: '20px',
         borderRadius: '12px',
-        border: '1px solid #334155'
+        border: '1px solid #e2e8f0',
+        boxShadow: '0 1px 3px rgba(0, 0, 0, 0.05)'
       }}>
         <select value={dateRange} onChange={e => setDateRange(e.target.value)} style={selectStyle}>
           <option value="all">All Time</option>
