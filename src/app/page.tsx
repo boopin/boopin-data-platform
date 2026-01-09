@@ -385,11 +385,11 @@ export default function Dashboard() {
           { label: 'Total Events', value: data?.stats.totalEvents || 0, icon: '⚡', color: '#f59e0b' },
           { label: 'Identified Users', value: data?.stats.identifiedVisitors || 0, icon: '👤', color: '#8b5cf6' },
         ].map((stat, i) => (
-          <div key={i} style={{ background: '#1e293b', borderRadius: '12px', padding: '20px', border: '1px solid #334155' }}>
+          <div key={i} style={{ background: '#ffffff', borderRadius: '12px', padding: '20px', border: '1px solid #e2e8f0', boxShadow: '0 1px 3px rgba(0, 0, 0, 0.05)' }}>
             <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start' }}>
               <div>
-                <p style={{ color: '#94a3b8', fontSize: '13px', margin: 0 }}>{stat.label}</p>
-                <p style={{ color: '#f8fafc', fontSize: '32px', fontWeight: 700, margin: '8px 0 0' }}>{stat.value.toLocaleString()}</p>
+                <p style={{ color: '#64748b', fontSize: '13px', margin: 0 }}>{stat.label}</p>
+                <p style={{ color: '#1e293b', fontSize: '32px', fontWeight: 700, margin: '8px 0 0' }}>{stat.value.toLocaleString()}</p>
               </div>
               <span style={{ fontSize: '24px' }}>{stat.icon}</span>
             </div>
@@ -409,7 +409,7 @@ export default function Dashboard() {
           { label: 'Form Conversion', value: `${engagementMetrics.conversionRate}%`, icon: '📊', color: '#3b82f6' },
           { label: 'Scroll Events', value: engagementMetrics.scrollEvents, icon: '📜', color: '#a855f7' },
         ].map((stat, i) => (
-          <div key={i} style={{ background: '#1e293b', borderRadius: '10px', padding: '14px', border: '1px solid #334155' }}>
+          <div key={i} style={{ background: '#ffffff', borderRadius: '10px', padding: '14px', border: '1px solid #e2e8f0', boxShadow: '0 1px 2px rgba(0, 0, 0, 0.05)' }}>
             <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
               <div>
                 <p style={{ color: '#64748b', fontSize: '10px', margin: 0, textTransform: 'uppercase' }}>{stat.label}</p>
@@ -424,8 +424,8 @@ export default function Dashboard() {
       {/* Main Grid */}
       <div style={{ display: 'grid', gridTemplateColumns: '2fr 1fr', gap: '24px' }}>
         {/* Recent Events */}
-        <div style={{ background: '#1e293b', borderRadius: '12px', padding: '20px', border: '1px solid #334155' }}>
-          <h2 style={{ color: '#f8fafc', fontSize: '16px', margin: '0 0 16px', display: 'flex', alignItems: 'center', gap: '8px' }}>
+        <div style={{ background: '#ffffff', borderRadius: '12px', padding: '20px', border: '1px solid #e2e8f0', boxShadow: '0 1px 3px rgba(0, 0, 0, 0.05)' }}>
+          <h2 style={{ color: '#1e293b', fontSize: '16px', margin: '0 0 16px', display: 'flex', alignItems: 'center', gap: '8px' }}>
             <span>⚡</span> Recent Events
             <span style={{ fontSize: '12px', color: '#64748b', fontWeight: 400 }}>
               (click to view details)
@@ -468,7 +468,7 @@ export default function Dashboard() {
                       </span>
                     )}
                   </div>
-                  <p style={{ color: '#94a3b8', fontSize: '12px', margin: '4px 0 0', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
+                  <p style={{ color: '#64748b', fontSize: '12px', margin: '4px 0 0', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
                     {event.page_path || 'N/A'}
                   </p>
                 </div>
@@ -488,8 +488,8 @@ export default function Dashboard() {
         {/* Right Sidebar */}
         <div style={{ display: 'flex', flexDirection: 'column', gap: '16px' }}>
           {/* Event Breakdown */}
-          <div style={{ background: '#1e293b', borderRadius: '12px', padding: '20px', border: '1px solid #334155' }}>
-            <h2 style={{ color: '#f8fafc', fontSize: '16px', margin: '0 0 16px', display: 'flex', alignItems: 'center', gap: '8px' }}>
+          <div style={{ background: '#ffffff', borderRadius: '12px', padding: '20px', border: '1px solid #e2e8f0', boxShadow: '0 1px 3px rgba(0, 0, 0, 0.05)' }}>
+            <h2 style={{ color: '#1e293b', fontSize: '16px', margin: '0 0 16px', display: 'flex', alignItems: 'center', gap: '8px' }}>
               <span>📊</span> Events by Type
             </h2>
             <div style={{ maxHeight: '300px', overflowY: 'auto' }}>
@@ -498,8 +498,8 @@ export default function Dashboard() {
                   <span style={{ fontSize: '14px' }}>{eventIcons[event.event_type] || '📌'}</span>
                   <div style={{ flex: 1 }}>
                     <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '4px' }}>
-                      <span style={{ color: '#e2e8f0', fontSize: '12px' }}>{event.event_type}</span>
-                      <span style={{ color: '#94a3b8', fontSize: '12px' }}>{event.count}</span>
+                      <span style={{ color: '#1e293b', fontSize: '12px' }}>{event.event_type}</span>
+                      <span style={{ color: '#64748b', fontSize: '12px' }}>{event.count}</span>
                     </div>
                     <div style={{ height: '4px', background: '#334155', borderRadius: '2px', overflow: 'hidden' }}>
                       <div style={{ 
@@ -516,9 +516,9 @@ export default function Dashboard() {
           </div>
 
           {/* Identified Users */}
-          <div style={{ background: '#1e293b', borderRadius: '12px', padding: '20px', border: '1px solid #334155' }}>
+          <div style={{ background: '#ffffff', borderRadius: '12px', padding: '20px', border: '1px solid #e2e8f0', boxShadow: '0 1px 3px rgba(0, 0, 0, 0.05)' }}>
             <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '16px' }}>
-              <h2 style={{ color: '#f8fafc', fontSize: '16px', margin: 0, display: 'flex', alignItems: 'center', gap: '8px' }}>
+              <h2 style={{ color: '#1e293b', fontSize: '16px', margin: 0, display: 'flex', alignItems: 'center', gap: '8px' }}>
                 <span>👤</span> Identified Users
               </h2>
               <a href="/visitors" style={{ color: '#22d3ee', fontSize: '12px', textDecoration: 'none' }}>View all →</a>
@@ -552,7 +552,7 @@ export default function Dashboard() {
                     {(user.name || user.email || '?')[0].toUpperCase()}
                   </div>
                   <div style={{ flex: 1, minWidth: 0 }}>
-                    <p style={{ color: '#f8fafc', fontSize: '13px', margin: 0, fontWeight: 500 }}>
+                    <p style={{ color: '#1e293b', fontSize: '13px', margin: 0, fontWeight: 500 }}>
                       {user.name || 'Anonymous'}
                     </p>
                     <p style={{ color: '#64748b', fontSize: '11px', margin: '2px 0 0', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
@@ -569,13 +569,13 @@ export default function Dashboard() {
           </div>
 
           {/* Location Breakdown */}
-          <div style={{ background: '#1e293b', borderRadius: '12px', padding: '20px', border: '1px solid #334155' }}>
-            <h2 style={{ color: '#f8fafc', fontSize: '16px', margin: '0 0 16px', display: 'flex', alignItems: 'center', gap: '8px' }}>
+          <div style={{ background: '#ffffff', borderRadius: '12px', padding: '20px', border: '1px solid #e2e8f0', boxShadow: '0 1px 3px rgba(0, 0, 0, 0.05)' }}>
+            <h2 style={{ color: '#1e293b', fontSize: '16px', margin: '0 0 16px', display: 'flex', alignItems: 'center', gap: '8px' }}>
               <span>🌍</span> Top Locations
             </h2>
             {data?.cityBreakdown.slice(0, 5).map((city, i) => (
               <div key={i} style={{ display: 'flex', justifyContent: 'space-between', padding: '8px 0', borderBottom: '1px solid #334155' }}>
-                <span style={{ color: '#e2e8f0', fontSize: '13px' }}>{city.city}, {city.country}</span>
+                <span style={{ color: '#1e293b', fontSize: '13px' }}>{city.city}, {city.country}</span>
                 <span style={{ color: '#22d3ee', fontSize: '13px', fontWeight: 600 }}>{city.count}</span>
               </div>
             ))}
@@ -584,19 +584,20 @@ export default function Dashboard() {
       </div>
 
       {/* Install Pixel Section */}
-      <div style={{ marginTop: '24px', background: '#1e293b', borderRadius: '12px', padding: '20px', border: '1px solid #334155' }}>
-        <h2 style={{ color: '#f8fafc', fontSize: '16px', margin: '0 0 16px', display: 'flex', alignItems: 'center', gap: '8px' }}>
+      <div style={{ marginTop: '24px', background: '#ffffff', borderRadius: '12px', padding: '20px', border: '1px solid #e2e8f0', boxShadow: '0 1px 3px rgba(0, 0, 0, 0.05)' }}>
+        <h2 style={{ color: '#1e293b', fontSize: '16px', margin: '0 0 16px', display: 'flex', alignItems: 'center', gap: '8px' }}>
           <span>🔧</span> Install Tracking Pixel
         </h2>
-        <p style={{ color: '#94a3b8', fontSize: '13px', marginBottom: '12px' }}>Add this code before the closing &lt;/head&gt; tag:</p>
-        <pre style={{ 
-          background: '#0f172a', 
-          padding: '16px', 
-          borderRadius: '8px', 
+        <p style={{ color: '#64748b', fontSize: '13px', marginBottom: '12px' }}>Add this code before the closing &lt;/head&gt; tag:</p>
+        <pre style={{
+          background: '#f8fafc',
+          padding: '16px',
+          borderRadius: '8px',
           overflow: 'auto',
           fontSize: '12px',
-          color: '#22d3ee',
-          border: '1px solid #334155'
+          color: '#1e293b',
+          border: '1px solid #e2e8f0',
+          fontFamily: 'monospace'
         }}>
 {`<script src="https://pulse-analytics-data-platform.vercel.app/pixel.js"></script>
 <script>

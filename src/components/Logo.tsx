@@ -1,29 +1,29 @@
 import Link from 'next/link';
-import Image from 'next/image';
 
 export default function Logo() {
   return (
-    <Link href="/" style={{ textDecoration: 'none', display: 'flex', alignItems: 'center', gap: '12px' }}>
+    <Link href="/" style={{ textDecoration: 'none', display: 'flex', alignItems: 'center', gap: '8px' }}>
       <div style={{
         fontFamily: 'Arial, sans-serif',
-        fontSize: '24px',
+        fontSize: '20px',
         fontWeight: 700,
         color: '#1a1a1a',
         letterSpacing: '-0.5px'
       }}>
-        boopin
+        Pulse Analytics
       </div>
       <div style={{
-        fontSize: '11px',
+        fontSize: '10px',
         color: '#64748b',
-        fontWeight: 500,
-        background: '#f1f5f9',
-        padding: '4px 8px',
+        fontWeight: 600,
+        background: '#eff6ff',
+        padding: '3px 8px',
         borderRadius: '4px',
         textTransform: 'uppercase',
-        letterSpacing: '0.5px'
+        letterSpacing: '0.5px',
+        border: '1px solid #dbeafe'
       }}>
-        Analytics
+        by Boopin
       </div>
     </Link>
   );
