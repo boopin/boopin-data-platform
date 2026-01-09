@@ -2,6 +2,9 @@
 
 import { useEffect, useState } from 'react';
 import { useParams } from 'next/navigation';
+import { useSite } from '../../../contexts/SiteContext';
+import Link from 'next/link';
+import Navigation from '../../../components/Navigation';
 
 interface Segment {
   id: string;
@@ -32,12 +35,13 @@ interface Webhook {
 
 export default function SegmentDetailPage() {
   const params = useParams();
+  const { selectedSite, loading: siteLoading } = useSite();
   const [segment, setSegment] = useState<Segment | null>(null);
   const [users, setUsers] = useState<User[]>([]);
   const [webhooks, setWebhooks] = useState<Webhook[]>([]);
   const [loading, setLoading] = useState(true);
   const [activeTab, setActiveTab] = useState<'users' | 'export' | 'webhooks' | 'ads'>('users');
-  
+
   // Webhook form state
   const [webhookUrl, setWebhookUrl] = useState('');
   const [webhookType, setWebhookType] = useState('generic');
@@ -47,16 +51,18 @@ export default function SegmentDetailPage() {
 
   useEffect(() => {
     async function fetchData() {
+      if (!selectedSite) return;
+
       try {
         const [segmentRes, webhooksRes] = await Promise.all([
-          fetch(`/api/segments/${params.id}`),
-          fetch(`/api/segments/${params.id}/webhook`)
+          fetch(`/api/segments/${params.id}?site_id=${selectedSite.id}`),
+          fetch(`/api/segments/${params.id}/webhook?site_id=${selectedSite.id}`)
         ]);
-        
+
         const segmentData = await segmentRes.json();
         setSegment(segmentData.segment);
         setUsers(segmentData.users || []);
-        
+
         const webhooksData = await webhooksRes.json();
         setWebhooks(webhooksData.webhooks || []);
       } catch (err) {
@@ -65,27 +71,28 @@ export default function SegmentDetailPage() {
         setLoading(false);
       }
     }
-    
-    if (params.id) {
+
+    if (params.id && selectedSite) {
       fetchData();
     }
-  }, [params.id]);
+  }, [params.id, selectedSite]);
 
   const handleExport = (format: 'csv' | 'json') => {
-    window.open(`/api/segments/${params.id}/export?format=${format}`, '_blank');
+    if (!selectedSite) return;
+    window.open(`/api/segments/${params.id}/export?format=${format}&site_id=${selectedSite.id}`, '_blank');
   };
 
   const handleSaveWebhook = async () => {
-    if (!webhookUrl) return;
-    
+    if (!webhookUrl || !selectedSite) return;
+
     setSavingWebhook(true);
     try {
-      const res = await fetch(`/api/segments/${params.id}/webhook`, {
+      const res = await fetch(`/api/segments/${params.id}/webhook?site_id=${selectedSite.id}`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ webhook_url: webhookUrl, webhook_type: webhookType, is_active: true })
       });
-      
+
       if (res.ok) {
         const data = await res.json();
         setWebhooks([...webhooks.filter(w => w.webhook_type !== webhookType), data.webhook]);
@@ -100,16 +107,18 @@ export default function SegmentDetailPage() {
   };
 
   const handleTriggerWebhook = async (type: string) => {
+    if (!selectedSite) return;
+
     setTriggeringWebhook(type);
     setWebhookResult(null);
-    
+
     try {
-      const res = await fetch(`/api/segments/${params.id}/webhook/trigger`, {
+      const res = await fetch(`/api/segments/${params.id}/webhook/trigger?site_id=${selectedSite.id}`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ webhook_type: type })
       });
-      
+
       const data = await res.json();
       if (data.success) {
         setWebhookResult({ success: true, message: `✓ Sent ${data.users_sent} users to ${type} webhook` });
@@ -124,10 +133,10 @@ export default function SegmentDetailPage() {
   };
 
   const handleDeleteWebhook = async (type: string) => {
-    if (!confirm('Delete this webhook?')) return;
-    
+    if (!confirm('Delete this webhook?') || !selectedSite) return;
+
     try {
-      await fetch(`/api/segments/${params.id}/webhook?type=${type}`, { method: 'DELETE' });
+      await fetch(`/api/segments/${params.id}/webhook?type=${type}&site_id=${selectedSite.id}`, { method: 'DELETE' });
       setWebhooks(webhooks.filter(w => w.webhook_type !== type));
     } catch (err) {
       console.error(err);
@@ -213,11 +222,7 @@ export default function SegmentDetailPage() {
               </div>
             </a>
           </div>
-          <nav style={{ display: 'flex', gap: '16px' }}>
-            <a href="/" style={{ color: '#94a3b8', textDecoration: 'none', fontSize: '14px' }}>Dashboard</a>
-            <a href="/visitors" style={{ color: '#94a3b8', textDecoration: 'none', fontSize: '14px' }}>Visitors</a>
-            <a href="/segments" style={{ color: '#22d3ee', textDecoration: 'none', fontSize: '14px', fontWeight: 600 }}>Segments</a>
-          </nav>
+          <Navigation />
         </div>
       </header>
 
