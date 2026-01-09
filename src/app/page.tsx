@@ -614,6 +614,7 @@ export default function Dashboard() {
 </script>`}
         </pre>
       </div>
+      </main>
     </div>
   );
 }
