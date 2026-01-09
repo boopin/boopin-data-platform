@@ -107,16 +107,17 @@ export default function NewSegmentPage() {
 
     setSaving(true);
     try {
-      const res = await fetch(`/api/segments?site_id=${selectedSite.id}`, {
+      const res = await fetch('/api/segments', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ name, description, rules }),
+        body: JSON.stringify({ name, description, rules, site_id: selectedSite.id }),
       });
 
       if (res.ok) {
         router.push('/segments');
       } else {
-        alert('Failed to create segment');
+        const error = await res.json();
+        alert(`Failed to create segment: ${error.error || 'Unknown error'}`);
       }
     } catch (err) {
       console.error(err);
