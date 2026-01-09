@@ -3,6 +3,7 @@
 import { useState, useEffect } from 'react';
 import { useParams } from 'next/navigation';
 import Link from 'next/link';
+import { useSite } from '../../../contexts/SiteContext';
 
 interface StepAnalysis {
   stepIndex: number;
@@ -37,6 +38,7 @@ interface FunnelAnalysis {
 export default function FunnelAnalysisPage() {
   const params = useParams();
   const funnelId = params.id as string;
+  const { selectedSite, loading: siteLoading } = useSite();
 
   const [analysis, setAnalysis] = useState<FunnelAnalysis | null>(null);
   const [loading, setLoading] = useState(true);
@@ -52,16 +54,18 @@ export default function FunnelAnalysisPage() {
   }, []);
 
   useEffect(() => {
-    if (dateFrom && dateTo) {
+    if (dateFrom && dateTo && selectedSite) {
       fetchAnalysis();
     }
-  }, [funnelId, dateFrom, dateTo]);
+  }, [funnelId, dateFrom, dateTo, selectedSite]);
 
   const fetchAnalysis = async () => {
+    if (!selectedSite) return;
+
     setLoading(true);
     try {
       const response = await fetch(
-        `/api/funnels/${funnelId}/analyze?from=${dateFrom}&to=${dateTo}`
+        `/api/funnels/${funnelId}/analyze?from=${dateFrom}&to=${dateTo}&site_id=${selectedSite.id}`
       );
       const data = await response.json();
 
@@ -73,7 +77,7 @@ export default function FunnelAnalysisPage() {
         setAnalysis(data);
       }
     } catch (error) {
-      console.error('Error fetching analysis:', error);
+      console.error('Failed to load funnel analysis', error);
       setAnalysis(null);
     } finally {
       setLoading(false);

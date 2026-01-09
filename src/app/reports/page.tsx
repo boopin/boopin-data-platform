@@ -113,6 +113,50 @@ export default function ReportsPage() {
     return '#64748b';
   };
 
+  const exportToCSV = () => {
+    if (!data) return;
+
+    const headers = ['Metric', 'Current Period', 'Previous Period', 'Change', 'Change %'];
+    const metrics = [
+      ['Total Visitors', data.currentPeriod.stats.totalVisitors, data.comparisonPeriod.stats.totalVisitors, data.changes.totalVisitors.value, data.changes.totalVisitors.percentage],
+      ['Page Views', data.currentPeriod.stats.totalPageViews, data.comparisonPeriod.stats.totalPageViews, data.changes.totalPageViews.value, data.changes.totalPageViews.percentage],
+      ['Total Events', data.currentPeriod.stats.totalEvents, data.comparisonPeriod.stats.totalEvents, data.changes.totalEvents.value, data.changes.totalEvents.percentage],
+      ['Identified Users', data.currentPeriod.stats.identifiedVisitors, data.comparisonPeriod.stats.identifiedVisitors, data.changes.identifiedVisitors.value, data.changes.identifiedVisitors.percentage],
+      ['Purchases', data.currentPeriod.stats.purchases, data.comparisonPeriod.stats.purchases, data.changes.purchases.value, data.changes.purchases.percentage],
+      ['Add to Cart', data.currentPeriod.stats.addToCarts, data.comparisonPeriod.stats.addToCarts, data.changes.addToCarts.value, data.changes.addToCarts.percentage],
+      ['Cart Abandons', data.currentPeriod.stats.cartAbandons, data.comparisonPeriod.stats.cartAbandons, data.changes.cartAbandons.value, data.changes.cartAbandons.percentage],
+      ['Form Starts', data.currentPeriod.stats.formStarts, data.comparisonPeriod.stats.formStarts, data.changes.formStarts.value, data.changes.formStarts.percentage],
+      ['Form Submits', data.currentPeriod.stats.formSubmits, data.comparisonPeriod.stats.formSubmits, data.changes.formSubmits.value, data.changes.formSubmits.percentage],
+      ['Sign Ups', data.currentPeriod.stats.signups, data.comparisonPeriod.stats.signups, data.changes.signups.value, data.changes.signups.percentage],
+      ['Logins', data.currentPeriod.stats.logins, data.comparisonPeriod.stats.logins, data.changes.logins.value, data.changes.logins.percentage]
+    ];
+
+    const csvContent = [
+      headers.join(','),
+      ...metrics.map(row => row.map(cell => `"${cell}"`).join(','))
+    ].join('\n');
+
+    const blob = new Blob([csvContent], { type: 'text/csv' });
+    const url = window.URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = `report-${mode}-${new Date().toISOString().split('T')[0]}.csv`;
+    a.click();
+    window.URL.revokeObjectURL(url);
+  };
+
+  const exportToJSON = () => {
+    if (!data) return;
+
+    const blob = new Blob([JSON.stringify(data, null, 2)], { type: 'application/json' });
+    const url = window.URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = `report-${mode}-${new Date().toISOString().split('T')[0]}.json`;
+    a.click();
+    window.URL.revokeObjectURL(url);
+  };
+
   const MetricCard = ({
     label,
     currentValue,
@@ -181,11 +225,53 @@ export default function ReportsPage() {
 
       <main style={{ maxWidth: '1400px', margin: '0 auto', padding: '24px' }}>
         {/* Page Header */}
-        <div style={{ marginBottom: '24px' }}>
-          <h2 style={{ margin: 0, fontSize: '28px', color: '#fff', fontWeight: 700 }}>📊 Comparison Reports</h2>
-          <p style={{ margin: '8px 0 0', color: '#94a3b8', fontSize: '14px' }}>
-            Analyze trends and compare performance across different time periods
-          </p>
+        <div style={{ marginBottom: '24px', display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start' }}>
+          <div>
+            <h2 style={{ margin: 0, fontSize: '28px', color: '#fff', fontWeight: 700 }}>📊 Comparison Reports</h2>
+            <p style={{ margin: '8px 0 0', color: '#94a3b8', fontSize: '14px' }}>
+              Analyze trends and compare performance across different time periods
+            </p>
+          </div>
+          {data && (
+            <div style={{ display: 'flex', gap: '8px' }}>
+              <button
+                onClick={exportToCSV}
+                style={{
+                  background: '#10b981',
+                  color: '#fff',
+                  border: 'none',
+                  borderRadius: '8px',
+                  padding: '10px 16px',
+                  fontSize: '13px',
+                  fontWeight: 600,
+                  cursor: 'pointer',
+                  display: 'flex',
+                  alignItems: 'center',
+                  gap: '6px'
+                }}
+              >
+                📊 Export CSV
+              </button>
+              <button
+                onClick={exportToJSON}
+                style={{
+                  background: '#6366f1',
+                  color: '#fff',
+                  border: 'none',
+                  borderRadius: '8px',
+                  padding: '10px 16px',
+                  fontSize: '13px',
+                  fontWeight: 600,
+                  cursor: 'pointer',
+                  display: 'flex',
+                  alignItems: 'center',
+                  gap: '6px'
+                }}
+              >
+                📦 Export JSON
+              </button>
+            </div>
+          )}
         </div>
 
         {/* Comparison Mode Selector */}

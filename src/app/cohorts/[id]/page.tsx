@@ -3,6 +3,7 @@
 import { useState, useEffect } from 'react';
 import { useParams } from 'next/navigation';
 import Link from 'next/link';
+import { useSite } from '../../../contexts/SiteContext';
 
 interface RetentionData {
   period: number;
@@ -31,18 +32,28 @@ interface CohortAnalysis {
 export default function CohortAnalysisPage() {
   const params = useParams();
   const cohortId = params.id as string;
+  const { selectedSite, loading: siteLoading } = useSite();
 
   const [analysis, setAnalysis] = useState<CohortAnalysis | null>(null);
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
-    fetchAnalysis();
-  }, [cohortId]);
+    if (selectedSite) {
+      fetchAnalysis();
+    }
+  }, [cohortId, selectedSite]);
 
   const fetchAnalysis = async () => {
+    if (!selectedSite) return;
+
     setLoading(true);
     try {
-      const response = await fetch(`/api/cohorts/${cohortId}/analyze`);
+      const response = await fetch(`/api/cohorts/${cohortId}/analyze?site_id=${selectedSite.id}`);
+      if (!response.ok) {
+        const error = await response.json();
+        console.error('Error from API:', error.error || 'Unknown error');
+        throw new Error(error.error || 'Failed to fetch analysis');
+      }
       const data = await response.json();
       setAnalysis(data);
     } catch (error) {
