@@ -3,6 +3,8 @@
 import { useState } from 'react';
 import { useRouter } from 'next/navigation';
 import Link from 'next/link';
+import { useSite } from '../../../contexts/SiteContext';
+import Navigation from '../../../components/Navigation';
 
 interface Rule {
   type: string;
@@ -36,6 +38,7 @@ const operatorLabels: Record<string, string> = {
 
 export default function NewSegmentPage() {
   const router = useRouter();
+  const { selectedSite, loading: siteLoading } = useSite();
   const [name, setName] = useState('');
   const [description, setDescription] = useState('');
   const [rules, setRules] = useState<Rule[]>([{ type: 'page_views', operator: 'greater_than', value: '1' }]);
@@ -67,9 +70,14 @@ export default function NewSegmentPage() {
   };
 
   const handlePreview = async () => {
+    if (!selectedSite) {
+      alert('Please select a site first');
+      return;
+    }
+
     setPreviewing(true);
     try {
-      const res = await fetch('/api/segments/preview', {
+      const res = await fetch(`/api/segments/preview?site_id=${selectedSite.id}`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ rules }),
@@ -89,9 +97,14 @@ export default function NewSegmentPage() {
       return;
     }
 
+    if (!selectedSite) {
+      alert('Please select a site first');
+      return;
+    }
+
     setSaving(true);
     try {
-      const res = await fetch('/api/segments', {
+      const res = await fetch(`/api/segments?site_id=${selectedSite.id}`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ name, description, rules }),
@@ -128,11 +141,7 @@ export default function NewSegmentPage() {
               </div>
             </Link>
           </div>
-          <nav style={{ display: 'flex', gap: '16px' }}>
-            <Link href="/" style={{ color: '#94a3b8', textDecoration: 'none', fontSize: '14px' }}>Dashboard</Link>
-            <Link href="/visitors" style={{ color: '#94a3b8', textDecoration: 'none', fontSize: '14px' }}>Visitors</Link>
-            <Link href="/segments" style={{ color: '#22d3ee', textDecoration: 'none', fontSize: '14px', fontWeight: 600 }}>Segments</Link>
-          </nav>
+          <Navigation />
         </div>
       </header>
 
