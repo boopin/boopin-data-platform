@@ -1,23 +1,32 @@
 'use client';
 
-import { useState } from 'react';
+import { useState, useRef, useCallback } from 'react';
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
 
 export default function Navigation() {
   const pathname = usePathname();
   const [openDropdown, setOpenDropdown] = useState<string | null>(null);
+  const closeTimeoutRef = useRef<NodeJS.Timeout | null>(null);
 
   const isActive = (path: string) => pathname === path;
   const isDropdownActive = (paths: string[]) => paths.some(path => pathname === path);
 
-  const handleMouseEnter = (dropdown: string) => {
+  const handleMouseEnter = useCallback((dropdown: string) => {
+    // Clear any pending close timeout
+    if (closeTimeoutRef.current) {
+      clearTimeout(closeTimeoutRef.current);
+      closeTimeoutRef.current = null;
+    }
     setOpenDropdown(dropdown);
-  };
+  }, []);
 
-  const handleMouseLeave = () => {
-    setOpenDropdown(null);
-  };
+  const handleMouseLeave = useCallback(() => {
+    // Add a delay before closing to allow mouse movement between button and dropdown
+    closeTimeoutRef.current = setTimeout(() => {
+      setOpenDropdown(null);
+    }, 300); // 300ms delay
+  }, []);
 
   const navItems = [
     { path: '/', label: 'Dashboard', standalone: true },
@@ -121,11 +130,13 @@ export default function Navigation() {
 
             {openDropdown === item.dropdown && (
               <div
+                onMouseEnter={() => handleMouseEnter(item.dropdown!)}
+                onMouseLeave={handleMouseLeave}
                 style={{
                   position: 'absolute',
                   top: '100%',
                   left: 0,
-                  marginTop: '8px',
+                  marginTop: '4px',
                   background: '#ffffff',
                   border: '1px solid #e2e8f0',
                   borderRadius: '12px',
