@@ -15,7 +15,8 @@ export async function POST(request: NextRequest) {
 
     const visitors = await sql`SELECT id, is_identified FROM visitors WHERE site_id = ${site_id}`;
     const events = await sql`
-      SELECT visitor_id, event_type, page_path, device_type, country, city, utm_source, timestamp
+      SELECT visitor_id, event_type, page_path, device_type, country, city,
+             utm_source, utm_medium, utm_campaign, referrer, timestamp
       FROM events
       WHERE site_id = ${site_id}
     `;
@@ -89,6 +90,26 @@ function matchesRules(events: Record<string, unknown>[], rules: object[], visito
         const utmMatch = events.some(e => e.utm_source === value);
         if (operator === 'equals' && !utmMatch) return false;
         if (operator === 'not_equals' && utmMatch) return false;
+        break;
+
+      case 'utm_medium':
+        const utmMediumMatch = events.some(e => e.utm_medium === value);
+        if (operator === 'equals' && !utmMediumMatch) return false;
+        if (operator === 'not_equals' && utmMediumMatch) return false;
+        break;
+
+      case 'utm_campaign':
+        const utmCampaignMatch = events.some(e => e.utm_campaign === value);
+        if (operator === 'equals' && !utmCampaignMatch) return false;
+        if (operator === 'not_equals' && utmCampaignMatch) return false;
+        break;
+
+      case 'referrer':
+        const referrerMatch = events.some(e =>
+          (e.referrer as string || '').includes(value as string)
+        );
+        if (operator === 'contains' && !referrerMatch) return false;
+        if (operator === 'not_contains' && referrerMatch) return false;
         break;
 
       case 'event_type':

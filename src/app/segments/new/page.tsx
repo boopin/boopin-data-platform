@@ -20,6 +20,9 @@ const ruleTypes = [
   { value: 'city', label: 'City', operators: ['equals', 'not_equals'] },
   { value: 'device', label: 'Device Type', operators: ['equals', 'not_equals'] },
   { value: 'utm_source', label: 'UTM Source', operators: ['equals', 'not_equals'] },
+  { value: 'utm_medium', label: 'UTM Medium', operators: ['equals', 'not_equals'] },
+  { value: 'utm_campaign', label: 'UTM Campaign', operators: ['equals', 'not_equals'] },
+  { value: 'referrer', label: 'Referrer', operators: ['contains', 'not_contains'] },
   { value: 'event_type', label: 'Has Event Type', operators: ['equals', 'not_equals'] },
   { value: 'is_identified', label: 'Is Identified', operators: ['equals'] },
   { value: 'last_seen_days', label: 'Last Seen (Days Ago)', operators: ['less_than', 'greater_than', 'equals'] },
@@ -231,21 +234,62 @@ export default function NewSegmentPage() {
                     <select
                       value={rule.value}
                       onChange={(e) => updateRule(index, 'value', e.target.value)}
-                      style={{ ...selectStyle, width: 'auto', minWidth: '140px' }}
+                      style={{ ...selectStyle, width: 'auto', minWidth: '180px' }}
                     >
-                      <option value="">Select...</option>
-                      <option value="page_view">Page View</option>
-                      <option value="click">Click</option>
-                      <option value="button_click">Button Click</option>
-                      <option value="form_submit">Form Submit</option>
-                      <option value="identify">Identify</option>
+                      <option value="">Select event...</option>
+                      <optgroup label="📄 Page Events">
+                        <option value="page_view">Page View</option>
+                      </optgroup>
+                      <optgroup label="🛒 E-commerce">
+                        <option value="purchase">Purchase</option>
+                        <option value="add_to_cart">Add to Cart</option>
+                        <option value="remove_from_cart">Remove from Cart</option>
+                        <option value="checkout_started">Checkout Started</option>
+                        <option value="payment_completed">Payment Completed</option>
+                        <option value="product_viewed">Product Viewed</option>
+                      </optgroup>
+                      <optgroup label="👤 User Actions">
+                        <option value="signup">Sign Up</option>
+                        <option value="login">Login</option>
+                        <option value="logout">Logout</option>
+                        <option value="identify">Identify</option>
+                      </optgroup>
+                      <optgroup label="📝 Form Events">
+                        <option value="form_submit">Form Submit</option>
+                        <option value="form_started">Form Started</option>
+                        <option value="form_error">Form Error</option>
+                      </optgroup>
+                      <optgroup label="🖱️ Interaction">
+                        <option value="click">Click</option>
+                        <option value="button_click">Button Click</option>
+                        <option value="link_click">Link Click</option>
+                        <option value="download">Download</option>
+                      </optgroup>
+                      <optgroup label="🎥 Media">
+                        <option value="video_play">Video Play</option>
+                        <option value="video_pause">Video Pause</option>
+                        <option value="video_complete">Video Complete</option>
+                      </optgroup>
+                      <optgroup label="⚠️ Errors">
+                        <option value="javascript_error">JavaScript Error</option>
+                        <option value="api_error">API Error</option>
+                      </optgroup>
                     </select>
                   ) : (
                     <input
                       type={['page_views', 'total_events', 'last_seen_days'].includes(rule.type) ? 'number' : 'text'}
                       value={rule.value}
                       onChange={(e) => updateRule(index, 'value', e.target.value)}
-                      placeholder={rule.type === 'visited_page' ? '/pricing' : rule.type === 'country' ? 'United Arab Emirates' : 'Value'}
+                      placeholder={
+                        rule.type === 'visited_page' ? '/pricing' :
+                        rule.type === 'country' ? 'United Arab Emirates' :
+                        rule.type === 'city' ? 'Dubai' :
+                        rule.type === 'utm_source' ? 'google' :
+                        rule.type === 'utm_medium' ? 'cpc' :
+                        rule.type === 'utm_campaign' ? 'summer_sale' :
+                        rule.type === 'referrer' ? 'google.com' :
+                        'Value'
+                      }
                       style={{ ...inputStyle, width: 'auto', minWidth: '150px' }}
                     />
                   )}
