@@ -77,10 +77,10 @@ export default function NewSegmentPage() {
 
     setPreviewing(true);
     try {
-      const res = await fetch(`/api/segments/preview?site_id=${selectedSite.id}`, {
+      const res = await fetch('/api/segments/preview', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ rules }),
+        body: JSON.stringify({ rules, site_id: selectedSite.id }),
       });
       const data = await res.json();
       setPreviewCount(data.count || 0);
