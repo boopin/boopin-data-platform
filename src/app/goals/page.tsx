@@ -1,4 +1,6 @@
 'use client';
+import Logo from '../../components/Logo';
+import SiteSelector from '../../components/SiteSelector';
 import { useEffect, useState } from 'react';
 import Link from 'next/link';
 import { useSite } from '../../contexts/SiteContext';
@@ -152,8 +154,8 @@ export default function GoalsPage() {
 
   if (siteLoading || loading) {
     return (
-      <div style={{ minHeight: '100vh', background: 'linear-gradient(135deg, #0f172a 0%, #1e293b 100%)', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
-        <div style={{ textAlign: 'center', color: '#e2e8f0' }}>
+      <div style={{ minHeight: '100vh', background: '#f8fafc', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+        <div style={{ textAlign: 'center', color: '#1e293b' }}>
           <div style={{ fontSize: '48px', marginBottom: '16px' }}>🎯</div>
           <p>Loading goals...</p>
         </div>
@@ -163,8 +165,8 @@ export default function GoalsPage() {
 
   if (!selectedSite) {
     return (
-      <div style={{ minHeight: '100vh', background: 'linear-gradient(135deg, #0f172a 0%, #1e293b 100%)', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
-        <div style={{ textAlign: 'center', color: '#e2e8f0' }}>
+      <div style={{ minHeight: '100vh', background: '#f8fafc', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+        <div style={{ textAlign: 'center', color: '#1e293b' }}>
           <div style={{ fontSize: '48px', marginBottom: '16px' }}>🎯</div>
           <p>No site selected. Please select a site from the dashboard.</p>
         </div>
@@ -173,31 +175,25 @@ export default function GoalsPage() {
   }
 
   return (
-    <div style={{ minHeight: '100vh', background: 'linear-gradient(135deg, #0f172a 0%, #1e293b 50%, #0f172a 100%)', fontFamily: 'system-ui, sans-serif' }}>
+    <div style={{ minHeight: '100vh', background: '#f8fafc', fontFamily: 'system-ui, sans-serif' }}>
       {/* Header */}
-      <header style={{ borderBottom: '1px solid #334155', background: 'rgba(15,23,42,0.95)', padding: '16px 24px', position: 'sticky', top: 0, zIndex: 100 }}>
-        <div style={{ maxWidth: '1400px', margin: '0 auto', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-          <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
-            <Link href="/" style={{ textDecoration: 'none', display: 'flex', alignItems: 'center', gap: '12px' }}>
-              <div style={{ width: '40px', height: '40px', background: 'linear-gradient(135deg, #06b6d4, #3b82f6)', borderRadius: '10px', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
-                <svg width="22" height="22" fill="none" stroke="white" strokeWidth="2" viewBox="0 0 24 24"><path d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z" /></svg>
-              </div>
-              <div>
-                <h1 style={{ margin: 0, fontSize: '20px', color: '#fff', fontWeight: 700 }}>Pulse Analytics</h1>
-                <p style={{ margin: 0, fontSize: '13px', color: '#64748b' }}>Goal Tracking</p>
-              </div>
-            </Link>
+      <header style={{ background: '#ffffff', borderBottom: '1px solid #e2e8f0', padding: '16px 32px', position: 'sticky', top: 0, zIndex: 100, boxShadow: '0 1px 2px rgba(0, 0, 0, 0.05)' }}>
+        <div style={{ maxWidth: '1600px', margin: '0 auto', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+          <Logo />
+          <div style={{ display: 'flex', alignItems: 'center', gap: '24px' }}>
+            <Navigation />
+            <div style={{ height: '24px', width: '1px', background: '#e2e8f0' }} />
+            <SiteSelector />
           </div>
-          <Navigation />
         </div>
       </header>
 
-      <main style={{ maxWidth: '1400px', margin: '0 auto', padding: '24px' }}>
+      <main style={{ maxWidth: '1600px', margin: '0 auto', padding: '32px' }}>
         {/* Page Header */}
         <div style={{ marginBottom: '24px', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
           <div>
-            <h2 style={{ margin: 0, fontSize: '28px', color: '#fff', fontWeight: 700 }}>🎯 Goals</h2>
-            <p style={{ margin: '8px 0 0', color: '#94a3b8', fontSize: '14px' }}>
+            <h2 style={{ margin: 0, fontSize: '28px', color: '#1e293b', fontWeight: 700 }}>🎯 Goals</h2>
+            <p style={{ margin: '8px 0 0', color: '#64748b', fontSize: '14px' }}>
               Track conversions and important events
             </p>
           </div>
@@ -206,7 +202,7 @@ export default function GoalsPage() {
               onClick={exportToCSV}
               style={{
                 background: '#10b981',
-                color: '#fff',
+                color: '#1e293b',
                 border: 'none',
                 borderRadius: '8px',
                 padding: '10px 16px',
@@ -221,7 +217,7 @@ export default function GoalsPage() {
               onClick={exportToJSON}
               style={{
                 background: '#6366f1',
-                color: '#fff',
+                color: '#1e293b',
                 border: 'none',
                 borderRadius: '8px',
                 padding: '10px 16px',
@@ -235,8 +231,8 @@ export default function GoalsPage() {
             <button
               onClick={handleNewGoal}
               style={{
-                background: 'linear-gradient(135deg, #06b6d4, #3b82f6)',
-                color: '#fff',
+                background: '#2563eb',
+                color: '#1e293b',
                 border: 'none',
                 borderRadius: '8px',
                 padding: '12px 24px',
@@ -252,17 +248,17 @@ export default function GoalsPage() {
 
         {/* Goals Grid */}
         {goals.length === 0 ? (
-          <div style={{ background: '#1e293b', borderRadius: '12px', padding: '80px 20px', border: '1px solid #334155', textAlign: 'center' }}>
+          <div style={{ background: '#ffffff', borderRadius: '12px', padding: '80px 20px', border: '1px solid #e2e8f0', textAlign: 'center' }}>
             <div style={{ fontSize: '64px', marginBottom: '16px' }}>🎯</div>
-            <p style={{ color: '#f8fafc', fontSize: '18px', fontWeight: 600, margin: 0 }}>No goals yet</p>
-            <p style={{ color: '#94a3b8', fontSize: '14px', margin: '8px 0 24px' }}>
+            <p style={{ color: '#1e293b', fontSize: '18px', fontWeight: 600, margin: 0 }}>No goals yet</p>
+            <p style={{ color: '#64748b', fontSize: '14px', margin: '8px 0 24px' }}>
               Create your first goal to start tracking conversions
             </p>
             <button
               onClick={handleNewGoal}
               style={{
-                background: 'linear-gradient(135deg, #06b6d4, #3b82f6)',
-                color: '#fff',
+                background: '#2563eb',
+                color: '#1e293b',
                 border: 'none',
                 borderRadius: '8px',
                 padding: '12px 24px',
@@ -277,13 +273,13 @@ export default function GoalsPage() {
         ) : (
           <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(350px, 1fr))', gap: '20px' }}>
             {goals.map((goal) => (
-              <div key={goal.id} style={{ background: '#1e293b', borderRadius: '12px', padding: '24px', border: '1px solid #334155' }}>
+              <div key={goal.id} style={{ background: '#ffffff', borderRadius: '12px', padding: '32px', border: '1px solid #e2e8f0' }}>
                 {/* Goal Header */}
                 <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: '16px' }}>
                   <div style={{ flex: 1 }}>
-                    <h3 style={{ margin: 0, fontSize: '18px', color: '#f8fafc', fontWeight: 600 }}>{goal.name}</h3>
+                    <h3 style={{ margin: 0, fontSize: '18px', color: '#1e293b', fontWeight: 600 }}>{goal.name}</h3>
                     {goal.description && (
-                      <p style={{ margin: '4px 0 0', color: '#94a3b8', fontSize: '13px' }}>{goal.description}</p>
+                      <p style={{ margin: '4px 0 0', color: '#64748b', fontSize: '13px' }}>{goal.description}</p>
                     )}
                   </div>
                   <div style={{ display: 'flex', gap: '8px' }}>
@@ -291,7 +287,7 @@ export default function GoalsPage() {
                       onClick={() => handleEdit(goal)}
                       style={{
                         background: '#334155',
-                        color: '#e2e8f0',
+                        color: '#1e293b',
                         border: 'none',
                         borderRadius: '6px',
                         padding: '6px 10px',
@@ -305,7 +301,7 @@ export default function GoalsPage() {
                       onClick={() => handleDelete(goal.id)}
                       style={{
                         background: '#ef4444',
-                        color: '#fff',
+                        color: '#1e293b',
                         border: 'none',
                         borderRadius: '6px',
                         padding: '6px 10px',
@@ -336,11 +332,11 @@ export default function GoalsPage() {
                 </div>
 
                 {/* Stats */}
-                <div style={{ background: '#0f172a', borderRadius: '8px', padding: '16px' }}>
+                <div style={{ background: '#f8fafc', borderRadius: '8px', padding: '16px' }}>
                   <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '12px' }}>
                     <div>
                       <p style={{ color: '#64748b', fontSize: '10px', margin: 0, textTransform: 'uppercase' }}>Total</p>
-                      <p style={{ color: '#22d3ee', fontSize: '24px', fontWeight: 700, margin: '4px 0 0' }}>
+                      <p style={{ color: '#2563eb', fontSize: '24px', fontWeight: 700, margin: '4px 0 0' }}>
                         {goal.stats?.completions || 0}
                       </p>
                     </div>
@@ -388,22 +384,22 @@ export default function GoalsPage() {
         >
           <div
             style={{
-              background: '#1e293b',
+              background: '#ffffff',
               borderRadius: '12px',
               padding: '32px',
               maxWidth: '500px',
               width: '90%',
-              border: '1px solid #334155'
+              border: '1px solid #e2e8f0'
             }}
             onClick={(e) => e.stopPropagation()}
           >
-            <h3 style={{ margin: '0 0 24px', fontSize: '24px', color: '#f8fafc', fontWeight: 700 }}>
+            <h3 style={{ margin: '0 0 24px', fontSize: '24px', color: '#1e293b', fontWeight: 700 }}>
               {editingGoal ? 'Edit Goal' : 'Create New Goal'}
             </h3>
 
             <form onSubmit={handleSubmit}>
               <div style={{ marginBottom: '20px' }}>
-                <label style={{ display: 'block', color: '#94a3b8', fontSize: '13px', marginBottom: '8px', fontWeight: 500 }}>
+                <label style={{ display: 'block', color: '#64748b', fontSize: '13px', marginBottom: '8px', fontWeight: 500 }}>
                   Goal Name *
                 </label>
                 <input
@@ -415,9 +411,9 @@ export default function GoalsPage() {
                     width: '100%',
                     padding: '12px',
                     borderRadius: '8px',
-                    border: '1px solid #334155',
-                    background: '#0f172a',
-                    color: '#e2e8f0',
+                    border: '1px solid #e2e8f0',
+                    background: '#f8fafc',
+                    color: '#1e293b',
                     fontSize: '14px'
                   }}
                   placeholder="e.g., Newsletter Signup"
@@ -425,7 +421,7 @@ export default function GoalsPage() {
               </div>
 
               <div style={{ marginBottom: '20px' }}>
-                <label style={{ display: 'block', color: '#94a3b8', fontSize: '13px', marginBottom: '8px', fontWeight: 500 }}>
+                <label style={{ display: 'block', color: '#64748b', fontSize: '13px', marginBottom: '8px', fontWeight: 500 }}>
                   Description
                 </label>
                 <textarea
@@ -435,9 +431,9 @@ export default function GoalsPage() {
                     width: '100%',
                     padding: '12px',
                     borderRadius: '8px',
-                    border: '1px solid #334155',
-                    background: '#0f172a',
-                    color: '#e2e8f0',
+                    border: '1px solid #e2e8f0',
+                    background: '#f8fafc',
+                    color: '#1e293b',
                     fontSize: '14px',
                     minHeight: '80px',
                     resize: 'vertical'
@@ -447,7 +443,7 @@ export default function GoalsPage() {
               </div>
 
               <div style={{ marginBottom: '20px' }}>
-                <label style={{ display: 'block', color: '#94a3b8', fontSize: '13px', marginBottom: '8px', fontWeight: 500 }}>
+                <label style={{ display: 'block', color: '#64748b', fontSize: '13px', marginBottom: '8px', fontWeight: 500 }}>
                   Goal Type *
                 </label>
                 <select
@@ -457,9 +453,9 @@ export default function GoalsPage() {
                     width: '100%',
                     padding: '12px',
                     borderRadius: '8px',
-                    border: '1px solid #334155',
-                    background: '#0f172a',
-                    color: '#e2e8f0',
+                    border: '1px solid #e2e8f0',
+                    background: '#f8fafc',
+                    color: '#1e293b',
                     fontSize: '14px',
                     cursor: 'pointer'
                   }}
@@ -470,7 +466,7 @@ export default function GoalsPage() {
               </div>
 
               <div style={{ marginBottom: '24px' }}>
-                <label style={{ display: 'block', color: '#94a3b8', fontSize: '13px', marginBottom: '8px', fontWeight: 500 }}>
+                <label style={{ display: 'block', color: '#64748b', fontSize: '13px', marginBottom: '8px', fontWeight: 500 }}>
                   Target Value *
                 </label>
                 <input
@@ -482,9 +478,9 @@ export default function GoalsPage() {
                     width: '100%',
                     padding: '12px',
                     borderRadius: '8px',
-                    border: '1px solid #334155',
-                    background: '#0f172a',
-                    color: '#e2e8f0',
+                    border: '1px solid #e2e8f0',
+                    background: '#f8fafc',
+                    color: '#1e293b',
                     fontSize: '14px'
                   }}
                   placeholder={formData.type === 'event' ? 'e.g., form_submit' : 'e.g., /thank-you'}
@@ -502,7 +498,7 @@ export default function GoalsPage() {
                   onClick={() => setShowModal(false)}
                   style={{
                     background: '#334155',
-                    color: '#e2e8f0',
+                    color: '#1e293b',
                     border: 'none',
                     borderRadius: '8px',
                     padding: '12px 24px',
@@ -516,8 +512,8 @@ export default function GoalsPage() {
                 <button
                   type="submit"
                   style={{
-                    background: 'linear-gradient(135deg, #06b6d4, #3b82f6)',
-                    color: '#fff',
+                    background: '#2563eb',
+                    color: '#1e293b',
                     border: 'none',
                     borderRadius: '8px',
                     padding: '12px 24px',

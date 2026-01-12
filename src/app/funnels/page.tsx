@@ -1,4 +1,6 @@
 'use client';
+import Logo from '../../components/Logo';
+import SiteSelector from '../../components/SiteSelector';
 
 import { useState, useEffect } from 'react';
 import Link from 'next/link';
@@ -137,17 +139,17 @@ export default function FunnelsPage() {
   };
 
   return (
-    <div style={{ minHeight: '100vh', background: 'linear-gradient(135deg, #0f172a 0%, #1e293b 50%, #0f172a 100%)', fontFamily: 'system-ui, sans-serif' }}>
+    <div style={{ minHeight: '100vh', background: '#f8fafc', fontFamily: 'system-ui, sans-serif' }}>
       {/* Navigation Header */}
-      <header style={{ borderBottom: '1px solid #334155', background: 'rgba(15,23,42,0.95)', padding: '16px 24px', position: 'sticky', top: 0, zIndex: 100 }}>
-        <div style={{ maxWidth: '1400px', margin: '0 auto', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+      <header style={{ borderBottom: '1px solid #e2e8f0', background: '#ffffff', padding: '16px 32px', position: 'sticky', top: 0, zIndex: 100 }}>
+        <div style={{ maxWidth: '1600px', margin: '0 auto', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
           <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
             <Link href="/" style={{ textDecoration: 'none', display: 'flex', alignItems: 'center', gap: '12px' }}>
-              <div style={{ width: '40px', height: '40px', background: 'linear-gradient(135deg, #06b6d4, #3b82f6)', borderRadius: '10px', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+              <div style={{ width: '40px', height: '40px', background: '#2563eb', borderRadius: '10px', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
                 <svg width="22" height="22" fill="none" stroke="white" strokeWidth="2" viewBox="0 0 24 24"><path d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z" /></svg>
               </div>
               <div>
-                <h1 style={{ margin: 0, fontSize: '20px', color: '#fff', fontWeight: 700 }}>Pulse Analytics</h1>
+                <h1 style={{ margin: 0, fontSize: '20px', color: '#1e293b', fontWeight: 700 }}>Pulse Analytics</h1>
                 <p style={{ margin: 0, fontSize: '13px', color: '#64748b' }}>Funnel Analysis</p>
               </div>
             </Link>
@@ -157,15 +159,15 @@ export default function FunnelsPage() {
       </header>
 
       {/* Main Content */}
-      <div style={{ padding: '24px' }}>
-      <div style={{ maxWidth: '1400px', margin: '0 auto' }}>
+      <div style={{ padding: '32px' }}>
+      <div style={{ maxWidth: '1600px', margin: '0 auto' }}>
         {/* Header */}
         <div style={{ marginBottom: '32px', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
           <div>
-            <h1 style={{ fontSize: '28px', fontWeight: 700, color: '#fff', marginBottom: '8px' }}>
+            <h1 style={{ fontSize: '28px', fontWeight: 700, color: '#1e293b', marginBottom: '8px' }}>
               📊 Funnel Analysis
             </h1>
-            <p style={{ color: '#94a3b8', fontSize: '14px' }}>
+            <p style={{ color: '#64748b', fontSize: '14px' }}>
               Create and analyze multi-step conversion funnels
             </p>
           </div>
@@ -173,7 +175,7 @@ export default function FunnelsPage() {
           onClick={() => setShowCreateModal(true)}
           style={{
             background: 'linear-gradient(135deg, #667eea 0%, #764ba2 100%)',
-            color: '#fff',
+            color: '#1e293b',
             padding: '12px 24px',
             borderRadius: '8px',
             border: 'none',
@@ -208,7 +210,7 @@ export default function FunnelsPage() {
             onClick={() => setShowCreateModal(true)}
             style={{
               background: 'linear-gradient(135deg, #667eea 0%, #764ba2 100%)',
-              color: '#fff',
+              color: '#1e293b',
               padding: '10px 20px',
               borderRadius: '8px',
               border: 'none',
@@ -229,7 +231,7 @@ export default function FunnelsPage() {
                 background: '#fff',
                 borderRadius: '12px',
                 border: '1px solid #e2e8f0',
-                padding: '24px',
+                padding: '32px',
                 boxShadow: '0 1px 3px rgba(0,0,0,0.1)'
               }}
             >
@@ -256,7 +258,7 @@ export default function FunnelsPage() {
                       height: '24px',
                       borderRadius: '50%',
                       background: 'linear-gradient(135deg, #667eea 0%, #764ba2 100%)',
-                      color: '#fff',
+                      color: '#1e293b',
                       display: 'flex',
                       alignItems: 'center',
                       justifyContent: 'center',
@@ -285,7 +287,7 @@ export default function FunnelsPage() {
                   style={{
                     flex: 1,
                     background: 'linear-gradient(135deg, #667eea 0%, #764ba2 100%)',
-                    color: '#fff',
+                    color: '#1e293b',
                     padding: '10px',
                     borderRadius: '6px',
                     textAlign: 'center',
@@ -513,7 +515,7 @@ export default function FunnelsPage() {
                   background: 'linear-gradient(135deg, #667eea 0%, #764ba2 100%)',
                   border: 'none',
                   borderRadius: '6px',
-                  color: '#fff',
+                  color: '#1e293b',
                   fontSize: '14px',
                   fontWeight: 600,
                   cursor: 'pointer'

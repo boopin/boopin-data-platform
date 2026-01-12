@@ -1,4 +1,6 @@
 'use client';
+import Logo from '../../components/Logo';
+import SiteSelector from '../../components/SiteSelector';
 
 import { useEffect, useState } from 'react';
 import Link from 'next/link';
@@ -53,16 +55,16 @@ export default function JourneysPage() {
 
   if (siteLoading || loading) {
     return (
-      <div style={{ minHeight: '100vh', background: 'linear-gradient(135deg, #0f172a 0%, #1e293b 100%)', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
-        <p style={{ color: '#94a3b8' }}>Loading journeys...</p>
+      <div style={{ minHeight: '100vh', background: '#f8fafc', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+        <p style={{ color: '#64748b' }}>Loading journeys...</p>
       </div>
     );
   }
 
   if (!selectedSite) {
     return (
-      <div style={{ minHeight: '100vh', background: 'linear-gradient(135deg, #0f172a 0%, #1e293b 100%)', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
-        <p style={{ color: '#94a3b8' }}>No site selected. Please select a site from the dashboard.</p>
+      <div style={{ minHeight: '100vh', background: '#f8fafc', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+        <p style={{ color: '#64748b' }}>No site selected. Please select a site from the dashboard.</p>
       </div>
     );
   }
@@ -70,49 +72,43 @@ export default function JourneysPage() {
   if (!data) return null;
 
   return (
-    <div style={{ minHeight: '100vh', background: 'linear-gradient(135deg, #0f172a 0%, #1e293b 50%, #0f172a 100%)', fontFamily: 'system-ui, sans-serif' }}>
+    <div style={{ minHeight: '100vh', background: '#f8fafc', fontFamily: 'system-ui, sans-serif' }}>
       {/* Header */}
-      <header style={{ borderBottom: '1px solid #334155', background: 'rgba(15,23,42,0.95)', padding: '16px 24px', position: 'sticky', top: 0, zIndex: 100 }}>
-        <div style={{ maxWidth: '1400px', margin: '0 auto', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-          <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
-            <Link href="/" style={{ textDecoration: 'none', display: 'flex', alignItems: 'center', gap: '12px' }}>
-              <div style={{ width: '40px', height: '40px', background: 'linear-gradient(135deg, #06b6d4, #3b82f6)', borderRadius: '10px', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
-                <svg width="22" height="22" fill="none" stroke="white" strokeWidth="2" viewBox="0 0 24 24"><path d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z" /></svg>
-              </div>
-              <div>
-                <h1 style={{ margin: 0, fontSize: '20px', color: '#fff', fontWeight: 700 }}>Pulse Analytics</h1>
-                <p style={{ margin: 0, fontSize: '13px', color: '#64748b' }}>User Journeys</p>
-              </div>
-            </Link>
+      <header style={{ background: '#ffffff', borderBottom: '1px solid #e2e8f0', padding: '16px 32px', position: 'sticky', top: 0, zIndex: 100, boxShadow: '0 1px 2px rgba(0, 0, 0, 0.05)' }}>
+        <div style={{ maxWidth: '1600px', margin: '0 auto', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+          <Logo />
+          <div style={{ display: 'flex', alignItems: 'center', gap: '24px' }}>
+            <Navigation />
+            <div style={{ height: '24px', width: '1px', background: '#e2e8f0' }} />
+            <SiteSelector />
           </div>
-          <Navigation />
         </div>
       </header>
 
-      <main style={{ maxWidth: '1400px', margin: '0 auto', padding: '24px' }}>
+      <main style={{ maxWidth: '1600px', margin: '0 auto', padding: '32px' }}>
         {/* Page Header */}
         <div style={{ marginBottom: '24px' }}>
-          <h2 style={{ margin: 0, fontSize: '28px', color: '#fff', fontWeight: 700 }}>🛤️ User Journeys</h2>
-          <p style={{ margin: '8px 0 0', color: '#94a3b8', fontSize: '14px' }}>
+          <h2 style={{ margin: 0, fontSize: '28px', color: '#1e293b', fontWeight: 700 }}>🛤️ User Journeys</h2>
+          <p style={{ margin: '8px 0 0', color: '#64748b', fontSize: '14px' }}>
             Visualize how users navigate through your site
           </p>
         </div>
 
         {/* Stats Cards */}
         <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(250px, 1fr))', gap: '16px', marginBottom: '32px' }}>
-          <div style={{ background: '#1e293b', borderRadius: '12px', padding: '20px', border: '1px solid #334155' }}>
+          <div style={{ background: '#ffffff', borderRadius: '12px', padding: '20px', border: '1px solid #e2e8f0', boxShadow: '0 1px 3px rgba(0, 0, 0, 0.05)' }}>
             <p style={{ margin: 0, color: '#64748b', fontSize: '13px', textTransform: 'uppercase' }}>Total Sessions</p>
-            <p style={{ margin: '8px 0 0', color: '#22d3ee', fontSize: '32px', fontWeight: 700 }}>
+            <p style={{ margin: '8px 0 0', color: '#2563eb', fontSize: '32px', fontWeight: 700 }}>
               {data.stats.totalSessions.toLocaleString()}
             </p>
           </div>
-          <div style={{ background: '#1e293b', borderRadius: '12px', padding: '20px', border: '1px solid #334155' }}>
+          <div style={{ background: '#ffffff', borderRadius: '12px', padding: '20px', border: '1px solid #e2e8f0', boxShadow: '0 1px 3px rgba(0, 0, 0, 0.05)' }}>
             <p style={{ margin: 0, color: '#64748b', fontSize: '13px', textTransform: 'uppercase' }}>Avg Session Depth</p>
             <p style={{ margin: '8px 0 0', color: '#10b981', fontSize: '32px', fontWeight: 700 }}>
               {data.stats.avgSessionDepth} pages
             </p>
           </div>
-          <div style={{ background: '#1e293b', borderRadius: '12px', padding: '20px', border: '1px solid #334155' }}>
+          <div style={{ background: '#ffffff', borderRadius: '12px', padding: '20px', border: '1px solid #e2e8f0', boxShadow: '0 1px 3px rgba(0, 0, 0, 0.05)' }}>
             <p style={{ margin: 0, color: '#64748b', fontSize: '13px', textTransform: 'uppercase' }}>Unique Paths</p>
             <p style={{ margin: '8px 0 0', color: '#f59e0b', fontSize: '32px', fontWeight: 700 }}>
               {data.stats.uniquePaths.toLocaleString()}
@@ -122,16 +118,16 @@ export default function JourneysPage() {
 
         {/* Common Paths */}
         <div style={{ marginBottom: '32px' }}>
-          <h3 style={{ margin: '0 0 16px', fontSize: '20px', color: '#fff', fontWeight: 600 }}>📊 Most Common Paths</h3>
+          <h3 style={{ margin: '0 0 16px', fontSize: '20px', color: '#1e293b', fontWeight: 600 }}>📊 Most Common Paths</h3>
           <div style={{ display: 'flex', flexDirection: 'column', gap: '12px' }}>
             {data.commonPaths.slice(0, 10).map((pathData, idx) => (
               <div
                 key={idx}
                 style={{
-                  background: '#1e293b',
+                  background: '#ffffff',
                   borderRadius: '12px',
                   padding: '16px',
-                  border: '1px solid #334155'
+                  border: '1px solid #e2e8f0'
                 }}
               >
                 <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '12px' }}>
@@ -141,7 +137,7 @@ export default function JourneysPage() {
                   <div
                     style={{
                       background: '#06b6d4',
-                      color: '#fff',
+                      color: '#1e293b',
                       padding: '4px 12px',
                       borderRadius: '12px',
                       fontSize: '12px',
@@ -156,8 +152,8 @@ export default function JourneysPage() {
                     <div key={pageIdx} style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
                       <div
                         style={{
-                          background: '#0f172a',
-                          color: '#22d3ee',
+                          background: '#f8fafc',
+                          color: '#2563eb',
                           padding: '8px 16px',
                           borderRadius: '8px',
                           fontSize: '13px',
@@ -182,8 +178,8 @@ export default function JourneysPage() {
         <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '24px' }}>
           {/* Entry Pages */}
           <div>
-            <h3 style={{ margin: '0 0 16px', fontSize: '20px', color: '#fff', fontWeight: 600 }}>🚪 Top Entry Pages</h3>
-            <div style={{ background: '#1e293b', borderRadius: '12px', border: '1px solid #334155', overflow: 'hidden' }}>
+            <h3 style={{ margin: '0 0 16px', fontSize: '20px', color: '#1e293b', fontWeight: 600 }}>🚪 Top Entry Pages</h3>
+            <div style={{ background: '#ffffff', borderRadius: '12px', border: '1px solid #e2e8f0', overflow: 'hidden' }}>
               {data.topEntryPages.map((page, idx) => (
                 <div
                   key={idx}
@@ -196,7 +192,7 @@ export default function JourneysPage() {
                   }}
                 >
                   <div>
-                    <p style={{ margin: 0, color: '#22d3ee', fontSize: '14px', fontFamily: 'monospace', fontWeight: 500 }}>
+                    <p style={{ margin: 0, color: '#2563eb', fontSize: '14px', fontFamily: 'monospace', fontWeight: 500 }}>
                       {page.page}
                     </p>
                     <p style={{ margin: '4px 0 0', color: '#64748b', fontSize: '12px' }}>
@@ -213,8 +209,8 @@ export default function JourneysPage() {
 
           {/* Exit Pages */}
           <div>
-            <h3 style={{ margin: '0 0 16px', fontSize: '20px', color: '#fff', fontWeight: 600 }}>🚶 Top Exit Pages</h3>
-            <div style={{ background: '#1e293b', borderRadius: '12px', border: '1px solid #334155', overflow: 'hidden' }}>
+            <h3 style={{ margin: '0 0 16px', fontSize: '20px', color: '#1e293b', fontWeight: 600 }}>🚶 Top Exit Pages</h3>
+            <div style={{ background: '#ffffff', borderRadius: '12px', border: '1px solid #e2e8f0', overflow: 'hidden' }}>
               {data.topExitPages.map((page, idx) => (
                 <div
                   key={idx}

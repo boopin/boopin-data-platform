@@ -1,4 +1,6 @@
 'use client';
+import Logo from '../../components/Logo';
+import SiteSelector from '../../components/SiteSelector';
 
 import { useState, useEffect } from 'react';
 import Link from 'next/link';
@@ -101,17 +103,17 @@ export default function CohortsPage() {
   };
 
   return (
-    <div style={{ minHeight: '100vh', background: 'linear-gradient(135deg, #0f172a 0%, #1e293b 50%, #0f172a 100%)', fontFamily: 'system-ui, sans-serif' }}>
+    <div style={{ minHeight: '100vh', background: '#f8fafc', fontFamily: 'system-ui, sans-serif' }}>
       {/* Navigation Header */}
-      <header style={{ borderBottom: '1px solid #334155', background: 'rgba(15,23,42,0.95)', padding: '16px 24px', position: 'sticky', top: 0, zIndex: 100 }}>
-        <div style={{ maxWidth: '1400px', margin: '0 auto', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+      <header style={{ borderBottom: '1px solid #e2e8f0', background: '#ffffff', padding: '16px 32px', position: 'sticky', top: 0, zIndex: 100 }}>
+        <div style={{ maxWidth: '1600px', margin: '0 auto', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
           <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
             <Link href="/" style={{ textDecoration: 'none', display: 'flex', alignItems: 'center', gap: '12px' }}>
-              <div style={{ width: '40px', height: '40px', background: 'linear-gradient(135deg, #06b6d4, #3b82f6)', borderRadius: '10px', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+              <div style={{ width: '40px', height: '40px', background: '#2563eb', borderRadius: '10px', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
                 <svg width="22" height="22" fill="none" stroke="white" strokeWidth="2" viewBox="0 0 24 24"><path d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z" /></svg>
               </div>
               <div>
-                <h1 style={{ margin: 0, fontSize: '20px', color: '#fff', fontWeight: 700 }}>Pulse Analytics</h1>
+                <h1 style={{ margin: 0, fontSize: '20px', color: '#1e293b', fontWeight: 700 }}>Pulse Analytics</h1>
                 <p style={{ margin: 0, fontSize: '13px', color: '#64748b' }}>Cohort Analysis</p>
               </div>
             </Link>
@@ -121,15 +123,15 @@ export default function CohortsPage() {
       </header>
 
       {/* Main Content */}
-      <div style={{ padding: '24px' }}>
-        <div style={{ maxWidth: '1400px', margin: '0 auto' }}>
+      <div style={{ padding: '32px' }}>
+        <div style={{ maxWidth: '1600px', margin: '0 auto' }}>
           {/* Header */}
           <div style={{ marginBottom: '32px', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
             <div>
-              <h1 style={{ fontSize: '28px', fontWeight: 700, color: '#fff', marginBottom: '8px' }}>
+              <h1 style={{ fontSize: '28px', fontWeight: 700, color: '#1e293b', marginBottom: '8px' }}>
                 📈 Cohort Analysis
               </h1>
-              <p style={{ color: '#94a3b8', fontSize: '14px' }}>
+              <p style={{ color: '#64748b', fontSize: '14px' }}>
                 Track user retention and behavior patterns over time
               </p>
             </div>
@@ -137,7 +139,7 @@ export default function CohortsPage() {
               onClick={() => setShowCreateModal(true)}
               style={{
                 background: 'linear-gradient(135deg, #667eea 0%, #764ba2 100%)',
-                color: '#fff',
+                color: '#1e293b',
                 padding: '12px 24px',
                 borderRadius: '8px',
                 border: 'none',
@@ -152,27 +154,27 @@ export default function CohortsPage() {
 
           {/* Cohorts List */}
           {loading ? (
-            <div style={{ textAlign: 'center', padding: '40px', color: '#94a3b8' }}>Loading cohorts...</div>
+            <div style={{ textAlign: 'center', padding: '40px', color: '#64748b' }}>Loading cohorts...</div>
           ) : cohorts.length === 0 ? (
             <div style={{
               textAlign: 'center',
               padding: '60px 20px',
-              background: '#1e293b',
+              background: '#ffffff',
               borderRadius: '12px',
-              border: '1px solid #334155'
+              border: '1px solid #e2e8f0'
             }}>
               <div style={{ fontSize: '48px', marginBottom: '16px' }}>📈</div>
-              <h3 style={{ fontSize: '18px', fontWeight: 600, color: '#fff', marginBottom: '8px' }}>
+              <h3 style={{ fontSize: '18px', fontWeight: 600, color: '#1e293b', marginBottom: '8px' }}>
                 No cohorts yet
               </h3>
-              <p style={{ color: '#94a3b8', marginBottom: '24px' }}>
+              <p style={{ color: '#64748b', marginBottom: '24px' }}>
                 Create your first cohort to start tracking user retention
               </p>
               <button
                 onClick={() => setShowCreateModal(true)}
                 style={{
                   background: 'linear-gradient(135deg, #667eea 0%, #764ba2 100%)',
-                  color: '#fff',
+                  color: '#1e293b',
                   padding: '10px 20px',
                   borderRadius: '8px',
                   border: 'none',
@@ -190,18 +192,18 @@ export default function CohortsPage() {
                 <div
                   key={cohort.id}
                   style={{
-                    background: '#1e293b',
+                    background: '#ffffff',
                     borderRadius: '12px',
-                    border: '1px solid #334155',
-                    padding: '24px'
+                    border: '1px solid #e2e8f0',
+                    padding: '32px'
                   }}
                 >
                   <div style={{ marginBottom: '16px' }}>
-                    <h3 style={{ fontSize: '18px', fontWeight: 600, color: '#fff', marginBottom: '8px' }}>
+                    <h3 style={{ fontSize: '18px', fontWeight: 600, color: '#1e293b', marginBottom: '8px' }}>
                       {cohort.name}
                     </h3>
                     {cohort.description && (
-                      <p style={{ fontSize: '14px', color: '#94a3b8', marginBottom: '12px' }}>
+                      <p style={{ fontSize: '14px', color: '#64748b', marginBottom: '12px' }}>
                         {cohort.description}
                       </p>
                     )}
@@ -220,7 +222,7 @@ export default function CohortsPage() {
                         fontSize: '12px',
                         padding: '4px 8px',
                         background: '#06b6d420',
-                        color: '#22d3ee',
+                        color: '#2563eb',
                         borderRadius: '4px',
                         fontWeight: 500
                       }}>
@@ -230,7 +232,7 @@ export default function CohortsPage() {
                   </div>
 
                   {/* Retention Periods */}
-                  <div style={{ marginBottom: '20px', padding: '16px', background: '#0f172a', borderRadius: '8px' }}>
+                  <div style={{ marginBottom: '20px', padding: '16px', background: '#f8fafc', borderRadius: '8px' }}>
                     <div style={{ fontSize: '11px', color: '#64748b', marginBottom: '8px', textTransform: 'uppercase', fontWeight: 600 }}>
                       Tracking Periods (days)
                     </div>
@@ -239,10 +241,10 @@ export default function CohortsPage() {
                         <span key={idx} style={{
                           fontSize: '13px',
                           padding: '4px 10px',
-                          background: '#1e293b',
-                          color: '#e2e8f0',
+                          background: '#ffffff',
+                          color: '#1e293b',
                           borderRadius: '4px',
-                          border: '1px solid #334155'
+                          border: '1px solid #e2e8f0'
                         }}>
                           {period}d
                         </span>
@@ -257,7 +259,7 @@ export default function CohortsPage() {
                       style={{
                         flex: 1,
                         background: 'linear-gradient(135deg, #667eea 0%, #764ba2 100%)',
-                        color: '#fff',
+                        color: '#1e293b',
                         padding: '10px',
                         borderRadius: '6px',
                         textAlign: 'center',
@@ -271,7 +273,7 @@ export default function CohortsPage() {
                     <button
                       onClick={() => deleteCohort(cohort.id)}
                       style={{
-                        background: '#1e293b',
+                        background: '#ffffff',
                         color: '#ef4444',
                         padding: '10px 16px',
                         borderRadius: '6px',
@@ -305,22 +307,22 @@ export default function CohortsPage() {
               padding: '20px'
             }}>
               <div style={{
-                background: '#1e293b',
+                background: '#ffffff',
                 padding: '32px',
                 borderRadius: '12px',
                 maxWidth: '600px',
                 width: '100%',
                 maxHeight: '90vh',
                 overflow: 'auto',
-                border: '1px solid #334155'
+                border: '1px solid #e2e8f0'
               }}>
-                <h2 style={{ fontSize: '24px', fontWeight: 700, color: '#fff', marginBottom: '24px' }}>
+                <h2 style={{ fontSize: '24px', fontWeight: 700, color: '#1e293b', marginBottom: '24px' }}>
                   Create New Cohort
                 </h2>
 
                 {/* Name */}
                 <div style={{ marginBottom: '20px' }}>
-                  <label style={{ display: 'block', fontSize: '14px', fontWeight: 600, color: '#e2e8f0', marginBottom: '8px' }}>
+                  <label style={{ display: 'block', fontSize: '14px', fontWeight: 600, color: '#1e293b', marginBottom: '8px' }}>
                     Cohort Name *
                   </label>
                   <input
@@ -331,10 +333,10 @@ export default function CohortsPage() {
                     style={{
                       width: '100%',
                       padding: '10px 12px',
-                      background: '#0f172a',
-                      border: '1px solid #334155',
+                      background: '#f8fafc',
+                      border: '1px solid #e2e8f0',
                       borderRadius: '6px',
-                      color: '#fff',
+                      color: '#1e293b',
                       fontSize: '14px'
                     }}
                   />
@@ -342,7 +344,7 @@ export default function CohortsPage() {
 
                 {/* Description */}
                 <div style={{ marginBottom: '20px' }}>
-                  <label style={{ display: 'block', fontSize: '14px', fontWeight: 600, color: '#e2e8f0', marginBottom: '8px' }}>
+                  <label style={{ display: 'block', fontSize: '14px', fontWeight: 600, color: '#1e293b', marginBottom: '8px' }}>
                     Description (optional)
                   </label>
                   <textarea
@@ -353,10 +355,10 @@ export default function CohortsPage() {
                     style={{
                       width: '100%',
                       padding: '10px 12px',
-                      background: '#0f172a',
-                      border: '1px solid #334155',
+                      background: '#f8fafc',
+                      border: '1px solid #e2e8f0',
                       borderRadius: '6px',
-                      color: '#fff',
+                      color: '#1e293b',
                       fontSize: '14px',
                       resize: 'vertical'
                     }}
@@ -365,7 +367,7 @@ export default function CohortsPage() {
 
                 {/* Interval Type */}
                 <div style={{ marginBottom: '24px' }}>
-                  <label style={{ display: 'block', fontSize: '14px', fontWeight: 600, color: '#e2e8f0', marginBottom: '8px' }}>
+                  <label style={{ display: 'block', fontSize: '14px', fontWeight: 600, color: '#1e293b', marginBottom: '8px' }}>
                     Cohort Interval *
                   </label>
                   <select
@@ -374,10 +376,10 @@ export default function CohortsPage() {
                     style={{
                       width: '100%',
                       padding: '10px 12px',
-                      background: '#0f172a',
-                      border: '1px solid #334155',
+                      background: '#f8fafc',
+                      border: '1px solid #e2e8f0',
                       borderRadius: '6px',
-                      color: '#fff',
+                      color: '#1e293b',
                       fontSize: '14px'
                     }}
                   >
@@ -397,10 +399,10 @@ export default function CohortsPage() {
                     style={{
                       flex: 1,
                       padding: '12px',
-                      background: '#0f172a',
-                      border: '1px solid #334155',
+                      background: '#f8fafc',
+                      border: '1px solid #e2e8f0',
                       borderRadius: '6px',
-                      color: '#e2e8f0',
+                      color: '#1e293b',
                       fontSize: '14px',
                       fontWeight: 600,
                       cursor: 'pointer'
@@ -416,7 +418,7 @@ export default function CohortsPage() {
                       background: 'linear-gradient(135deg, #667eea 0%, #764ba2 100%)',
                       border: 'none',
                       borderRadius: '6px',
-                      color: '#fff',
+                      color: '#1e293b',
                       fontSize: '14px',
                       fontWeight: 600,
                       cursor: 'pointer'
