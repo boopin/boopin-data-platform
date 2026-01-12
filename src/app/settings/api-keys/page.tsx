@@ -132,8 +132,8 @@ export default function ApiKeysPage() {
 
   if (loading) {
     return (
-      <div style={{ minHeight: '100vh', background: 'linear-gradient(135deg, #0f172a 0%, #1e293b 100%)', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
-        <div style={{ textAlign: 'center', color: '#e2e8f0' }}>
+      <div style={{ minHeight: '100vh', background: '#f8fafc', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+        <div style={{ textAlign: 'center', color: '#64748b' }}>
           <div style={{ fontSize: '48px', marginBottom: '16px' }}>🔑</div>
           <p>Loading API keys...</p>
         </div>
@@ -144,6 +144,16 @@ export default function ApiKeysPage() {
   return (
     <div style={{ minHeight: '100vh', background: '#f8fafc', fontFamily: 'system-ui, sans-serif' }}>
       {/* Header */}
+      <header style={{ background: '#ffffff', borderBottom: '1px solid #e2e8f0', padding: '16px 32px', position: 'sticky', top: 0, zIndex: 100, boxShadow: '0 1px 2px rgba(0, 0, 0, 0.05)' }}>
+        <div style={{ maxWidth: '1600px', margin: '0 auto', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+          <Logo />
+          <div style={{ display: 'flex', alignItems: 'center', gap: '24px' }}>
+            <Navigation />
+            <div style={{ height: '24px', width: '1px', background: '#e2e8f0' }} />
+            <SiteSelector />
+          </div>
+        </div>
+      </header>
 
       <main style={{ maxWidth: '1600px', margin: '0 auto', padding: '32px' }}>
         {/* Page Header */}
