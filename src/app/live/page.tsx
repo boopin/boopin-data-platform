@@ -2,6 +2,8 @@
 import { useEffect, useState } from 'react';
 import Link from 'next/link';
 import Navigation from '../../components/Navigation';
+import Logo from '../../components/Logo';
+import SiteSelector from '../../components/SiteSelector';
 
 interface LiveVisitor {
   id: string;
@@ -86,8 +88,8 @@ export default function LiveVisitorsPage() {
 
   if (loading) {
     return (
-      <div style={{ minHeight: '100vh', background: 'linear-gradient(135deg, #0f172a 0%, #1e293b 100%)', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
-        <div style={{ textAlign: 'center', color: '#e2e8f0' }}>
+      <div style={{ minHeight: '100vh', background: '#f8fafc', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+        <div style={{ textAlign: 'center', color: '#64748b' }}>
           <div style={{ fontSize: '48px', marginBottom: '16px' }}>👥</div>
           <p>Loading live visitors...</p>
         </div>
@@ -96,41 +98,35 @@ export default function LiveVisitorsPage() {
   }
 
   return (
-    <div style={{ minHeight: '100vh', background: 'linear-gradient(135deg, #0f172a 0%, #1e293b 50%, #0f172a 100%)', fontFamily: 'system-ui, sans-serif' }}>
+    <div style={{ minHeight: '100vh', background: '#f8fafc', fontFamily: 'system-ui, sans-serif' }}>
       {/* Header */}
-      <header style={{ borderBottom: '1px solid #334155', background: 'rgba(15,23,42,0.95)', padding: '16px 24px', position: 'sticky', top: 0, zIndex: 100 }}>
-        <div style={{ maxWidth: '1400px', margin: '0 auto', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-          <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
-            <Link href="/" style={{ textDecoration: 'none', display: 'flex', alignItems: 'center', gap: '12px' }}>
-              <div style={{ width: '40px', height: '40px', background: 'linear-gradient(135deg, #06b6d4, #3b82f6)', borderRadius: '10px', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
-                <svg width="22" height="22" fill="none" stroke="white" strokeWidth="2" viewBox="0 0 24 24"><path d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z" /></svg>
-              </div>
-              <div>
-                <h1 style={{ margin: 0, fontSize: '20px', color: '#fff', fontWeight: 700 }}>Pulse Analytics</h1>
-                <p style={{ margin: 0, fontSize: '13px', color: '#64748b' }}>Live Visitors</p>
-              </div>
-            </Link>
+      <header style={{ background: '#ffffff', borderBottom: '1px solid #e2e8f0', padding: '16px 32px', position: 'sticky', top: 0, zIndex: 100, boxShadow: '0 1px 2px rgba(0, 0, 0, 0.05)' }}>
+        <div style={{ maxWidth: '1600px', margin: '0 auto', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+          <Logo />
+          <div style={{ display: 'flex', alignItems: 'center', gap: '24px' }}>
+            <Navigation />
+            <div style={{ height: '24px', width: '1px', background: '#e2e8f0' }} />
+            <SiteSelector />
           </div>
-          <Navigation />
         </div>
       </header>
 
-      <main style={{ maxWidth: '1400px', margin: '0 auto', padding: '24px' }}>
+      <main style={{ maxWidth: '1600px', margin: '0 auto', padding: '32px' }}>
         {/* Page Header */}
         <div style={{ marginBottom: '24px', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
           <div>
-            <h2 style={{ margin: 0, fontSize: '28px', color: '#fff', fontWeight: 700, display: 'flex', alignItems: 'center', gap: '12px' }}>
+            <h2 style={{ margin: 0, fontSize: '28px', color: '#1e293b', fontWeight: 700, display: 'flex', alignItems: 'center', gap: '12px' }}>
               <span style={{ fontSize: '32px' }}>🔴</span>
               Live Visitors
             </h2>
-            <p style={{ margin: '8px 0 0', color: '#94a3b8', fontSize: '14px' }}>
+            <p style={{ margin: '8px 0 0', color: '#64748b', fontSize: '14px' }}>
               Real-time view of visitors on your site right now • Updates every 5 seconds
             </p>
           </div>
           <div style={{ textAlign: 'right' }}>
             <div style={{ display: 'flex', alignItems: 'center', gap: '8px', marginBottom: '4px' }}>
-              <div style={{ width: '8px', height: '8px', borderRadius: '50%', background: '#22c55e', animation: 'pulse 2s infinite' }}></div>
-              <span style={{ color: '#22c55e', fontSize: '14px', fontWeight: 600 }}>LIVE</span>
+              <div style={{ width: '8px', height: '8px', borderRadius: '50%', background: '#10b981', animation: 'pulse 2s infinite' }}></div>
+              <span style={{ color: '#10b981', fontSize: '14px', fontWeight: 600 }}>LIVE</span>
             </div>
             <p style={{ color: '#64748b', fontSize: '12px', margin: 0 }}>
               Updated {formatTimeAgo(lastUpdate.toISOString())}
@@ -141,15 +137,15 @@ export default function LiveVisitorsPage() {
         {/* Stats Cards */}
         <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(200px, 1fr))', gap: '16px', marginBottom: '24px' }}>
           {[
-            { label: 'Live Visitors', value: data?.stats.totalLiveVisitors || 0, icon: '👥', color: '#22c55e' },
-            { label: 'Identified', value: data?.stats.identifiedVisitors || 0, icon: '👤', color: '#3b82f6' },
+            { label: 'Live Visitors', value: data?.stats.totalLiveVisitors || 0, icon: '👥', color: '#10b981' },
+            { label: 'Identified', value: data?.stats.identifiedVisitors || 0, icon: '👤', color: '#2563eb' },
             { label: 'Anonymous', value: data?.stats.anonymousVisitors || 0, icon: '👻', color: '#64748b' },
             { label: 'Total Events', value: data?.stats.totalEvents || 0, icon: '⚡', color: '#f59e0b' },
           ].map((stat, i) => (
-            <div key={i} style={{ background: '#1e293b', borderRadius: '12px', padding: '20px', border: '1px solid #334155' }}>
+            <div key={i} style={{ background: '#ffffff', borderRadius: '12px', padding: '20px', border: '1px solid #e2e8f0', boxShadow: '0 1px 3px rgba(0, 0, 0, 0.05)' }}>
               <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start' }}>
                 <div>
-                  <p style={{ color: '#94a3b8', fontSize: '13px', margin: 0 }}>{stat.label}</p>
+                  <p style={{ color: '#64748b', fontSize: '13px', margin: 0, fontWeight: 500 }}>{stat.label}</p>
                   <p style={{ color: stat.color, fontSize: '32px', fontWeight: 700, margin: '8px 0 0' }}>{stat.value}</p>
                 </div>
                 <span style={{ fontSize: '24px' }}>{stat.icon}</span>
@@ -159,9 +155,9 @@ export default function LiveVisitorsPage() {
         </div>
 
         {/* Live Visitors Feed */}
-        <div style={{ background: '#1e293b', borderRadius: '12px', border: '1px solid #334155', overflow: 'hidden' }}>
-          <div style={{ padding: '20px', borderBottom: '1px solid #334155' }}>
-            <h3 style={{ margin: 0, fontSize: '18px', color: '#f8fafc', fontWeight: 600 }}>
+        <div style={{ background: '#ffffff', borderRadius: '12px', border: '1px solid #e2e8f0', overflow: 'hidden', boxShadow: '0 1px 3px rgba(0, 0, 0, 0.05)' }}>
+          <div style={{ padding: '20px', borderBottom: '1px solid #e2e8f0' }}>
+            <h3 style={{ margin: 0, fontSize: '18px', color: '#1e293b', fontWeight: 600 }}>
               Active Visitors ({data?.visitors.length || 0})
             </h3>
           </div>
@@ -169,8 +165,8 @@ export default function LiveVisitorsPage() {
           {!data?.visitors || data.visitors.length === 0 ? (
             <div style={{ padding: '80px 20px', textAlign: 'center' }}>
               <div style={{ fontSize: '64px', marginBottom: '16px' }}>👀</div>
-              <p style={{ color: '#94a3b8', fontSize: '16px', margin: 0 }}>No visitors online right now</p>
-              <p style={{ color: '#64748b', fontSize: '14px', margin: '8px 0 0' }}>Waiting for activity...</p>
+              <p style={{ color: '#64748b', fontSize: '16px', margin: 0 }}>No visitors online right now</p>
+              <p style={{ color: '#94a3b8', fontSize: '14px', margin: '8px 0 0' }}>Waiting for activity...</p>
             </div>
           ) : (
             <div style={{ maxHeight: '600px', overflowY: 'auto' }}>
@@ -182,12 +178,12 @@ export default function LiveVisitorsPage() {
                     display: 'flex',
                     gap: '16px',
                     padding: '20px',
-                    borderBottom: '1px solid #334155',
+                    borderBottom: '1px solid #e2e8f0',
                     textDecoration: 'none',
                     transition: 'background 0.2s',
                     position: 'relative'
                   }}
-                  onMouseEnter={e => (e.currentTarget.style.background = '#334155')}
+                  onMouseEnter={e => (e.currentTarget.style.background = '#f8fafc')}
                   onMouseLeave={e => (e.currentTarget.style.background = 'transparent')}
                 >
                   {/* New Visitor Badge */}
@@ -196,7 +192,7 @@ export default function LiveVisitorsPage() {
                       position: 'absolute',
                       top: '12px',
                       right: '12px',
-                      background: '#22c55e',
+                      background: '#10b981',
                       color: 'white',
                       padding: '4px 8px',
                       borderRadius: '4px',
@@ -213,13 +209,14 @@ export default function LiveVisitorsPage() {
                     height: '48px',
                     borderRadius: '50%',
                     background: visitor.is_identified
-                      ? 'linear-gradient(135deg, #10b981, #059669)'
-                      : 'linear-gradient(135deg, #64748b, #475569)',
+                      ? '#d1fae5'
+                      : '#f1f5f9',
                     display: 'flex',
                     alignItems: 'center',
                     justifyContent: 'center',
                     fontSize: '20px',
-                    flexShrink: 0
+                    flexShrink: 0,
+                    border: `2px solid ${visitor.is_identified ? '#10b981' : '#cbd5e1'}`
                   }}>
                     {visitor.is_identified ? '👤' : '👻'}
                   </div>
@@ -227,18 +224,18 @@ export default function LiveVisitorsPage() {
                   {/* Visitor Info */}
                   <div style={{ flex: 1, minWidth: 0 }}>
                     <div style={{ display: 'flex', alignItems: 'center', gap: '8px', marginBottom: '8px' }}>
-                      <p style={{ color: '#f8fafc', fontSize: '15px', fontWeight: 600, margin: 0 }}>
+                      <p style={{ color: '#1e293b', fontSize: '15px', fontWeight: 600, margin: 0 }}>
                         {visitor.name || visitor.email || 'Anonymous Visitor'}
                       </p>
                       {visitor.is_identified && visitor.email && (
-                        <span style={{ color: '#22d3ee', fontSize: '12px' }}>({visitor.email})</span>
+                        <span style={{ color: '#2563eb', fontSize: '12px' }}>({visitor.email})</span>
                       )}
                     </div>
 
                     {/* Current Page */}
                     <div style={{ display: 'flex', alignItems: 'center', gap: '8px', marginBottom: '8px' }}>
                       <span style={{ fontSize: '14px' }}>📄</span>
-                      <p style={{ color: '#94a3b8', fontSize: '13px', margin: 0, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
+                      <p style={{ color: '#64748b', fontSize: '13px', margin: 0, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
                         {visitor.page_path || 'Unknown page'}
                       </p>
                     </div>
@@ -294,7 +291,7 @@ export default function LiveVisitorsPage() {
 
                   {/* Last Activity */}
                   <div style={{ textAlign: 'right', flexShrink: 0 }}>
-                    <p style={{ color: '#22c55e', fontSize: '12px', fontWeight: 600, margin: 0 }}>
+                    <p style={{ color: '#10b981', fontSize: '12px', fontWeight: 600, margin: 0 }}>
                       {formatTimeAgo(visitor.last_activity)}
                     </p>
                   </div>

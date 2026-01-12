@@ -4,6 +4,8 @@ import { useEffect, useState } from 'react';
 import Link from 'next/link';
 import { useSite } from '../../contexts/SiteContext';
 import Navigation from '../../components/Navigation';
+import Logo from '../../components/Logo';
+import SiteSelector from '../../components/SiteSelector';
 
 interface Visitor {
   id: string;
@@ -121,46 +123,40 @@ export default function VisitorsPage() {
 
   if (siteLoading || loading) {
     return (
-      <div style={{ minHeight: '100vh', background: 'linear-gradient(135deg, #0f172a 0%, #1e293b 100%)', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
-        <p style={{ color: '#94a3b8' }}>Loading visitors...</p>
+      <div style={{ minHeight: '100vh', background: '#f8fafc', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+        <p style={{ color: '#64748b' }}>Loading visitors...</p>
       </div>
     );
   }
 
   if (!selectedSite) {
     return (
-      <div style={{ minHeight: '100vh', background: 'linear-gradient(135deg, #0f172a 0%, #1e293b 100%)', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
-        <p style={{ color: '#94a3b8' }}>No site selected. Please select a site from the dashboard.</p>
+      <div style={{ minHeight: '100vh', background: '#f8fafc', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+        <p style={{ color: '#64748b' }}>No site selected. Please select a site from the dashboard.</p>
       </div>
     );
   }
 
   return (
-    <div style={{ minHeight: '100vh', background: 'linear-gradient(135deg, #0f172a 0%, #1e293b 50%, #0f172a 100%)', fontFamily: 'system-ui, sans-serif' }}>
+    <div style={{ minHeight: '100vh', background: '#f8fafc', fontFamily: 'system-ui, sans-serif' }}>
       {/* Header */}
-      <header style={{ borderBottom: '1px solid #334155', background: 'rgba(15,23,42,0.95)', padding: '16px 24px', position: 'sticky', top: 0, zIndex: 100 }}>
-        <div style={{ maxWidth: '1400px', margin: '0 auto', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-          <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
-            <Link href="/" style={{ textDecoration: 'none', display: 'flex', alignItems: 'center', gap: '12px' }}>
-              <div style={{ width: '40px', height: '40px', background: 'linear-gradient(135deg, #06b6d4, #3b82f6)', borderRadius: '10px', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
-                <svg width="22" height="22" fill="none" stroke="white" strokeWidth="2" viewBox="0 0 24 24"><path d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z" /></svg>
-              </div>
-              <div>
-                <h1 style={{ margin: 0, fontSize: '20px', color: '#fff', fontWeight: 700 }}>Pulse Analytics</h1>
-                <p style={{ margin: 0, fontSize: '13px', color: '#64748b' }}>Visitor Profiles</p>
-              </div>
-            </Link>
+      <header style={{ background: '#ffffff', borderBottom: '1px solid #e2e8f0', padding: '16px 32px', position: 'sticky', top: 0, zIndex: 100, boxShadow: '0 1px 2px rgba(0, 0, 0, 0.05)' }}>
+        <div style={{ maxWidth: '1600px', margin: '0 auto', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+          <Logo />
+          <div style={{ display: 'flex', alignItems: 'center', gap: '24px' }}>
+            <Navigation />
+            <div style={{ height: '24px', width: '1px', background: '#e2e8f0' }} />
+            <SiteSelector />
           </div>
-          <Navigation />
         </div>
       </header>
 
-      <main style={{ maxWidth: '1400px', margin: '0 auto', padding: '24px' }}>
+      <main style={{ maxWidth: '1600px', margin: '0 auto', padding: '32px' }}>
         {/* Page Header */}
         <div style={{ marginBottom: '24px', display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start' }}>
           <div>
-            <h2 style={{ margin: 0, fontSize: '24px', color: '#fff', fontWeight: 700 }}>👥 All Visitors</h2>
-            <p style={{ margin: '8px 0 0', color: '#94a3b8', fontSize: '14px' }}>
+            <h2 style={{ margin: 0, fontSize: '24px', color: '#1e293b', fontWeight: 700 }}>👥 All Visitors</h2>
+            <p style={{ margin: '8px 0 0', color: '#64748b', fontSize: '14px' }}>
               {visitors.length} total visitors • {identifiedCount} identified • {anonymousCount} anonymous
             </p>
           </div>
@@ -168,17 +164,18 @@ export default function VisitorsPage() {
             <button
               onClick={exportToCSV}
               style={{
-                background: '#10b981',
-                color: '#fff',
-                border: 'none',
+                background: '#ffffff',
+                color: '#1e293b',
+                border: '1px solid #e2e8f0',
                 borderRadius: '8px',
                 padding: '10px 16px',
                 fontSize: '13px',
-                fontWeight: 600,
+                fontWeight: 500,
                 cursor: 'pointer',
                 display: 'flex',
                 alignItems: 'center',
-                gap: '6px'
+                gap: '6px',
+                boxShadow: '0 1px 2px rgba(0, 0, 0, 0.05)'
               }}
             >
               📊 Export CSV
@@ -186,8 +183,8 @@ export default function VisitorsPage() {
             <button
               onClick={exportToJSON}
               style={{
-                background: '#6366f1',
-                color: '#fff',
+                background: '#2563eb',
+                color: '#ffffff',
                 border: 'none',
                 borderRadius: '8px',
                 padding: '10px 16px',
@@ -196,7 +193,8 @@ export default function VisitorsPage() {
                 cursor: 'pointer',
                 display: 'flex',
                 alignItems: 'center',
-                gap: '6px'
+                gap: '6px',
+                boxShadow: '0 1px 2px rgba(0, 0, 0, 0.05)'
               }}
             >
               📦 Export JSON
@@ -213,16 +211,18 @@ export default function VisitorsPage() {
             value={search}
             onChange={(e) => setSearch(e.target.value)}
             style={{
-              background: '#0f172a',
-              color: '#e2e8f0',
-              border: '1px solid #334155',
+              background: '#ffffff',
+              color: '#1e293b',
+              border: '1px solid #cbd5e1',
               borderRadius: '8px',
-              padding: '10px 16px',
+              padding: '10px 14px',
               fontSize: '14px',
-              width: '300px'
+              width: '300px',
+              outline: 'none',
+              fontWeight: 500
             }}
           />
-          
+
           {/* Filter buttons */}
           <div style={{ display: 'flex', gap: '8px' }}>
             {[
@@ -234,24 +234,28 @@ export default function VisitorsPage() {
                 key={f.key}
                 onClick={() => setFilter(f.key as typeof filter)}
                 style={{
-                  background: filter === f.key ? '#3b82f6' : '#334155',
-                  color: '#fff',
-                  border: 'none',
+                  background: filter === f.key ? '#2563eb' : '#ffffff',
+                  color: filter === f.key ? '#ffffff' : '#475569',
+                  border: `1px solid ${filter === f.key ? '#2563eb' : '#e2e8f0'}`,
                   borderRadius: '8px',
                   padding: '10px 16px',
                   fontSize: '13px',
                   cursor: 'pointer',
                   display: 'flex',
                   alignItems: 'center',
-                  gap: '8px'
+                  gap: '8px',
+                  fontWeight: 500,
+                  boxShadow: '0 1px 2px rgba(0, 0, 0, 0.05)'
                 }}
               >
                 {f.label}
-                <span style={{ 
-                  background: filter === f.key ? '#1d4ed8' : '#1e293b', 
-                  padding: '2px 8px', 
+                <span style={{
+                  background: filter === f.key ? '#1d4ed8' : '#f1f5f9',
+                  color: filter === f.key ? '#ffffff' : '#64748b',
+                  padding: '2px 8px',
                   borderRadius: '4px',
-                  fontSize: '12px'
+                  fontSize: '12px',
+                  fontWeight: 600
                 }}>
                   {f.count}
                 </span>
@@ -261,16 +265,16 @@ export default function VisitorsPage() {
         </div>
 
         {/* Visitors Table */}
-        <div style={{ background: '#1e293b', borderRadius: '12px', border: '1px solid #334155', overflow: 'hidden' }}>
+        <div style={{ background: '#ffffff', borderRadius: '12px', border: '1px solid #e2e8f0', overflow: 'hidden', boxShadow: '0 1px 3px rgba(0, 0, 0, 0.05)' }}>
           <table style={{ width: '100%', borderCollapse: 'collapse' }}>
             <thead>
-              <tr style={{ background: '#0f172a' }}>
-                <th style={{ padding: '14px 16px', textAlign: 'left', color: '#64748b', fontSize: '12px', fontWeight: 600 }}>VISITOR</th>
-                <th style={{ padding: '14px 16px', textAlign: 'left', color: '#64748b', fontSize: '12px', fontWeight: 600 }}>CONTACT</th>
-                <th style={{ padding: '14px 16px', textAlign: 'center', color: '#64748b', fontSize: '12px', fontWeight: 600 }}>VISITS</th>
-                <th style={{ padding: '14px 16px', textAlign: 'left', color: '#64748b', fontSize: '12px', fontWeight: 600 }}>FIRST SEEN</th>
-                <th style={{ padding: '14px 16px', textAlign: 'left', color: '#64748b', fontSize: '12px', fontWeight: 600 }}>LAST SEEN</th>
-                <th style={{ padding: '14px 16px', textAlign: 'center', color: '#64748b', fontSize: '12px', fontWeight: 600 }}>ACTIONS</th>
+              <tr style={{ background: '#f8fafc', borderBottom: '1px solid #e2e8f0' }}>
+                <th style={{ padding: '14px 16px', textAlign: 'left', color: '#64748b', fontSize: '12px', fontWeight: 600, textTransform: 'uppercase', letterSpacing: '0.5px' }}>VISITOR</th>
+                <th style={{ padding: '14px 16px', textAlign: 'left', color: '#64748b', fontSize: '12px', fontWeight: 600, textTransform: 'uppercase', letterSpacing: '0.5px' }}>CONTACT</th>
+                <th style={{ padding: '14px 16px', textAlign: 'center', color: '#64748b', fontSize: '12px', fontWeight: 600, textTransform: 'uppercase', letterSpacing: '0.5px' }}>VISITS</th>
+                <th style={{ padding: '14px 16px', textAlign: 'left', color: '#64748b', fontSize: '12px', fontWeight: 600, textTransform: 'uppercase', letterSpacing: '0.5px' }}>FIRST SEEN</th>
+                <th style={{ padding: '14px 16px', textAlign: 'left', color: '#64748b', fontSize: '12px', fontWeight: 600, textTransform: 'uppercase', letterSpacing: '0.5px' }}>LAST SEEN</th>
+                <th style={{ padding: '14px 16px', textAlign: 'center', color: '#64748b', fontSize: '12px', fontWeight: 600, textTransform: 'uppercase', letterSpacing: '0.5px' }}>ACTIONS</th>
               </tr>
             </thead>
             <tbody>
@@ -282,28 +286,29 @@ export default function VisitorsPage() {
                 </tr>
               ) : (
                 filteredVisitors.map((visitor) => (
-                  <tr key={visitor.id} style={{ borderTop: '1px solid #334155' }}>
+                  <tr key={visitor.id} style={{ borderTop: '1px solid #e2e8f0' }}>
                     <td style={{ padding: '14px 16px' }}>
                       <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
-                        <div style={{ 
-                          width: '40px', 
-                          height: '40px', 
-                          borderRadius: '50%', 
-                          background: visitor.is_identified 
-                            ? 'linear-gradient(135deg, #10b981, #059669)' 
-                            : 'linear-gradient(135deg, #64748b, #475569)',
-                          display: 'flex', 
-                          alignItems: 'center', 
+                        <div style={{
+                          width: '40px',
+                          height: '40px',
+                          borderRadius: '50%',
+                          background: visitor.is_identified
+                            ? '#d1fae5'
+                            : '#f1f5f9',
+                          display: 'flex',
+                          alignItems: 'center',
                           justifyContent: 'center',
-                          fontSize: '16px'
+                          fontSize: '16px',
+                          border: `2px solid ${visitor.is_identified ? '#10b981' : '#cbd5e1'}`
                         }}>
                           {visitor.is_identified ? '👤' : '👻'}
                         </div>
                         <div>
-                          <p style={{ margin: 0, color: '#fff', fontSize: '14px', fontWeight: 500 }}>
+                          <p style={{ margin: 0, color: '#1e293b', fontSize: '14px', fontWeight: 500 }}>
                             {visitor.name || (visitor.is_identified ? 'Identified User' : 'Anonymous')}
                           </p>
-                          <p style={{ margin: '2px 0 0', color: '#64748b', fontSize: '11px', fontFamily: 'monospace' }}>
+                          <p style={{ margin: '2px 0 0', color: '#94a3b8', fontSize: '11px', fontFamily: 'monospace' }}>
                             {visitor.anonymous_id.slice(0, 16)}...
                           </p>
                         </div>
@@ -311,20 +316,20 @@ export default function VisitorsPage() {
                     </td>
                     <td style={{ padding: '14px 16px' }}>
                       {visitor.email && (
-                        <p style={{ margin: 0, color: '#22d3ee', fontSize: '13px' }}>{visitor.email}</p>
+                        <p style={{ margin: 0, color: '#2563eb', fontSize: '13px' }}>{visitor.email}</p>
                       )}
                       {visitor.phone && (
-                        <p style={{ margin: '2px 0 0', color: '#a78bfa', fontSize: '12px' }}>{visitor.phone}</p>
+                        <p style={{ margin: '2px 0 0', color: '#6366f1', fontSize: '12px' }}>{visitor.phone}</p>
                       )}
                       {!visitor.email && !visitor.phone && (
-                        <p style={{ margin: 0, color: '#64748b', fontSize: '13px' }}>—</p>
+                        <p style={{ margin: 0, color: '#94a3b8', fontSize: '13px' }}>—</p>
                       )}
                     </td>
                     <td style={{ padding: '14px 16px', textAlign: 'center' }}>
-                      <span style={{ 
-                        background: '#f59e0b20', 
-                        color: '#f59e0b', 
-                        padding: '4px 12px', 
+                      <span style={{
+                        background: '#fef3c7',
+                        color: '#f59e0b',
+                        padding: '4px 12px',
                         borderRadius: '12px',
                         fontSize: '13px',
                         fontWeight: 600
@@ -332,10 +337,10 @@ export default function VisitorsPage() {
                         {visitor.visit_count}
                       </span>
                     </td>
-                    <td style={{ padding: '14px 16px', color: '#94a3b8', fontSize: '13px' }}>
+                    <td style={{ padding: '14px 16px', color: '#64748b', fontSize: '13px' }}>
                       {formatDateTime(visitor.first_seen_at)}
                     </td>
-                    <td style={{ padding: '14px 16px', color: '#94a3b8', fontSize: '13px' }}>
+                    <td style={{ padding: '14px 16px', color: '#64748b', fontSize: '13px' }}>
                       {formatDateTime(visitor.last_seen_at)}
                     </td>
                     <td style={{ padding: '14px 16px', textAlign: 'center' }}>
@@ -343,14 +348,15 @@ export default function VisitorsPage() {
                         <Link
                           href={`/visitors/${visitor.id}`}
                           style={{
-                            background: 'linear-gradient(135deg, #8b5cf6, #6366f1)',
-                            color: '#fff',
+                            background: '#2563eb',
+                            color: '#ffffff',
                             padding: '6px 12px',
                             borderRadius: '6px',
                             fontSize: '12px',
                             textDecoration: 'none',
-                            fontWeight: 500,
-                            display: 'inline-block'
+                            fontWeight: 600,
+                            display: 'inline-block',
+                            boxShadow: '0 1px 2px rgba(0, 0, 0, 0.05)'
                           }}
                         >
                           👤 Profile
@@ -358,14 +364,16 @@ export default function VisitorsPage() {
                         <Link
                           href={`/visitors/${visitor.id}?tab=journey`}
                           style={{
-                            background: 'linear-gradient(135deg, #06b6d4, #3b82f6)',
-                            color: '#fff',
+                            background: '#ffffff',
+                            color: '#475569',
                             padding: '6px 12px',
                             borderRadius: '6px',
                             fontSize: '12px',
                             textDecoration: 'none',
                             fontWeight: 500,
-                            display: 'inline-block'
+                            display: 'inline-block',
+                            border: '1px solid #e2e8f0',
+                            boxShadow: '0 1px 2px rgba(0, 0, 0, 0.05)'
                           }}
                         >
                           🛤️ Journey

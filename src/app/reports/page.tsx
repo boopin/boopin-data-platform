@@ -3,6 +3,8 @@ import { useEffect, useState } from 'react';
 import Link from 'next/link';
 import { useSite } from '../../contexts/SiteContext';
 import Navigation from '../../components/Navigation';
+import Logo from '../../components/Logo';
+import SiteSelector from '../../components/SiteSelector';
 
 interface Stats {
   totalVisitors: number;
@@ -170,19 +172,19 @@ export default function ReportsPage() {
     icon: string;
     color: string;
   }) => (
-    <div style={{ background: '#1e293b', borderRadius: '12px', padding: '20px', border: '1px solid #334155' }}>
+    <div style={{ background: '#ffffff', borderRadius: '12px', padding: '20px', border: '1px solid #e2e8f0', boxShadow: '0 1px 3px rgba(0, 0, 0, 0.05)' }}>
       <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: '12px' }}>
         <div>
-          <p style={{ color: '#94a3b8', fontSize: '13px', margin: 0 }}>{label}</p>
-          <p style={{ color: '#f8fafc', fontSize: '32px', fontWeight: 700, margin: '8px 0 0' }}>
+          <p style={{ color: '#64748b', fontSize: '13px', margin: 0, fontWeight: 500 }}>{label}</p>
+          <p style={{ color: '#1e293b', fontSize: '32px', fontWeight: 700, margin: '8px 0 0' }}>
             {currentValue.toLocaleString()}
           </p>
         </div>
         <span style={{ fontSize: '24px' }}>{icon}</span>
       </div>
-      <div style={{ display: 'flex', alignItems: 'center', gap: '8px', marginTop: '12px', padding: '8px', background: '#0f172a', borderRadius: '6px' }}>
+      <div style={{ display: 'flex', alignItems: 'center', gap: '8px', marginTop: '12px', padding: '8px', background: '#f8fafc', borderRadius: '6px' }}>
         <span style={{ fontSize: '16px' }}>{getTrendIcon(change.trend)}</span>
-        <span style={{ color: getTrendColor(change.trend), fontSize: '14px', fontWeight: 600 }}>
+        <span style={{ color: getTrendColor(change.trend), fontSize: '14px', fontWeight: 500 }}>
           {change.percentage > 0 ? '+' : ''}{change.percentage}%
         </span>
         <span style={{ color: '#64748b', fontSize: '12px' }}>
@@ -194,8 +196,8 @@ export default function ReportsPage() {
 
   if (loading) {
     return (
-      <div style={{ minHeight: '100vh', background: 'linear-gradient(135deg, #0f172a 0%, #1e293b 100%)', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
-        <div style={{ textAlign: 'center', color: '#e2e8f0' }}>
+      <div style={{ minHeight: '100vh', background: '#f8fafc', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+        <div style={{ textAlign: 'center', color: '#64748b' }}>
           <div style={{ fontSize: '48px', marginBottom: '16px' }}>📊</div>
           <p>Loading reports...</p>
         </div>
@@ -204,31 +206,25 @@ export default function ReportsPage() {
   }
 
   return (
-    <div style={{ minHeight: '100vh', background: 'linear-gradient(135deg, #0f172a 0%, #1e293b 50%, #0f172a 100%)', fontFamily: 'system-ui, sans-serif' }}>
+    <div style={{ minHeight: '100vh', background: '#f8fafc', fontFamily: 'system-ui, sans-serif' }}>
       {/* Header */}
-      <header style={{ borderBottom: '1px solid #334155', background: 'rgba(15,23,42,0.95)', padding: '16px 24px', position: 'sticky', top: 0, zIndex: 100 }}>
-        <div style={{ maxWidth: '1400px', margin: '0 auto', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-          <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
-            <Link href="/" style={{ textDecoration: 'none', display: 'flex', alignItems: 'center', gap: '12px' }}>
-              <div style={{ width: '40px', height: '40px', background: 'linear-gradient(135deg, #06b6d4, #3b82f6)', borderRadius: '10px', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
-                <svg width="22" height="22" fill="none" stroke="white" strokeWidth="2" viewBox="0 0 24 24"><path d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z" /></svg>
-              </div>
-              <div>
-                <h1 style={{ margin: 0, fontSize: '20px', color: '#fff', fontWeight: 700 }}>Pulse Analytics</h1>
-                <p style={{ margin: 0, fontSize: '13px', color: '#64748b' }}>Comparison Reports</p>
-              </div>
-            </Link>
+      <header style={{ background: '#ffffff', borderBottom: '1px solid #e2e8f0', padding: '16px 32px', position: 'sticky', top: 0, zIndex: 100, boxShadow: '0 1px 2px rgba(0, 0, 0, 0.05)' }}>
+        <div style={{ maxWidth: '1600px', margin: '0 auto', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+          <Logo />
+          <div style={{ display: 'flex', alignItems: 'center', gap: '24px' }}>
+            <Navigation />
+            <div style={{ height: '24px', width: '1px', background: '#e2e8f0' }} />
+            <SiteSelector />
           </div>
-          <Navigation />
         </div>
       </header>
 
-      <main style={{ maxWidth: '1400px', margin: '0 auto', padding: '24px' }}>
+      <main style={{ maxWidth: '1600px', margin: '0 auto', padding: '32px' }}>
         {/* Page Header */}
         <div style={{ marginBottom: '24px', display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start' }}>
           <div>
-            <h2 style={{ margin: 0, fontSize: '28px', color: '#fff', fontWeight: 700 }}>📊 Comparison Reports</h2>
-            <p style={{ margin: '8px 0 0', color: '#94a3b8', fontSize: '14px' }}>
+            <h2 style={{ margin: 0, fontSize: '28px', color: '#1e293b', fontWeight: 700 }}>📊 Comparison Reports</h2>
+            <p style={{ margin: '8px 0 0', color: '#64748b', fontSize: '14px' }}>
               Analyze trends and compare performance across different time periods
             </p>
           </div>
@@ -237,13 +233,13 @@ export default function ReportsPage() {
               <button
                 onClick={exportToCSV}
                 style={{
-                  background: '#10b981',
-                  color: '#fff',
-                  border: 'none',
+                  background: '#ffffff',
+                  color: '#1e293b',
+                  border: '1px solid #e2e8f0',
                   borderRadius: '8px',
                   padding: '10px 16px',
                   fontSize: '13px',
-                  fontWeight: 600,
+                  fontWeight: 500, boxShadow: '0 1px 2px rgba(0, 0, 0, 0.05)',
                   cursor: 'pointer',
                   display: 'flex',
                   alignItems: 'center',
@@ -255,13 +251,13 @@ export default function ReportsPage() {
               <button
                 onClick={exportToJSON}
                 style={{
-                  background: '#6366f1',
-                  color: '#fff',
+                  background: '#2563eb',
+                  color: '#ffffff',
                   border: 'none',
                   borderRadius: '8px',
                   padding: '10px 16px',
                   fontSize: '13px',
-                  fontWeight: 600,
+                  fontWeight: 600, boxShadow: '0 1px 2px rgba(0, 0, 0, 0.05)',
                   cursor: 'pointer',
                   display: 'flex',
                   alignItems: 'center',
@@ -275,8 +271,8 @@ export default function ReportsPage() {
         </div>
 
         {/* Comparison Mode Selector */}
-        <div style={{ background: '#1e293b', borderRadius: '12px', padding: '20px', border: '1px solid #334155', marginBottom: '24px' }}>
-          <h3 style={{ margin: '0 0 16px', color: '#f8fafc', fontSize: '16px', fontWeight: 600 }}>
+        <div style={{ background: '#ffffff', borderRadius: '12px', padding: '20px', border: '1px solid #e2e8f0', boxShadow: '0 1px 3px rgba(0, 0, 0, 0.05)', marginBottom: '24px' }}>
+          <h3 style={{ margin: '0 0 16px', color: '#1e293b', fontSize: '16px', fontWeight: 500 }}>
             Comparison Mode
           </h3>
           <div style={{ display: 'flex', gap: '12px', flexWrap: 'wrap', marginBottom: mode === 'custom' ? '16px' : 0 }}>
@@ -291,9 +287,9 @@ export default function ReportsPage() {
                 key={option.key}
                 onClick={() => setMode(option.key)}
                 style={{
-                  background: mode === option.key ? 'linear-gradient(135deg, #06b6d4, #3b82f6)' : '#334155',
-                  color: '#fff',
-                  border: 'none',
+                  background: mode === option.key ? '#2563eb' : '#ffffff',
+                  color: mode === option.key ? '#ffffff' : '#475569',
+                  border: `1px solid ${mode === option.key ? '#2563eb' : '#e2e8f0'}`,
                   borderRadius: '8px',
                   padding: '12px 20px',
                   fontSize: '14px',
@@ -313,9 +309,9 @@ export default function ReportsPage() {
 
           {/* Custom Date Range Inputs */}
           {mode === 'custom' && (
-            <div style={{ display: 'flex', gap: '12px', alignItems: 'center', marginTop: '16px', padding: '16px', background: '#0f172a', borderRadius: '8px' }}>
+            <div style={{ display: 'flex', gap: '12px', alignItems: 'center', marginTop: '16px', padding: '16px', background: '#f8fafc', borderRadius: '8px' }}>
               <div style={{ flex: 1 }}>
-                <label style={{ color: '#94a3b8', fontSize: '12px', display: 'block', marginBottom: '6px' }}>From Date</label>
+                <label style={{ color: '#64748b', fontSize: '12px', display: 'block', marginBottom: '6px' }}>From Date</label>
                 <input
                   type="date"
                   value={customFrom}
@@ -324,15 +320,15 @@ export default function ReportsPage() {
                     width: '100%',
                     padding: '10px',
                     borderRadius: '6px',
-                    border: '1px solid #334155',
-                    background: '#1e293b',
-                    color: '#e2e8f0',
+                    border: '1px solid #e2e8f0',
+                    background: '#ffffff',
+                    color: '#1e293b',
                     fontSize: '14px'
                   }}
                 />
               </div>
               <div style={{ flex: 1 }}>
-                <label style={{ color: '#94a3b8', fontSize: '12px', display: 'block', marginBottom: '6px' }}>To Date</label>
+                <label style={{ color: '#64748b', fontSize: '12px', display: 'block', marginBottom: '6px' }}>To Date</label>
                 <input
                   type="date"
                   value={customTo}
@@ -341,9 +337,9 @@ export default function ReportsPage() {
                     width: '100%',
                     padding: '10px',
                     borderRadius: '6px',
-                    border: '1px solid #334155',
-                    background: '#1e293b',
-                    color: '#e2e8f0',
+                    border: '1px solid #e2e8f0',
+                    background: '#ffffff',
+                    color: '#1e293b',
                     fontSize: '14px'
                   }}
                 />
@@ -355,18 +351,18 @@ export default function ReportsPage() {
         {data && (
           <>
             {/* Period Summary */}
-            <div style={{ background: '#1e293b', borderRadius: '12px', padding: '20px', border: '1px solid #334155', marginBottom: '24px' }}>
+            <div style={{ background: '#ffffff', borderRadius: '12px', padding: '20px', border: '1px solid #e2e8f0', boxShadow: '0 1px 3px rgba(0, 0, 0, 0.05)', marginBottom: '24px' }}>
               <div style={{ display: 'grid', gridTemplateColumns: '1fr auto 1fr', gap: '24px', alignItems: 'center' }}>
                 <div>
-                  <p style={{ color: '#22d3ee', fontSize: '12px', margin: 0, fontWeight: 600 }}>CURRENT PERIOD</p>
-                  <p style={{ color: '#f8fafc', fontSize: '18px', margin: '8px 0 0', fontWeight: 600 }}>
+                  <p style={{ color: '#2563eb', fontSize: '12px', margin: 0, fontWeight: 500 }}>CURRENT PERIOD</p>
+                  <p style={{ color: '#1e293b', fontSize: '18px', margin: '8px 0 0', fontWeight: 500 }}>
                     {formatDate(data.currentPeriod.from)} - {formatDate(data.currentPeriod.to)}
                   </p>
                 </div>
                 <div style={{ fontSize: '32px' }}>⚡</div>
                 <div>
-                  <p style={{ color: '#64748b', fontSize: '12px', margin: 0, fontWeight: 600 }}>COMPARISON PERIOD</p>
-                  <p style={{ color: '#94a3b8', fontSize: '18px', margin: '8px 0 0', fontWeight: 600 }}>
+                  <p style={{ color: '#64748b', fontSize: '12px', margin: 0, fontWeight: 500 }}>COMPARISON PERIOD</p>
+                  <p style={{ color: '#64748b', fontSize: '18px', margin: '8px 0 0', fontWeight: 500 }}>
                     {formatDate(data.comparisonPeriod.from)} - {formatDate(data.comparisonPeriod.to)}
                   </p>
                 </div>
@@ -375,7 +371,7 @@ export default function ReportsPage() {
 
             {/* Key Metrics */}
             <div style={{ marginBottom: '24px' }}>
-              <h3 style={{ color: '#f8fafc', fontSize: '18px', margin: '0 0 16px', fontWeight: 600 }}>
+              <h3 style={{ color: '#1e293b', fontSize: '18px', margin: '0 0 16px', fontWeight: 600 }}>
                 📊 Key Metrics
               </h3>
               <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(250px, 1fr))', gap: '16px' }}>
@@ -412,7 +408,7 @@ export default function ReportsPage() {
 
             {/* E-commerce Metrics */}
             <div style={{ marginBottom: '24px' }}>
-              <h3 style={{ color: '#f8fafc', fontSize: '18px', margin: '0 0 16px', fontWeight: 600 }}>
+              <h3 style={{ color: '#1e293b', fontSize: '18px', margin: '0 0 16px', fontWeight: 600 }}>
                 🛒 E-commerce Performance
               </h3>
               <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(250px, 1fr))', gap: '16px' }}>
@@ -442,7 +438,7 @@ export default function ReportsPage() {
 
             {/* Engagement Metrics */}
             <div style={{ marginBottom: '24px' }}>
-              <h3 style={{ color: '#f8fafc', fontSize: '18px', margin: '0 0 16px', fontWeight: 600 }}>
+              <h3 style={{ color: '#1e293b', fontSize: '18px', margin: '0 0 16px', fontWeight: 600 }}>
                 📝 Engagement Metrics
               </h3>
               <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(250px, 1fr))', gap: '16px' }}>
@@ -480,26 +476,26 @@ export default function ReportsPage() {
             {/* Detailed Breakdowns */}
             <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '24px' }}>
               {/* Top Pages Comparison */}
-              <div style={{ background: '#1e293b', borderRadius: '12px', padding: '20px', border: '1px solid #334155' }}>
-                <h3 style={{ color: '#f8fafc', fontSize: '16px', margin: '0 0 16px', fontWeight: 600 }}>
+              <div style={{ background: '#ffffff', borderRadius: '12px', padding: '20px', border: '1px solid #e2e8f0', boxShadow: '0 1px 3px rgba(0, 0, 0, 0.05)' }}>
+                <h3 style={{ color: '#1e293b', fontSize: '16px', margin: '0 0 16px', fontWeight: 600 }}>
                   📄 Top Pages
                 </h3>
                 <div style={{ display: 'flex', gap: '16px' }}>
                   <div style={{ flex: 1 }}>
-                    <p style={{ color: '#22d3ee', fontSize: '12px', margin: '0 0 12px', fontWeight: 600 }}>CURRENT</p>
+                    <p style={{ color: '#2563eb', fontSize: '12px', margin: '0 0 12px', fontWeight: 500 }}>CURRENT</p>
                     {data.currentPeriod.stats.topPages.slice(0, 5).map((page, i) => (
-                      <div key={i} style={{ display: 'flex', justifyContent: 'space-between', padding: '8px 0', borderBottom: '1px solid #334155' }}>
-                        <span style={{ color: '#e2e8f0', fontSize: '12px', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{page.page_path}</span>
-                        <span style={{ color: '#22d3ee', fontSize: '12px', fontWeight: 600, marginLeft: '8px' }}>{page.count}</span>
+                      <div key={i} style={{ display: 'flex', justifyContent: 'space-between', padding: '8px 0', borderBottom: '1px solid #e2e8f0' }}>
+                        <span style={{ color: '#1e293b', fontSize: '12px', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{page.page_path}</span>
+                        <span style={{ color: '#2563eb', fontSize: '12px', fontWeight: 500, marginLeft: '8px' }}>{page.count}</span>
                       </div>
                     ))}
                   </div>
                   <div style={{ flex: 1 }}>
-                    <p style={{ color: '#64748b', fontSize: '12px', margin: '0 0 12px', fontWeight: 600 }}>PREVIOUS</p>
+                    <p style={{ color: '#64748b', fontSize: '12px', margin: '0 0 12px', fontWeight: 500 }}>PREVIOUS</p>
                     {data.comparisonPeriod.stats.topPages.slice(0, 5).map((page, i) => (
-                      <div key={i} style={{ display: 'flex', justifyContent: 'space-between', padding: '8px 0', borderBottom: '1px solid #334155' }}>
-                        <span style={{ color: '#94a3b8', fontSize: '12px', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{page.page_path}</span>
-                        <span style={{ color: '#64748b', fontSize: '12px', fontWeight: 600, marginLeft: '8px' }}>{page.count}</span>
+                      <div key={i} style={{ display: 'flex', justifyContent: 'space-between', padding: '8px 0', borderBottom: '1px solid #e2e8f0' }}>
+                        <span style={{ color: '#64748b', fontSize: '12px', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{page.page_path}</span>
+                        <span style={{ color: '#64748b', fontSize: '12px', fontWeight: 500, marginLeft: '8px' }}>{page.count}</span>
                       </div>
                     ))}
                   </div>
@@ -507,26 +503,26 @@ export default function ReportsPage() {
               </div>
 
               {/* Traffic Sources Comparison */}
-              <div style={{ background: '#1e293b', borderRadius: '12px', padding: '20px', border: '1px solid #334155' }}>
-                <h3 style={{ color: '#f8fafc', fontSize: '16px', margin: '0 0 16px', fontWeight: 600 }}>
+              <div style={{ background: '#ffffff', borderRadius: '12px', padding: '20px', border: '1px solid #e2e8f0', boxShadow: '0 1px 3px rgba(0, 0, 0, 0.05)' }}>
+                <h3 style={{ color: '#1e293b', fontSize: '16px', margin: '0 0 16px', fontWeight: 600 }}>
                   🔗 Traffic Sources
                 </h3>
                 <div style={{ display: 'flex', gap: '16px' }}>
                   <div style={{ flex: 1 }}>
-                    <p style={{ color: '#22d3ee', fontSize: '12px', margin: '0 0 12px', fontWeight: 600 }}>CURRENT</p>
+                    <p style={{ color: '#2563eb', fontSize: '12px', margin: '0 0 12px', fontWeight: 500 }}>CURRENT</p>
                     {data.currentPeriod.stats.trafficSources.slice(0, 5).map((source, i) => (
-                      <div key={i} style={{ display: 'flex', justifyContent: 'space-between', padding: '8px 0', borderBottom: '1px solid #334155' }}>
-                        <span style={{ color: '#e2e8f0', fontSize: '12px' }}>{source.source}</span>
-                        <span style={{ color: '#22d3ee', fontSize: '12px', fontWeight: 600 }}>{source.count}</span>
+                      <div key={i} style={{ display: 'flex', justifyContent: 'space-between', padding: '8px 0', borderBottom: '1px solid #e2e8f0' }}>
+                        <span style={{ color: '#1e293b', fontSize: '12px' }}>{source.source}</span>
+                        <span style={{ color: '#2563eb', fontSize: '12px', fontWeight: 500 }}>{source.count}</span>
                       </div>
                     ))}
                   </div>
                   <div style={{ flex: 1 }}>
-                    <p style={{ color: '#64748b', fontSize: '12px', margin: '0 0 12px', fontWeight: 600 }}>PREVIOUS</p>
+                    <p style={{ color: '#64748b', fontSize: '12px', margin: '0 0 12px', fontWeight: 500 }}>PREVIOUS</p>
                     {data.comparisonPeriod.stats.trafficSources.slice(0, 5).map((source, i) => (
-                      <div key={i} style={{ display: 'flex', justifyContent: 'space-between', padding: '8px 0', borderBottom: '1px solid #334155' }}>
-                        <span style={{ color: '#94a3b8', fontSize: '12px' }}>{source.source}</span>
-                        <span style={{ color: '#64748b', fontSize: '12px', fontWeight: 600 }}>{source.count}</span>
+                      <div key={i} style={{ display: 'flex', justifyContent: 'space-between', padding: '8px 0', borderBottom: '1px solid #e2e8f0' }}>
+                        <span style={{ color: '#64748b', fontSize: '12px' }}>{source.source}</span>
+                        <span style={{ color: '#64748b', fontSize: '12px', fontWeight: 500 }}>{source.count}</span>
                       </div>
                     ))}
                   </div>
