@@ -178,8 +178,10 @@ export async function POST(request: NextRequest) {
         `;
         visitorId = newVisitor[0].id;
         isNewVisitor = true;
+        console.log('Created new visitor:', { visitorId, type: typeof visitorId, raw: newVisitor[0] });
       } else {
         visitorId = visitor[0].id;
+        console.log('Found existing visitor:', { visitorId, type: typeof visitorId, raw: visitor[0] });
         // Update last seen and visit count
         await sql`
           UPDATE visitors
@@ -234,6 +236,14 @@ export async function POST(request: NextRequest) {
     // Insert event
     let result;
     try {
+      // Debug logging
+      console.log('Attempting to insert event with:', {
+        siteId,
+        visitorId,
+        visitorIdType: typeof visitorId,
+        eventType
+      });
+
       result = await sql`
         INSERT INTO events (
           site_id, visitor_id, session_id, event_type,
@@ -254,7 +264,14 @@ export async function POST(request: NextRequest) {
       `;
     } catch (eventError: any) {
       console.error('Event insertion error:', eventError.message);
-      console.error('Event data:', { siteId, visitorId, eventType });
+      console.error('Event data:', {
+        siteId,
+        siteIdType: typeof siteId,
+        visitorId,
+        visitorIdType: typeof visitorId,
+        visitorIdValue: JSON.stringify(visitorId),
+        eventType
+      });
       throw new Error(`Event insertion error: ${eventError.message}`);
     }
 
