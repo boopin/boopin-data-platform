@@ -1,6 +1,9 @@
 'use client';
 import { useEffect, useState } from 'react';
 import Link from 'next/link';
+import Navigation from '@/components/Navigation';
+import Logo from '@/components/Logo';
+import SiteSelector from '@/components/SiteSelector';
 
 interface ApiKey {
   id: string;
@@ -139,50 +142,23 @@ export default function ApiKeysPage() {
   }
 
   return (
-    <div style={{ minHeight: '100vh', background: 'linear-gradient(135deg, #0f172a 0%, #1e293b 50%, #0f172a 100%)', fontFamily: 'system-ui, sans-serif' }}>
+    <div style={{ minHeight: '100vh', background: '#f8fafc', fontFamily: 'system-ui, sans-serif' }}>
       {/* Header */}
-      <header style={{ borderBottom: '1px solid #334155', background: 'rgba(15,23,42,0.95)', padding: '16px 24px', position: 'sticky', top: 0, zIndex: 100 }}>
-        <div style={{ maxWidth: '1400px', margin: '0 auto', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-          <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
-            <Link href="/" style={{ textDecoration: 'none', display: 'flex', alignItems: 'center', gap: '12px' }}>
-              <div style={{ width: '40px', height: '40px', background: 'linear-gradient(135deg, #06b6d4, #3b82f6)', borderRadius: '10px', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
-                <svg width="22" height="22" fill="none" stroke="white" strokeWidth="2" viewBox="0 0 24 24"><path d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z" /></svg>
-              </div>
-              <div>
-                <h1 style={{ margin: 0, fontSize: '20px', color: '#fff', fontWeight: 700 }}>Pulse Analytics</h1>
-                <p style={{ margin: 0, fontSize: '13px', color: '#64748b' }}>API Keys</p>
-              </div>
-            </Link>
-          </div>
-          <nav style={{ display: 'flex', gap: '16px' }}>
-            <Link href="/" style={{ color: '#94a3b8', textDecoration: 'none', fontSize: '14px' }}>Dashboard</Link>
-            <Link href="/visitors" style={{ color: '#94a3b8', textDecoration: 'none', fontSize: '14px' }}>Visitors</Link>
-            <Link href="/segments" style={{ color: '#94a3b8', textDecoration: 'none', fontSize: '14px' }}>Segments</Link>
-            <Link href="/reports" style={{ color: '#94a3b8', textDecoration: 'none', fontSize: '14px' }}>Reports</Link>
-            <Link href="/live" style={{ color: '#94a3b8', textDecoration: 'none', fontSize: '14px' }}>Live</Link>
-            <Link href="/goals" style={{ color: '#94a3b8', textDecoration: 'none', fontSize: '14px' }}>Goals</Link>
-            <Link href="/funnels" style={{ color: '#94a3b8', textDecoration: 'none', fontSize: '14px' }}>Funnels</Link>
-            <Link href="/cohorts" style={{ color: '#94a3b8', textDecoration: 'none', fontSize: '14px' }}>Cohorts</Link>
-            <Link href="/settings/api-keys" style={{ color: '#22d3ee', textDecoration: 'none', fontSize: '14px', fontWeight: 600 }}>API Keys</Link>
-            <Link href="/settings/webhooks" style={{ color: '#94a3b8', textDecoration: 'none', fontSize: '14px' }}>Webhooks</Link>
-          </nav>
-        </div>
-      </header>
 
-      <main style={{ maxWidth: '1400px', margin: '0 auto', padding: '24px' }}>
+      <main style={{ maxWidth: '1600px', margin: '0 auto', padding: '32px' }}>
         {/* Page Header */}
         <div style={{ marginBottom: '24px', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
           <div>
-            <h2 style={{ margin: 0, fontSize: '28px', color: '#fff', fontWeight: 700 }}>🔑 API Keys</h2>
-            <p style={{ margin: '8px 0 0', color: '#94a3b8', fontSize: '14px' }}>
+            <h2 style={{ margin: 0, fontSize: '28px', color: '#1e293b', fontWeight: 700 }}>🔑 API Keys</h2>
+            <p style={{ margin: '8px 0 0', color: '#64748b', fontSize: '14px' }}>
               Manage API keys for server-side tracking
             </p>
           </div>
           <button
             onClick={() => setShowModal(true)}
             style={{
-              background: 'linear-gradient(135deg, #06b6d4, #3b82f6)',
-              color: '#fff',
+              background: '#2563eb',
+              color: '#1e293b',
               border: 'none',
               borderRadius: '8px',
               padding: '12px 24px',
@@ -196,10 +172,10 @@ export default function ApiKeysPage() {
         </div>
 
         {/* API Keys Table */}
-        <div style={{ background: '#1e293b', borderRadius: '12px', border: '1px solid #334155', overflow: 'hidden' }}>
+        <div style={{ background: '#ffffff', borderRadius: '12px', border: '1px solid #e2e8f0', overflow: 'hidden' }}>
           <table style={{ width: '100%', borderCollapse: 'collapse' }}>
             <thead>
-              <tr style={{ background: '#0f172a' }}>
+              <tr style={{ background: '#f8fafc' }}>
                 <th style={{ padding: '14px 16px', textAlign: 'left', color: '#64748b', fontSize: '12px', fontWeight: 600 }}>NAME</th>
                 <th style={{ padding: '14px 16px', textAlign: 'left', color: '#64748b', fontSize: '12px', fontWeight: 600 }}>KEY</th>
                 <th style={{ padding: '14px 16px', textAlign: 'left', color: '#64748b', fontSize: '12px', fontWeight: 600 }}>PERMISSIONS</th>
@@ -217,8 +193,8 @@ export default function ApiKeysPage() {
                 </tr>
               ) : (
                 apiKeys.map((key) => (
-                  <tr key={key.id} style={{ borderTop: '1px solid #334155' }}>
-                    <td style={{ padding: '14px 16px', color: '#f8fafc', fontSize: '14px', fontWeight: 500 }}>
+                  <tr key={key.id} style={{ borderTop: '1px solid #e2e8f0' }}>
+                    <td style={{ padding: '14px 16px', color: '#1e293b', fontSize: '14px', fontWeight: 500 }}>
                       {key.name}
                       {key.expires_at && (
                         <div style={{ color: '#64748b', fontSize: '11px', marginTop: '4px' }}>
@@ -227,7 +203,7 @@ export default function ApiKeysPage() {
                       )}
                     </td>
                     <td style={{ padding: '14px 16px' }}>
-                      <code style={{ background: '#0f172a', color: '#22d3ee', padding: '4px 8px', borderRadius: '4px', fontSize: '12px', fontFamily: 'monospace' }}>
+                      <code style={{ background: '#f8fafc', color: '#2563eb', padding: '4px 8px', borderRadius: '4px', fontSize: '12px', fontFamily: 'monospace' }}>
                         {key.key_prefix}...
                       </code>
                     </td>
@@ -250,7 +226,7 @@ export default function ApiKeysPage() {
                         )}
                       </div>
                     </td>
-                    <td style={{ padding: '14px 16px', color: '#94a3b8', fontSize: '13px' }}>
+                    <td style={{ padding: '14px 16px', color: '#64748b', fontSize: '13px' }}>
                       {formatDate(key.last_used_at)}
                     </td>
                     <td style={{ padding: '14px 16px' }}>
@@ -275,7 +251,7 @@ export default function ApiKeysPage() {
                         onClick={() => handleDelete(key.id)}
                         style={{
                           background: '#ef4444',
-                          color: '#fff',
+                          color: '#1e293b',
                           border: 'none',
                           borderRadius: '6px',
                           padding: '6px 12px',
@@ -295,12 +271,12 @@ export default function ApiKeysPage() {
         </div>
 
         {/* Documentation */}
-        <div style={{ marginTop: '32px', background: '#1e293b', borderRadius: '12px', padding: '24px', border: '1px solid #334155' }}>
-          <h3 style={{ margin: '0 0 16px', fontSize: '18px', color: '#f8fafc', fontWeight: 600 }}>📖 How to Use Server-Side Tracking</h3>
-          <p style={{ color: '#94a3b8', fontSize: '14px', marginBottom: '16px' }}>
+        <div style={{ marginTop: '32px', background: '#ffffff', borderRadius: '12px', padding: '32px', border: '1px solid #e2e8f0' }}>
+          <h3 style={{ margin: '0 0 16px', fontSize: '18px', color: '#1e293b', fontWeight: 600 }}>📖 How to Use Server-Side Tracking</h3>
+          <p style={{ color: '#64748b', fontSize: '14px', marginBottom: '16px' }}>
             Track events from your backend server using the Server-Side Events API:
           </p>
-          <pre style={{ background: '#0f172a', padding: '16px', borderRadius: '8px', overflow: 'auto', fontSize: '12px', color: '#22d3ee', border: '1px solid #334155' }}>
+          <pre style={{ background: '#f8fafc', padding: '16px', borderRadius: '8px', overflow: 'auto', fontSize: '12px', color: '#2563eb', border: '1px solid #e2e8f0' }}>
 {`curl -X POST https://pulse-analytics-data-platform.vercel.app/api/track/server \\
   -H "Authorization: Bearer YOUR_API_KEY" \\
   -H "Content-Type: application/json" \\
@@ -339,12 +315,12 @@ export default function ApiKeysPage() {
         >
           <div
             style={{
-              background: '#1e293b',
+              background: '#ffffff',
               borderRadius: '12px',
               padding: '32px',
               maxWidth: '600px',
               width: '90%',
-              border: '1px solid #334155',
+              border: '1px solid #e2e8f0',
               maxHeight: '90vh',
               overflowY: 'auto'
             }}
@@ -352,7 +328,7 @@ export default function ApiKeysPage() {
           >
             {newKey ? (
               <>
-                <h3 style={{ margin: '0 0 24px', fontSize: '24px', color: '#f8fafc', fontWeight: 700 }}>
+                <h3 style={{ margin: '0 0 24px', fontSize: '24px', color: '#1e293b', fontWeight: 700 }}>
                   ✅ API Key Created!
                 </h3>
                 <div style={{ background: '#fef3c7', border: '1px solid #f59e0b', borderRadius: '8px', padding: '16px', marginBottom: '24px' }}>
@@ -361,16 +337,16 @@ export default function ApiKeysPage() {
                     This is the only time you'll see the full API key. Store it securely.
                   </p>
                 </div>
-                <div style={{ background: '#0f172a', padding: '16px', borderRadius: '8px', marginBottom: '24px' }}>
-                  <code style={{ color: '#22d3ee', fontSize: '14px', wordBreak: 'break-all' }}>
+                <div style={{ background: '#f8fafc', padding: '16px', borderRadius: '8px', marginBottom: '24px' }}>
+                  <code style={{ color: '#2563eb', fontSize: '14px', wordBreak: 'break-all' }}>
                     {newKey}
                   </code>
                 </div>
                 <button
                   onClick={() => copyToClipboard(newKey)}
                   style={{
-                    background: 'linear-gradient(135deg, #06b6d4, #3b82f6)',
-                    color: '#fff',
+                    background: '#2563eb',
+                    color: '#1e293b',
                     border: 'none',
                     borderRadius: '8px',
                     padding: '12px 24px',
@@ -385,13 +361,13 @@ export default function ApiKeysPage() {
               </>
             ) : (
               <>
-                <h3 style={{ margin: '0 0 24px', fontSize: '24px', color: '#f8fafc', fontWeight: 700 }}>
+                <h3 style={{ margin: '0 0 24px', fontSize: '24px', color: '#1e293b', fontWeight: 700 }}>
                   Create New API Key
                 </h3>
 
                 <form onSubmit={handleCreate}>
                   <div style={{ marginBottom: '20px' }}>
-                    <label style={{ display: 'block', color: '#94a3b8', fontSize: '13px', marginBottom: '8px', fontWeight: 500 }}>
+                    <label style={{ display: 'block', color: '#64748b', fontSize: '13px', marginBottom: '8px', fontWeight: 500 }}>
                       Key Name *
                     </label>
                     <input
@@ -403,8 +379,8 @@ export default function ApiKeysPage() {
                         width: '100%',
                         padding: '12px',
                         borderRadius: '8px',
-                        border: '1px solid #334155',
-                        background: '#0f172a',
+                        border: '1px solid #e2e8f0',
+                        background: '#f8fafc',
                         color: '#e2e8f0',
                         fontSize: '14px'
                       }}
@@ -413,7 +389,7 @@ export default function ApiKeysPage() {
                   </div>
 
                   <div style={{ marginBottom: '20px' }}>
-                    <label style={{ display: 'block', color: '#94a3b8', fontSize: '13px', marginBottom: '8px', fontWeight: 500 }}>
+                    <label style={{ display: 'block', color: '#64748b', fontSize: '13px', marginBottom: '8px', fontWeight: 500 }}>
                       Expires In (days)
                     </label>
                     <input
@@ -424,8 +400,8 @@ export default function ApiKeysPage() {
                         width: '100%',
                         padding: '12px',
                         borderRadius: '8px',
-                        border: '1px solid #334155',
-                        background: '#0f172a',
+                        border: '1px solid #e2e8f0',
+                        background: '#f8fafc',
                         color: '#e2e8f0',
                         fontSize: '14px'
                       }}
@@ -434,7 +410,7 @@ export default function ApiKeysPage() {
                   </div>
 
                   <div style={{ marginBottom: '24px' }}>
-                    <label style={{ display: 'block', color: '#94a3b8', fontSize: '13px', marginBottom: '12px', fontWeight: 500 }}>
+                    <label style={{ display: 'block', color: '#64748b', fontSize: '13px', marginBottom: '12px', fontWeight: 500 }}>
                       Permissions
                     </label>
                     <div style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
@@ -444,7 +420,7 @@ export default function ApiKeysPage() {
                         { key: 'manage_goals', label: 'Manage Goals', desc: 'Create/update goals' },
                         { key: 'manage_segments', label: 'Manage Segments', desc: 'Create/update segments' }
                       ].map((perm) => (
-                        <label key={perm.key} style={{ display: 'flex', alignItems: 'center', gap: '12px', padding: '12px', background: '#0f172a', borderRadius: '8px', cursor: 'pointer' }}>
+                        <label key={perm.key} style={{ display: 'flex', alignItems: 'center', gap: '12px', padding: '12px', background: '#f8fafc', borderRadius: '8px', cursor: 'pointer' }}>
                           <input
                             type="checkbox"
                             checked={formData.permissions[perm.key as keyof typeof formData.permissions]}
@@ -458,7 +434,7 @@ export default function ApiKeysPage() {
                             style={{ cursor: 'pointer' }}
                           />
                           <div>
-                            <div style={{ color: '#f8fafc', fontSize: '14px', fontWeight: 500 }}>{perm.label}</div>
+                            <div style={{ color: '#1e293b', fontSize: '14px', fontWeight: 500 }}>{perm.label}</div>
                             <div style={{ color: '#64748b', fontSize: '12px' }}>{perm.desc}</div>
                           </div>
                         </label>
@@ -486,8 +462,8 @@ export default function ApiKeysPage() {
                     <button
                       type="submit"
                       style={{
-                        background: 'linear-gradient(135deg, #06b6d4, #3b82f6)',
-                        color: '#fff',
+                        background: '#2563eb',
+                        color: '#1e293b',
                         border: 'none',
                         borderRadius: '8px',
                         padding: '12px 24px',
@@ -505,6 +481,7 @@ export default function ApiKeysPage() {
           </div>
         </div>
       )}
+      </main>
     </div>
   );
 }

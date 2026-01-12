@@ -3,6 +3,9 @@
 import { useEffect, useState } from 'react';
 import Link from 'next/link';
 import { useSite } from '@/contexts/SiteContext';
+import Navigation from '@/components/Navigation';
+import Logo from '@/components/Logo';
+import SiteSelector from '@/components/SiteSelector';
 
 interface Webhook {
   id: string;
@@ -253,7 +256,7 @@ export default function WebhooksPage() {
   if (siteLoading || loading) {
     return (
       <div style={{ padding: '40px', textAlign: 'center' }}>
-        <div style={{ fontSize: '18px', color: '#666' }}>Loading...</div>
+        <div style={{ fontSize: '18px', color: '#64748b' }}>Loading...</div>
       </div>
     );
   }
@@ -261,152 +264,41 @@ export default function WebhooksPage() {
   if (!selectedSite) {
     return (
       <div style={{ padding: '40px', textAlign: 'center' }}>
-        <div style={{ fontSize: '18px', color: '#666' }}>No site selected. Please select a site first.</div>
+        <div style={{ fontSize: '18px', color: '#64748b' }}>No site selected. Please select a site first.</div>
       </div>
     );
   }
 
   return (
-    <div style={{ padding: '40px', maxWidth: '1400px', margin: '0 auto', minHeight: '100vh', background: '#f9fafb' }}>
-      {/* Navigation */}
-      <div style={{
-        background: 'linear-gradient(135deg, #667eea 0%, #764ba2 100%)',
-        padding: '20px 30px',
-        borderRadius: '12px',
-        marginBottom: '30px',
-        boxShadow: '0 4px 6px rgba(0,0,0,0.1)'
-      }}>
-        <div style={{ display: 'flex', gap: '20px', flexWrap: 'wrap', alignItems: 'center' }}>
-          <Link href="/" style={{
-            color: '#fff',
-            textDecoration: 'none',
-            fontSize: '14px',
-            fontWeight: 500,
-            padding: '8px 16px',
-            borderRadius: '6px',
-            background: 'rgba(255,255,255,0.1)',
-            transition: 'background 0.2s'
-          }}>
-            📊 Dashboard
-          </Link>
-          <Link href="/visitors" style={{
-            color: '#fff',
-            textDecoration: 'none',
-            fontSize: '14px',
-            fontWeight: 500,
-            padding: '8px 16px',
-            borderRadius: '6px',
-            background: 'rgba(255,255,255,0.1)'
-          }}>
-            👥 Visitors
-          </Link>
-          <Link href="/segments" style={{
-            color: '#fff',
-            textDecoration: 'none',
-            fontSize: '14px',
-            fontWeight: 500,
-            padding: '8px 16px',
-            borderRadius: '6px',
-            background: 'rgba(255,255,255,0.1)'
-          }}>
-            🎯 Segments
-          </Link>
-          <Link href="/live" style={{
-            color: '#fff',
-            textDecoration: 'none',
-            fontSize: '14px',
-            fontWeight: 500,
-            padding: '8px 16px',
-            borderRadius: '6px',
-            background: 'rgba(255,255,255,0.1)'
-          }}>
-            🔴 Live
-          </Link>
-          <Link href="/goals" style={{
-            color: '#fff',
-            textDecoration: 'none',
-            fontSize: '14px',
-            fontWeight: 500,
-            padding: '8px 16px',
-            borderRadius: '6px',
-            background: 'rgba(255,255,255,0.1)'
-          }}>
-            🎯 Goals
-          </Link>
-          <Link href="/funnels" style={{
-            color: '#fff',
-            textDecoration: 'none',
-            fontSize: '14px',
-            fontWeight: 500,
-            padding: '8px 16px',
-            borderRadius: '6px',
-            background: 'rgba(255,255,255,0.1)'
-          }}>
-            📊 Funnels
-          </Link>
-          <Link href="/cohorts" style={{
-            color: '#fff',
-            textDecoration: 'none',
-            fontSize: '14px',
-            fontWeight: 500,
-            padding: '8px 16px',
-            borderRadius: '6px',
-            background: 'rgba(255,255,255,0.1)'
-          }}>
-            📈 Cohorts
-          </Link>
-          <Link href="/reports" style={{
-            color: '#fff',
-            textDecoration: 'none',
-            fontSize: '14px',
-            fontWeight: 500,
-            padding: '8px 16px',
-            borderRadius: '6px',
-            background: 'rgba(255,255,255,0.1)'
-          }}>
-            📈 Reports
-          </Link>
-          <div style={{ marginLeft: 'auto', display: 'flex', gap: '12px' }}>
-            <Link href="/settings/api-keys" style={{
-              color: '#fff',
-              textDecoration: 'none',
-              fontSize: '14px',
-              fontWeight: 500,
-              padding: '8px 16px',
-              borderRadius: '6px',
-              background: 'rgba(255,255,255,0.1)'
-            }}>
-              🔑 API Keys
-            </Link>
-            <Link href="/settings/webhooks" style={{
-              color: '#fff',
-              textDecoration: 'none',
-              fontSize: '14px',
-              fontWeight: 500,
-              padding: '8px 16px',
-              borderRadius: '6px',
-              background: 'rgba(255,255,255,0.2)'
-            }}>
-              🪝 Webhooks
-            </Link>
+    <div style={{ minHeight: '100vh', background: '#f8fafc', fontFamily: 'system-ui, sans-serif' }}>
+      {/* Header */}
+      <header style={{ background: '#ffffff', borderBottom: '1px solid #e2e8f0', padding: '16px 32px', position: 'sticky', top: 0, zIndex: 100, boxShadow: '0 1px 2px rgba(0, 0, 0, 0.05)' }}>
+        <div style={{ maxWidth: '1600px', margin: '0 auto', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+          <Logo />
+          <div style={{ display: 'flex', alignItems: 'center', gap: '24px' }}>
+            <Navigation />
+            <div style={{ height: '24px', width: '1px', background: '#e2e8f0' }} />
+            <SiteSelector />
           </div>
         </div>
-      </div>
+      </header>
+
+      <main style={{ maxWidth: '1600px', margin: '0 auto', padding: '32px' }}>
 
       {/* Header */}
       <div style={{ marginBottom: '30px', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
         <div>
-          <h1 style={{ fontSize: '32px', fontWeight: 700, marginBottom: '8px', color: '#1a202c' }}>
+          <h1 style={{ fontSize: '32px', fontWeight: 700, marginBottom: '8px', color: '#1e293b' }}>
             🪝 Webhooks
           </h1>
-          <p style={{ color: '#666', fontSize: '15px' }}>
+          <p style={{ color: '#64748b', fontSize: '15px' }}>
             Send real-time event data to external URLs
           </p>
         </div>
         <button
           onClick={openCreateModal}
           style={{
-            background: 'linear-gradient(135deg, #667eea 0%, #764ba2 100%)',
+            background: '#2563eb',
             color: '#fff',
             padding: '12px 24px',
             borderRadius: '8px',
@@ -414,7 +306,7 @@ export default function WebhooksPage() {
             cursor: 'pointer',
             fontSize: '15px',
             fontWeight: 600,
-            boxShadow: '0 4px 6px rgba(102, 126, 234, 0.3)'
+            boxShadow: '0 1px 2px rgba(0, 0, 0, 0.05)'
           }}
         >
           + Create Webhook
@@ -424,23 +316,23 @@ export default function WebhooksPage() {
       {/* Webhooks List */}
       {webhooks.length === 0 ? (
         <div style={{
-          background: '#f7fafc',
+          background: '#f8fafc',
           padding: '60px',
           borderRadius: '12px',
           textAlign: 'center',
-          border: '2px dashed #cbd5e0'
+          border: '1px dashed #cbd5e1'
         }}>
           <div style={{ fontSize: '48px', marginBottom: '16px' }}>🪝</div>
-          <h3 style={{ fontSize: '20px', fontWeight: 600, marginBottom: '8px', color: '#2d3748' }}>
+          <h3 style={{ fontSize: '20px', fontWeight: 600, marginBottom: '8px', color: '#1e293b' }}>
             No webhooks yet
           </h3>
-          <p style={{ color: '#718096', marginBottom: '24px' }}>
+          <p style={{ color: '#64748b', marginBottom: '24px' }}>
             Create your first webhook to start receiving real-time event notifications
           </p>
           <button
             onClick={openCreateModal}
             style={{
-              background: 'linear-gradient(135deg, #667eea 0%, #764ba2 100%)',
+              background: '#2563eb',
               color: '#fff',
               padding: '12px 24px',
               borderRadius: '8px',
@@ -469,7 +361,7 @@ export default function WebhooksPage() {
               <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'start', marginBottom: '16px', gap: '16px' }}>
                 <div style={{ flex: 1, minWidth: 0 }}>
                   <div style={{ display: 'flex', alignItems: 'center', gap: '12px', marginBottom: '8px', flexWrap: 'wrap' }}>
-                    <h3 style={{ fontSize: '18px', fontWeight: 600, color: '#1a202c', margin: 0, wordBreak: 'break-word' }}>
+                    <h3 style={{ fontSize: '18px', fontWeight: 600, color: '#1e293b', margin: 0, wordBreak: 'break-word' }}>
                       {webhook.name}
                     </h3>
                     <span style={{
@@ -486,7 +378,7 @@ export default function WebhooksPage() {
                   <div style={{ color: '#4a5568', fontSize: '14px', marginBottom: '12px', wordBreak: 'break-all' }}>
                     <strong>URL:</strong> {webhook.url}
                   </div>
-                  <div style={{ display: 'flex', gap: '24px', flexWrap: 'wrap', fontSize: '13px', color: '#718096' }}>
+                  <div style={{ display: 'flex', gap: '24px', flexWrap: 'wrap', fontSize: '13px', color: '#64748b' }}>
                     <div>
                       <strong>Event Types:</strong>{' '}
                       {webhook.event_types ? webhook.event_types.join(', ') : 'All events'}
@@ -599,12 +491,12 @@ export default function WebhooksPage() {
       {/* Documentation */}
       <div style={{
         marginTop: '40px',
-        background: '#f7fafc',
+        background: '#f8fafc',
         padding: '30px',
         borderRadius: '12px',
         border: '1px solid #e2e8f0'
       }}>
-        <h2 style={{ fontSize: '20px', fontWeight: 600, marginBottom: '16px', color: '#1a202c' }}>
+        <h2 style={{ fontSize: '20px', fontWeight: 600, marginBottom: '16px', color: '#1e293b' }}>
           📚 Webhook Documentation
         </h2>
         <div style={{ color: '#4a5568', lineHeight: '1.6', fontSize: '14px' }}>
@@ -612,7 +504,7 @@ export default function WebhooksPage() {
             Webhooks allow you to receive real-time notifications when events occur in Pulse Analytics.
           </p>
 
-          <h3 style={{ fontSize: '16px', fontWeight: 600, marginBottom: '12px', color: '#2d3748' }}>
+          <h3 style={{ fontSize: '16px', fontWeight: 600, marginBottom: '12px', color: '#1e293b' }}>
             Webhook Payload Example:
           </h3>
           <pre style={{
@@ -637,7 +529,7 @@ export default function WebhooksPage() {
 }`}
           </pre>
 
-          <h3 style={{ fontSize: '16px', fontWeight: 600, marginBottom: '12px', color: '#2d3748' }}>
+          <h3 style={{ fontSize: '16px', fontWeight: 600, marginBottom: '12px', color: '#1e293b' }}>
             Security:
           </h3>
           <p style={{ marginBottom: '8px' }}>
@@ -670,12 +562,12 @@ export default function WebhooksPage() {
             maxHeight: '90vh',
             overflow: 'auto'
           }}>
-            <h2 style={{ fontSize: '24px', fontWeight: 600, marginBottom: '24px', color: '#1a202c' }}>
+            <h2 style={{ fontSize: '24px', fontWeight: 600, marginBottom: '24px', color: '#1e293b' }}>
               {editingWebhook ? 'Edit Webhook' : 'Create Webhook'}
             </h2>
 
             <div style={{ marginBottom: '20px' }}>
-              <label style={{ display: 'block', marginBottom: '8px', fontWeight: 500, color: '#2d3748' }}>
+              <label style={{ display: 'block', marginBottom: '8px', fontWeight: 500, color: '#1e293b' }}>
                 Webhook Name *
               </label>
               <input
@@ -694,7 +586,7 @@ export default function WebhooksPage() {
             </div>
 
             <div style={{ marginBottom: '20px' }}>
-              <label style={{ display: 'block', marginBottom: '8px', fontWeight: 500, color: '#2d3748' }}>
+              <label style={{ display: 'block', marginBottom: '8px', fontWeight: 500, color: '#1e293b' }}>
                 Webhook URL *
               </label>
               <input
@@ -713,7 +605,7 @@ export default function WebhooksPage() {
             </div>
 
             <div style={{ marginBottom: '24px' }}>
-              <label style={{ display: 'block', marginBottom: '8px', fontWeight: 500, color: '#2d3748' }}>
+              <label style={{ display: 'block', marginBottom: '8px', fontWeight: 500, color: '#1e293b' }}>
                 Event Types (leave empty for all events)
               </label>
               <div style={{ display: 'grid', gridTemplateColumns: 'repeat(2, 1fr)', gap: '10px' }}>
@@ -737,7 +629,7 @@ export default function WebhooksPage() {
                       onChange={() => toggleEventType(eventType)}
                       style={{ cursor: 'pointer' }}
                     />
-                    <span style={{ fontSize: '14px', color: '#2d3748' }}>{eventType}</span>
+                    <span style={{ fontSize: '14px', color: '#1e293b' }}>{eventType}</span>
                   </label>
                 ))}
               </div>
@@ -809,7 +701,7 @@ export default function WebhooksPage() {
             width: '100%',
             boxShadow: '0 20px 60px rgba(0,0,0,0.3)'
           }}>
-            <h2 style={{ fontSize: '24px', fontWeight: 600, marginBottom: '24px', color: '#1a202c' }}>
+            <h2 style={{ fontSize: '24px', fontWeight: 600, marginBottom: '24px', color: '#1e293b' }}>
               ✅ Webhook Created!
             </h2>
 
@@ -829,18 +721,18 @@ export default function WebhooksPage() {
             </div>
 
             <div style={{ marginBottom: '24px' }}>
-              <label style={{ display: 'block', marginBottom: '8px', fontWeight: 600, color: '#2d3748', fontSize: '13px' }}>
+              <label style={{ display: 'block', marginBottom: '8px', fontWeight: 600, color: '#1e293b', fontSize: '13px' }}>
                 Webhook Secret:
               </label>
               <div style={{
-                background: '#f7fafc',
+                background: '#f8fafc',
                 padding: '16px',
                 borderRadius: '8px',
                 border: '1px solid #e2e8f0',
                 marginBottom: '12px'
               }}>
                 <code style={{
-                  color: '#1a202c',
+                  color: '#1e293b',
                   fontSize: '13px',
                   wordBreak: 'break-all',
                   fontFamily: 'monospace'
@@ -855,7 +747,7 @@ export default function WebhooksPage() {
                   padding: '12px 24px',
                   borderRadius: '8px',
                   border: 'none',
-                  background: 'linear-gradient(135deg, #667eea 0%, #764ba2 100%)',
+                  background: '#2563eb',
                   color: '#fff',
                   cursor: 'pointer',
                   fontSize: '14px',
@@ -889,6 +781,7 @@ export default function WebhooksPage() {
           </div>
         </div>
       )}
+      </main>
     </div>
   );
 }
