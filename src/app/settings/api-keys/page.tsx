@@ -491,7 +491,6 @@ export default function ApiKeysPage() {
           </div>
         </div>
       )}
-      </main>
     </div>
   );
 }
