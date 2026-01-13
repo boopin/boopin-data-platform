@@ -11,6 +11,7 @@ export async function GET(request: NextRequest) {
     const country = searchParams.get('country');
     const eventType = searchParams.get('eventType');
     const dateFrom = searchParams.get('dateFrom');
+    const dateTo = searchParams.get('dateTo');
 
     // Site ID is required for multi-site support
     if (!siteId) {
@@ -105,75 +106,153 @@ export async function GET(request: NextRequest) {
 
     } else if (dateFrom && !country && !eventType) {
       // Date filter only
-      statsResult = await sql`
-        SELECT 
-          (SELECT COUNT(*) FROM visitors WHERE site_id = ${siteId}) as total_visitors,
-          (SELECT COUNT(*) FROM events WHERE event_type = 'page_view' AND timestamp >= ${dateFrom}::timestamp AND site_id = ${siteId}) as total_page_views,
-          (SELECT COUNT(*) FROM events WHERE timestamp >= ${dateFrom}::timestamp AND site_id = ${siteId}) as total_events,
-          (SELECT COUNT(*) FROM visitors WHERE is_identified = true AND site_id = ${siteId}) as identified_visitors
-      `;
+      if (dateTo) {
+        // With end date
+        statsResult = await sql`
+          SELECT
+            (SELECT COUNT(*) FROM visitors WHERE site_id = ${siteId}) as total_visitors,
+            (SELECT COUNT(*) FROM events WHERE event_type = 'page_view' AND timestamp >= ${dateFrom}::timestamp AND timestamp <= ${dateTo}::timestamp AND site_id = ${siteId}) as total_page_views,
+            (SELECT COUNT(*) FROM events WHERE timestamp >= ${dateFrom}::timestamp AND timestamp <= ${dateTo}::timestamp AND site_id = ${siteId}) as total_events,
+            (SELECT COUNT(*) FROM visitors WHERE is_identified = true AND site_id = ${siteId}) as identified_visitors
+        `;
+      } else {
+        // Without end date (from date onwards)
+        statsResult = await sql`
+          SELECT
+            (SELECT COUNT(*) FROM visitors WHERE site_id = ${siteId}) as total_visitors,
+            (SELECT COUNT(*) FROM events WHERE event_type = 'page_view' AND timestamp >= ${dateFrom}::timestamp AND site_id = ${siteId}) as total_page_views,
+            (SELECT COUNT(*) FROM events WHERE timestamp >= ${dateFrom}::timestamp AND site_id = ${siteId}) as total_events,
+            (SELECT COUNT(*) FROM visitors WHERE is_identified = true AND site_id = ${siteId}) as identified_visitors
+        `;
+      }
 
-      recentEvents = await sql`
-        SELECT 
-          e.id, e.event_type, e.page_path, e.page_url, e.timestamp,
-          e.visitor_id, e.user_agent, e.device_type, e.ip_address,
-          e.referrer, e.utm_source, e.utm_medium, e.utm_campaign,
-          e.country, e.city, e.region, e.properties,
-          v.email, v.name, e.browser, e.os
-        FROM events e
-        LEFT JOIN visitors v ON e.visitor_id = v.id
-        WHERE e.timestamp >= ${dateFrom}::timestamp AND e.site_id = ${siteId}
-        ORDER BY e.timestamp DESC
-        LIMIT 100
-      `;
+      if (dateTo) {
+        // With end date
+        recentEvents = await sql`
+          SELECT
+            e.id, e.event_type, e.page_path, e.page_url, e.timestamp,
+            e.visitor_id, e.user_agent, e.device_type, e.ip_address,
+            e.referrer, e.utm_source, e.utm_medium, e.utm_campaign,
+            e.country, e.city, e.region, e.properties,
+            v.email, v.name, e.browser, e.os
+          FROM events e
+          LEFT JOIN visitors v ON e.visitor_id = v.id
+          WHERE e.timestamp >= ${dateFrom}::timestamp AND e.timestamp <= ${dateTo}::timestamp AND e.site_id = ${siteId}
+          ORDER BY e.timestamp DESC
+          LIMIT 100
+        `;
 
-      deviceBreakdown = await sql`
-        SELECT device_type, COUNT(*) as count
-        FROM events WHERE device_type IS NOT NULL AND timestamp >= ${dateFrom}::timestamp AND site_id = ${siteId}
-        GROUP BY device_type ORDER BY count DESC
-      `;
+        deviceBreakdown = await sql`
+          SELECT device_type, COUNT(*) as count
+          FROM events WHERE device_type IS NOT NULL AND timestamp >= ${dateFrom}::timestamp AND timestamp <= ${dateTo}::timestamp AND site_id = ${siteId}
+          GROUP BY device_type ORDER BY count DESC
+        `;
 
-      browserBreakdown = await sql`
-        SELECT browser as name, COUNT(*) as count
-        FROM events WHERE browser IS NOT NULL AND timestamp >= ${dateFrom}::timestamp AND site_id = ${siteId}
-        GROUP BY browser ORDER BY count DESC LIMIT 10
-      `;
+        browserBreakdown = await sql`
+          SELECT browser as name, COUNT(*) as count
+          FROM events WHERE browser IS NOT NULL AND timestamp >= ${dateFrom}::timestamp AND timestamp <= ${dateTo}::timestamp AND site_id = ${siteId}
+          GROUP BY browser ORDER BY count DESC LIMIT 10
+        `;
 
-      osBreakdown = await sql`
-        SELECT os as name, COUNT(*) as count
-        FROM events WHERE os IS NOT NULL AND timestamp >= ${dateFrom}::timestamp AND site_id = ${siteId}
-        GROUP BY os ORDER BY count DESC LIMIT 10
-      `;
+        osBreakdown = await sql`
+          SELECT os as name, COUNT(*) as count
+          FROM events WHERE os IS NOT NULL AND timestamp >= ${dateFrom}::timestamp AND timestamp <= ${dateTo}::timestamp AND site_id = ${siteId}
+          GROUP BY os ORDER BY count DESC LIMIT 10
+        `;
 
-      topPages = await sql`
-        SELECT page_path, COUNT(*) as count
-        FROM events WHERE event_type = 'page_view' AND page_path IS NOT NULL AND timestamp >= ${dateFrom}::timestamp AND site_id = ${siteId}
-        GROUP BY page_path ORDER BY count DESC LIMIT 10
-      `;
+        topPages = await sql`
+          SELECT page_path, COUNT(*) as count
+          FROM events WHERE event_type = 'page_view' AND page_path IS NOT NULL AND timestamp >= ${dateFrom}::timestamp AND timestamp <= ${dateTo}::timestamp AND site_id = ${siteId}
+          GROUP BY page_path ORDER BY count DESC LIMIT 10
+        `;
 
-      eventBreakdown = await sql`
-        SELECT event_type, COUNT(*) as count
-        FROM events WHERE timestamp >= ${dateFrom}::timestamp AND site_id = ${siteId}
-        GROUP BY event_type ORDER BY count DESC
-      `;
+        eventBreakdown = await sql`
+          SELECT event_type, COUNT(*) as count
+          FROM events WHERE timestamp >= ${dateFrom}::timestamp AND timestamp <= ${dateTo}::timestamp AND site_id = ${siteId}
+          GROUP BY event_type ORDER BY count DESC
+        `;
 
-      trafficSources = await sql`
-        SELECT COALESCE(utm_source, 'Direct') as source, COUNT(*) as count
-        FROM events WHERE event_type = 'page_view' AND timestamp >= ${dateFrom}::timestamp AND site_id = ${siteId}
-        GROUP BY COALESCE(utm_source, 'Direct') ORDER BY count DESC LIMIT 10
-      `;
+        trafficSources = await sql`
+          SELECT COALESCE(utm_source, 'Direct') as source, COUNT(*) as count
+          FROM events WHERE event_type = 'page_view' AND timestamp >= ${dateFrom}::timestamp AND timestamp <= ${dateTo}::timestamp AND site_id = ${siteId}
+          GROUP BY COALESCE(utm_source, 'Direct') ORDER BY count DESC LIMIT 10
+        `;
 
-      countryBreakdown = await sql`
-        SELECT country, COUNT(*) as count
-        FROM events WHERE country IS NOT NULL AND timestamp >= ${dateFrom}::timestamp AND site_id = ${siteId}
-        GROUP BY country ORDER BY count DESC LIMIT 20
-      `;
+        countryBreakdown = await sql`
+          SELECT country, COUNT(*) as count
+          FROM events WHERE country IS NOT NULL AND timestamp >= ${dateFrom}::timestamp AND timestamp <= ${dateTo}::timestamp AND site_id = ${siteId}
+          GROUP BY country ORDER BY count DESC LIMIT 20
+        `;
 
-      cityBreakdown = await sql`
-        SELECT city, country, COUNT(*) as count
-        FROM events WHERE city IS NOT NULL AND timestamp >= ${dateFrom}::timestamp AND site_id = ${siteId}
-        GROUP BY city, country ORDER BY count DESC LIMIT 20
-      `;
+        cityBreakdown = await sql`
+          SELECT city, country, COUNT(*) as count
+          FROM events WHERE city IS NOT NULL AND timestamp >= ${dateFrom}::timestamp AND timestamp <= ${dateTo}::timestamp AND site_id = ${siteId}
+          GROUP BY city, country ORDER BY count DESC LIMIT 20
+        `;
+      } else {
+        // Without end date
+        recentEvents = await sql`
+          SELECT
+            e.id, e.event_type, e.page_path, e.page_url, e.timestamp,
+            e.visitor_id, e.user_agent, e.device_type, e.ip_address,
+            e.referrer, e.utm_source, e.utm_medium, e.utm_campaign,
+            e.country, e.city, e.region, e.properties,
+            v.email, v.name, e.browser, e.os
+          FROM events e
+          LEFT JOIN visitors v ON e.visitor_id = v.id
+          WHERE e.timestamp >= ${dateFrom}::timestamp AND e.site_id = ${siteId}
+          ORDER BY e.timestamp DESC
+          LIMIT 100
+        `;
+
+        deviceBreakdown = await sql`
+          SELECT device_type, COUNT(*) as count
+          FROM events WHERE device_type IS NOT NULL AND timestamp >= ${dateFrom}::timestamp AND site_id = ${siteId}
+          GROUP BY device_type ORDER BY count DESC
+        `;
+
+        browserBreakdown = await sql`
+          SELECT browser as name, COUNT(*) as count
+          FROM events WHERE browser IS NOT NULL AND timestamp >= ${dateFrom}::timestamp AND site_id = ${siteId}
+          GROUP BY browser ORDER BY count DESC LIMIT 10
+        `;
+
+        osBreakdown = await sql`
+          SELECT os as name, COUNT(*) as count
+          FROM events WHERE os IS NOT NULL AND timestamp >= ${dateFrom}::timestamp AND site_id = ${siteId}
+          GROUP BY os ORDER BY count DESC LIMIT 10
+        `;
+
+        topPages = await sql`
+          SELECT page_path, COUNT(*) as count
+          FROM events WHERE event_type = 'page_view' AND page_path IS NOT NULL AND timestamp >= ${dateFrom}::timestamp AND site_id = ${siteId}
+          GROUP BY page_path ORDER BY count DESC LIMIT 10
+        `;
+
+        eventBreakdown = await sql`
+          SELECT event_type, COUNT(*) as count
+          FROM events WHERE timestamp >= ${dateFrom}::timestamp AND site_id = ${siteId}
+          GROUP BY event_type ORDER BY count DESC
+        `;
+
+        trafficSources = await sql`
+          SELECT COALESCE(utm_source, 'Direct') as source, COUNT(*) as count
+          FROM events WHERE event_type = 'page_view' AND timestamp >= ${dateFrom}::timestamp AND site_id = ${siteId}
+          GROUP BY COALESCE(utm_source, 'Direct') ORDER BY count DESC LIMIT 10
+        `;
+
+        countryBreakdown = await sql`
+          SELECT country, COUNT(*) as count
+          FROM events WHERE country IS NOT NULL AND timestamp >= ${dateFrom}::timestamp AND site_id = ${siteId}
+          GROUP BY country ORDER BY count DESC LIMIT 20
+        `;
+
+        cityBreakdown = await sql`
+          SELECT city, country, COUNT(*) as count
+          FROM events WHERE city IS NOT NULL AND timestamp >= ${dateFrom}::timestamp AND site_id = ${siteId}
+          GROUP BY city, country ORDER BY count DESC LIMIT 20
+        `;
+      }
 
     } else if (country && !eventType && !dateFrom) {
       // Country filter only
