@@ -61,6 +61,8 @@ export default function Dashboard() {
 
   // Filters
   const [dateRange, setDateRange] = useState('all');
+  const [customDateFrom, setCustomDateFrom] = useState('');
+  const [customDateTo, setCustomDateTo] = useState('');
   const [countryFilter, setCountryFilter] = useState('');
   const [eventTypeFilter, setEventTypeFilter] = useState('');
 
@@ -74,7 +76,12 @@ export default function Dashboard() {
       if (eventTypeFilter) params.append('eventType', eventTypeFilter);
       
       // Date range filter
-      if (dateRange !== 'all') {
+      if (dateRange === 'custom' && customDateFrom && customDateTo) {
+        // Custom date range
+        params.append('dateFrom', new Date(customDateFrom).toISOString());
+        params.append('dateTo', new Date(customDateTo + 'T23:59:59').toISOString());
+      } else if (dateRange !== 'all' && dateRange !== 'custom') {
+        // Preset date ranges
         const now = new Date();
         let dateFrom: Date;
         switch (dateRange) {
@@ -112,7 +119,7 @@ export default function Dashboard() {
     fetchData();
     const interval = setInterval(fetchData, 30000);
     return () => clearInterval(interval);
-  }, [selectedSite, dateRange, countryFilter, eventTypeFilter]);
+  }, [selectedSite, dateRange, customDateFrom, customDateTo, countryFilter, eventTypeFilter]);
 
   useEffect(() => {
     const timer = setInterval(() => setCurrentTime(new Date()), 1000);
@@ -350,7 +357,27 @@ export default function Dashboard() {
           <option value="today">Today</option>
           <option value="7days">Last 7 Days</option>
           <option value="30days">Last 30 Days</option>
+          <option value="custom">Custom Range</option>
         </select>
+
+        {dateRange === 'custom' && (
+          <>
+            <input
+              type="date"
+              value={customDateFrom}
+              onChange={e => setCustomDateFrom(e.target.value)}
+              style={selectStyle}
+              placeholder="From date"
+            />
+            <input
+              type="date"
+              value={customDateTo}
+              onChange={e => setCustomDateTo(e.target.value)}
+              style={selectStyle}
+              placeholder="To date"
+            />
+          </>
+        )}
         
         <select value={countryFilter} onChange={e => setCountryFilter(e.target.value)} style={selectStyle}>
           <option value="">All Countries</option>
@@ -368,7 +395,7 @@ export default function Dashboard() {
         
         <div style={{ flex: 1 }} />
         
-        <button onClick={() => { setDateRange('all'); setCountryFilter(''); setEventTypeFilter(''); }} style={{ ...buttonStyle, background: '#334155' }}>
+        <button onClick={() => { setDateRange('all'); setCustomDateFrom(''); setCustomDateTo(''); setCountryFilter(''); setEventTypeFilter(''); }} style={{ ...buttonStyle, background: '#334155' }}>
           Clear Filters
         </button>
         
