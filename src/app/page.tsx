@@ -655,7 +655,7 @@ export default function Dashboard() {
               </tr>
             </thead>
             <tbody>
-              {data?.sourceAndMediumBreakdown?.length > 0 ? (
+              {(data?.sourceAndMediumBreakdown && data.sourceAndMediumBreakdown.length > 0) ? (
                 data.sourceAndMediumBreakdown.map((row, i) => {
                   const convRate = row.sessions > 0 ? ((row.conversions / row.sessions) * 100).toFixed(1) : '0.0';
                   return (
