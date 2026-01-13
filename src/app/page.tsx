@@ -34,6 +34,14 @@ interface DashboardData {
   topPages: Array<{ page_path: string; count: number }>;
   eventBreakdown: Array<{ event_type: string; count: number }>;
   trafficSources: Array<{ source: string; count: number }>;
+  sourceAndMediumBreakdown: Array<{
+    source: string;
+    medium: string;
+    sessions: number;
+    unique_visitors: number;
+    page_views: number;
+    conversions: number;
+  }>;
   countryBreakdown: Array<{ country: string; count: number }>;
   cityBreakdown: Array<{ city: string; country: string; count: number }>;
   identifiedUsers: Array<{
@@ -48,6 +56,8 @@ interface DashboardData {
   filters: {
     countries: string[];
     eventTypes: string[];
+    sources: string[];
+    mediums: string[];
   };
 }
 
@@ -65,6 +75,8 @@ export default function Dashboard() {
   const [customDateTo, setCustomDateTo] = useState('');
   const [countryFilter, setCountryFilter] = useState('');
   const [eventTypeFilter, setEventTypeFilter] = useState('');
+  const [sourceFilter, setSourceFilter] = useState('');
+  const [mediumFilter, setMediumFilter] = useState('');
 
   const fetchData = async () => {
     if (!selectedSite) return;
@@ -119,7 +131,7 @@ export default function Dashboard() {
     fetchData();
     const interval = setInterval(fetchData, 30000);
     return () => clearInterval(interval);
-  }, [selectedSite, dateRange, customDateFrom, customDateTo, countryFilter, eventTypeFilter]);
+  }, [selectedSite, dateRange, customDateFrom, customDateTo, countryFilter, eventTypeFilter, sourceFilter, mediumFilter]);
 
   useEffect(() => {
     const timer = setInterval(() => setCurrentTime(new Date()), 1000);
@@ -392,10 +404,24 @@ export default function Dashboard() {
             <option key={e} value={e}>{e}</option>
           ))}
         </select>
-        
+
+        <select value={sourceFilter} onChange={e => setSourceFilter(e.target.value)} style={selectStyle}>
+          <option value="">All Sources</option>
+          {data?.filters.sources?.map(s => (
+            <option key={s} value={s}>{s}</option>
+          ))}
+        </select>
+
+        <select value={mediumFilter} onChange={e => setMediumFilter(e.target.value)} style={selectStyle}>
+          <option value="">All Mediums</option>
+          {data?.filters.mediums?.map(m => (
+            <option key={m} value={m}>{m}</option>
+          ))}
+        </select>
+
         <div style={{ flex: 1 }} />
         
-        <button onClick={() => { setDateRange('all'); setCustomDateFrom(''); setCustomDateTo(''); setCountryFilter(''); setEventTypeFilter(''); }} style={{ ...buttonStyle, background: '#334155' }}>
+        <button onClick={() => { setDateRange('all'); setCustomDateFrom(''); setCustomDateTo(''); setCountryFilter(''); setEventTypeFilter(''); setSourceFilter(''); setMediumFilter(''); }} style={{ ...buttonStyle, background: '#334155' }}>
           Clear Filters
         </button>
         
@@ -607,6 +633,63 @@ export default function Dashboard() {
               </div>
             ))}
           </div>
+        </div>
+      </div>
+
+      {/* Source/Medium Breakdown Table */}
+      <div style={{ marginTop: '32px', background: '#ffffff', borderRadius: '12px', padding: '24px', border: '1px solid #e2e8f0', boxShadow: '0 1px 3px rgba(0, 0, 0, 0.05)' }}>
+        <h2 style={{ color: '#1e293b', fontSize: '18px', margin: '0 0 20px', display: 'flex', alignItems: 'center', gap: '8px', fontWeight: 700 }}>
+          <span>📈</span> Traffic Source / Medium Breakdown
+        </h2>
+        <div style={{ overflowX: 'auto' }}>
+          <table style={{ width: '100%', borderCollapse: 'collapse' }}>
+            <thead>
+              <tr style={{ borderBottom: '2px solid #e2e8f0' }}>
+                <th style={{ padding: '12px 16px', textAlign: 'left', color: '#64748b', fontSize: '12px', fontWeight: 600, textTransform: 'uppercase' }}>Source</th>
+                <th style={{ padding: '12px 16px', textAlign: 'left', color: '#64748b', fontSize: '12px', fontWeight: 600, textTransform: 'uppercase' }}>Medium</th>
+                <th style={{ padding: '12px 16px', textAlign: 'right', color: '#64748b', fontSize: '12px', fontWeight: 600, textTransform: 'uppercase' }}>Sessions</th>
+                <th style={{ padding: '12px 16px', textAlign: 'right', color: '#64748b', fontSize: '12px', fontWeight: 600, textTransform: 'uppercase' }}>Visitors</th>
+                <th style={{ padding: '12px 16px', textAlign: 'right', color: '#64748b', fontSize: '12px', fontWeight: 600, textTransform: 'uppercase' }}>Page Views</th>
+                <th style={{ padding: '12px 16px', textAlign: 'right', color: '#64748b', fontSize: '12px', fontWeight: 600, textTransform: 'uppercase' }}>Conversions</th>
+                <th style={{ padding: '12px 16px', textAlign: 'right', color: '#64748b', fontSize: '12px', fontWeight: 600, textTransform: 'uppercase' }}>Conv. Rate</th>
+              </tr>
+            </thead>
+            <tbody>
+              {data?.sourceAndMediumBreakdown?.length > 0 ? (
+                data.sourceAndMediumBreakdown.map((row, i) => {
+                  const convRate = row.sessions > 0 ? ((row.conversions / row.sessions) * 100).toFixed(1) : '0.0';
+                  return (
+                    <tr key={i} style={{ borderBottom: '1px solid #f1f5f9', transition: 'background 0.2s' }}
+                        onMouseEnter={e => (e.currentTarget.style.background = '#f8fafc')}
+                        onMouseLeave={e => (e.currentTarget.style.background = 'transparent')}>
+                      <td style={{ padding: '14px 16px', color: '#1e293b', fontSize: '14px', fontWeight: 600 }}>{row.source}</td>
+                      <td style={{ padding: '14px 16px', color: '#64748b', fontSize: '14px' }}>{row.medium}</td>
+                      <td style={{ padding: '14px 16px', textAlign: 'right', color: '#1e293b', fontSize: '14px', fontWeight: 500 }}>{row.sessions.toLocaleString()}</td>
+                      <td style={{ padding: '14px 16px', textAlign: 'right', color: '#1e293b', fontSize: '14px' }}>{row.unique_visitors.toLocaleString()}</td>
+                      <td style={{ padding: '14px 16px', textAlign: 'right', color: '#1e293b', fontSize: '14px' }}>{row.page_views.toLocaleString()}</td>
+                      <td style={{ padding: '14px 16px', textAlign: 'right', color: row.conversions > 0 ? '#10b981' : '#64748b', fontSize: '14px', fontWeight: row.conversions > 0 ? 600 : 400 }}>
+                        {row.conversions.toLocaleString()}
+                      </td>
+                      <td style={{ padding: '14px 16px', textAlign: 'right', color: parseFloat(convRate) > 5 ? '#10b981' : '#64748b', fontSize: '14px', fontWeight: parseFloat(convRate) > 5 ? 600 : 400 }}>
+                        {convRate}%
+                      </td>
+                    </tr>
+                  );
+                })
+              ) : (
+                <tr>
+                  <td colSpan={7} style={{ padding: '48px', textAlign: 'center', color: '#64748b', fontSize: '14px' }}>
+                    No traffic data available for the selected filters
+                  </td>
+                </tr>
+              )}
+            </tbody>
+          </table>
+        </div>
+        <div style={{ marginTop: '16px', padding: '12px', background: '#f8fafc', borderRadius: '8px', border: '1px solid #e2e8f0' }}>
+          <p style={{ color: '#64748b', fontSize: '12px', margin: 0 }}>
+            <strong>Note:</strong> Conversions include purchase, form_submit, and sign_up events. Conversion rate = (Conversions / Sessions) × 100
+          </p>
         </div>
       </div>
 
