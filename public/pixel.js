@@ -124,7 +124,7 @@
   // ============================================
 
   function sendEvent(eventType, properties) {
-    if (!initialized || !apiKey || !endpoint) {
+    if (!initialized || !siteId || !endpoint) {
       console.warn('[PulseAnalytics] Pixel not initialized');
       return;
     }
