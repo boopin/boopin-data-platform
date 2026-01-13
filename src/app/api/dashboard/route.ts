@@ -28,6 +28,7 @@ export async function GET(request: NextRequest) {
     let topPages;
     let eventBreakdown;
     let trafficSources;
+    let sourceAndMediumBreakdown;
     let countryBreakdown;
     let cityBreakdown;
 
@@ -90,6 +91,21 @@ export async function GET(request: NextRequest) {
         SELECT COALESCE(utm_source, 'Direct') as source, COUNT(*) as count
         FROM events WHERE event_type = 'page_view' AND site_id = ${siteId}
         GROUP BY COALESCE(utm_source, 'Direct') ORDER BY count DESC LIMIT 10
+      `;
+
+      sourceAndMediumBreakdown = await sql`
+        SELECT
+          COALESCE(utm_source, 'Direct') as source,
+          COALESCE(utm_medium, 'None') as medium,
+          COUNT(*) as sessions,
+          COUNT(DISTINCT visitor_id) as unique_visitors,
+          COUNT(CASE WHEN event_type = 'page_view' THEN 1 END) as page_views,
+          COUNT(CASE WHEN event_type IN ('purchase', 'form_submit', 'sign_up') THEN 1 END) as conversions
+        FROM events
+        WHERE site_id = ${siteId}
+        GROUP BY COALESCE(utm_source, 'Direct'), COALESCE(utm_medium, 'None')
+        ORDER BY sessions DESC
+        LIMIT 50
       `;
 
       countryBreakdown = await sql`
@@ -178,6 +194,21 @@ export async function GET(request: NextRequest) {
           GROUP BY COALESCE(utm_source, 'Direct') ORDER BY count DESC LIMIT 10
         `;
 
+        sourceAndMediumBreakdown = await sql`
+          SELECT
+            COALESCE(utm_source, 'Direct') as source,
+            COALESCE(utm_medium, 'None') as medium,
+            COUNT(*) as sessions,
+            COUNT(DISTINCT visitor_id) as unique_visitors,
+            COUNT(CASE WHEN event_type = 'page_view' THEN 1 END) as page_views,
+            COUNT(CASE WHEN event_type IN ('purchase', 'form_submit', 'sign_up') THEN 1 END) as conversions
+          FROM events
+          WHERE timestamp >= ${dateFrom}::timestamp AND timestamp <= ${dateTo}::timestamp AND site_id = ${siteId}
+          GROUP BY COALESCE(utm_source, 'Direct'), COALESCE(utm_medium, 'None')
+          ORDER BY sessions DESC
+          LIMIT 50
+        `;
+
         countryBreakdown = await sql`
           SELECT country, COUNT(*) as count
           FROM events WHERE country IS NOT NULL AND timestamp >= ${dateFrom}::timestamp AND timestamp <= ${dateTo}::timestamp AND site_id = ${siteId}
@@ -239,6 +270,21 @@ export async function GET(request: NextRequest) {
           SELECT COALESCE(utm_source, 'Direct') as source, COUNT(*) as count
           FROM events WHERE event_type = 'page_view' AND timestamp >= ${dateFrom}::timestamp AND site_id = ${siteId}
           GROUP BY COALESCE(utm_source, 'Direct') ORDER BY count DESC LIMIT 10
+        `;
+
+        sourceAndMediumBreakdown = await sql`
+          SELECT
+            COALESCE(utm_source, 'Direct') as source,
+            COALESCE(utm_medium, 'None') as medium,
+            COUNT(*) as sessions,
+            COUNT(DISTINCT visitor_id) as unique_visitors,
+            COUNT(CASE WHEN event_type = 'page_view' THEN 1 END) as page_views,
+            COUNT(CASE WHEN event_type IN ('purchase', 'form_submit', 'sign_up') THEN 1 END) as conversions
+          FROM events
+          WHERE timestamp >= ${dateFrom}::timestamp AND site_id = ${siteId}
+          GROUP BY COALESCE(utm_source, 'Direct'), COALESCE(utm_medium, 'None')
+          ORDER BY sessions DESC
+          LIMIT 50
         `;
 
         countryBreakdown = await sql`
@@ -706,6 +752,21 @@ export async function GET(request: NextRequest) {
       SELECT DISTINCT event_type FROM events WHERE site_id = ${siteId} ORDER BY event_type
     `;
 
+    // Get unique sources and mediums for filters
+    const sources = await sql`
+      SELECT DISTINCT COALESCE(utm_source, 'Direct') as source
+      FROM events
+      WHERE site_id = ${siteId}
+      ORDER BY source
+    `;
+
+    const mediums = await sql`
+      SELECT DISTINCT COALESCE(utm_medium, 'None') as medium
+      FROM events
+      WHERE site_id = ${siteId}
+      ORDER BY medium
+    `;
+
     return NextResponse.json({
       stats: {
         totalVisitors: parseInt(statsResult[0]?.total_visitors) || 0,
@@ -720,12 +781,15 @@ export async function GET(request: NextRequest) {
       topPages,
       eventBreakdown,
       trafficSources,
+      sourceAndMediumBreakdown,
       countryBreakdown,
       cityBreakdown,
       identifiedUsers,
       filters: {
         countries: countries.map((c) => c.country),
         eventTypes: eventTypes.map((e) => e.event_type),
+        sources: sources.map((s) => s.source),
+        mediums: mediums.map((m) => m.medium),
       }
     }, {
       headers: {
