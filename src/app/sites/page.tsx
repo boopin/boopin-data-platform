@@ -148,58 +148,14 @@ export default function SitesPage() {
   };
 
   const getTrackingCode = (siteId: string) => {
-    return `<!-- Pulse Analytics Tracking Code -->
+    const origin = typeof window !== 'undefined' ? window.location.origin : 'https://pulse-analytics-data-platform.vercel.app';
+    return `<!-- Pulse Analytics - Advanced Tracking -->
+<script src="${origin}/pixel.js"></script>
 <script>
-(function() {
-  window.pulseAnalytics = window.pulseAnalytics || [];
-  const pulse = window.pulseAnalytics;
-
-  // Configuration
-  const SITE_ID = '${siteId}';
-  const API_ENDPOINT = '${typeof window !== 'undefined' ? window.location.origin : ''}/api/track';
-
-  // Generate or get anonymous ID
-  function getAnonymousId() {
-    let id = localStorage.getItem('pulse_anonymous_id');
-    if (!id) {
-      id = 'pulse_' + Math.random().toString(36).substr(2, 9) + Date.now();
-      localStorage.setItem('pulse_anonymous_id', id);
-    }
-    return id;
-  }
-
-  // Track function
-  pulse.track = function(eventType, properties = {}) {
-    const anonymousId = getAnonymousId();
-
-    fetch(API_ENDPOINT, {
-      method: 'POST',
-      headers: {
-        'Content-Type': 'application/json'
-      },
-      body: JSON.stringify({
-        siteId: SITE_ID,
-        anonymousId: anonymousId,
-        eventType: eventType,
-        properties: properties,
-        pageUrl: window.location.href,
-        pagePath: window.location.pathname,
-        pageTitle: document.title,
-        referrer: document.referrer,
-        userAgent: navigator.userAgent,
-        screenWidth: screen.width,
-        screenHeight: screen.height,
-        viewportWidth: window.innerWidth,
-        viewportHeight: window.innerHeight
-      })
-    }).catch(err => console.error('Pulse Analytics tracking error:', err));
-  };
-
-  // Auto-track page view
-  pulse.track('page_view');
-})();
+  window._bp = window._bp || [];
+  window._bp.push(['init', '${siteId}']);
 </script>
-<!-- End Pulse Analytics Tracking Code -->`  ;
+<!-- End Pulse Analytics -->`;
   };
 
   if (loading) {
@@ -541,8 +497,11 @@ export default function SitesPage() {
             <h2 style={{ fontSize: '24px', fontWeight: 700, color: '#1e293b', marginBottom: '8px' }}>
               Tracking Code for {selectedSite.name}
             </h2>
-            <p style={{ color: '#64748b', fontSize: '14px', marginBottom: '24px' }}>
+            <p style={{ color: '#64748b', fontSize: '14px', marginBottom: '8px' }}>
               Add this code to your website&apos;s &lt;head&gt; section to start tracking visitors.
+            </p>
+            <p style={{ color: '#10b981', fontSize: '13px', marginBottom: '24px', background: '#10b98110', padding: '12px', borderRadius: '6px', border: '1px solid #10b98140' }}>
+              ✅ Includes: UTM tracking, scroll depth, form tracking, clicks, e-commerce events, and error tracking
             </p>
 
             <div style={{ marginBottom: '20px' }}>
