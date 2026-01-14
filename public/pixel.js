@@ -792,10 +792,10 @@
     for (var i = 0; i < BP.length; i++) {
       var args = BP[i];
       var cmd = args[0];
-      
+
       if (cmd === 'init') {
         siteId = args[1];  // Changed from apiKey to siteId
-        
+
         // Auto-detect endpoint from script URL
         var scripts = document.getElementsByTagName('script');
         for (var j = 0; j < scripts.length; j++) {
@@ -812,15 +812,15 @@
         if (!endpoint) {
           endpoint = 'https://pulse-analytics-data-platform.vercel.app/api/track';
         }
-        
+
         anonymousId = getAnonymousId();
         sessionId = getSessionId();
         sessionStartTime = getSessionStartTime();
         initialized = true;
-        
+
         // Load cart from session
         loadCartFromSession();
-        
+
         // Initialize all auto-tracking
         trackPageView();
         trackClicks();
@@ -832,7 +832,7 @@
         trackErrors();  // Added error tracking
 
         console.log('[PulseAnalytics] Initialized successfully');
-        
+
       } else if (cmd === 'track') {
         sendEvent(args[1], args[2]);
       } else if (cmd === 'identify') {
@@ -840,6 +840,28 @@
       }
     }
   }
+
+  // Override push to auto-process new commands after initial load
+  var originalPush = BP.push;
+  BP.push = function() {
+    var result = originalPush.apply(BP, arguments);
+    // If already processed initial queue, immediately process new commands
+    if (initialized || document.readyState === 'complete') {
+      var newCommands = Array.prototype.slice.call(arguments);
+      for (var i = 0; i < newCommands.length; i++) {
+        var args = newCommands[i];
+        var cmd = args[0];
+        if (cmd === 'init' && !initialized) {
+          processQueue();
+        } else if (cmd === 'track' && initialized) {
+          sendEvent(args[1], args[2]);
+        } else if (cmd === 'identify' && initialized) {
+          identify(args[1], args[2]);
+        }
+      }
+    }
+    return result;
+  };
 
   if (document.readyState === 'complete') {
     processQueue();
