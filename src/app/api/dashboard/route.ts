@@ -126,19 +126,19 @@ export async function GET(request: NextRequest) {
         // With end date
         statsResult = await sql`
           SELECT
-            (SELECT COUNT(*) FROM visitors WHERE site_id = ${siteId}) as total_visitors,
+            (SELECT COUNT(DISTINCT visitor_id) FROM events WHERE timestamp >= ${dateFrom}::timestamp AND timestamp <= ${dateTo}::timestamp AND site_id = ${siteId}) as total_visitors,
             (SELECT COUNT(*) FROM events WHERE event_type = 'page_view' AND timestamp >= ${dateFrom}::timestamp AND timestamp <= ${dateTo}::timestamp AND site_id = ${siteId}) as total_page_views,
             (SELECT COUNT(*) FROM events WHERE timestamp >= ${dateFrom}::timestamp AND timestamp <= ${dateTo}::timestamp AND site_id = ${siteId}) as total_events,
-            (SELECT COUNT(*) FROM visitors WHERE is_identified = true AND site_id = ${siteId}) as identified_visitors
+            (SELECT COUNT(DISTINCT e.visitor_id) FROM events e JOIN visitors v ON e.visitor_id = v.id WHERE v.is_identified = true AND e.timestamp >= ${dateFrom}::timestamp AND e.timestamp <= ${dateTo}::timestamp AND e.site_id = ${siteId}) as identified_visitors
         `;
       } else {
         // Without end date (from date onwards)
         statsResult = await sql`
           SELECT
-            (SELECT COUNT(*) FROM visitors WHERE site_id = ${siteId}) as total_visitors,
+            (SELECT COUNT(DISTINCT visitor_id) FROM events WHERE timestamp >= ${dateFrom}::timestamp AND site_id = ${siteId}) as total_visitors,
             (SELECT COUNT(*) FROM events WHERE event_type = 'page_view' AND timestamp >= ${dateFrom}::timestamp AND site_id = ${siteId}) as total_page_views,
             (SELECT COUNT(*) FROM events WHERE timestamp >= ${dateFrom}::timestamp AND site_id = ${siteId}) as total_events,
-            (SELECT COUNT(*) FROM visitors WHERE is_identified = true AND site_id = ${siteId}) as identified_visitors
+            (SELECT COUNT(DISTINCT e.visitor_id) FROM events e JOIN visitors v ON e.visitor_id = v.id WHERE v.is_identified = true AND e.timestamp >= ${dateFrom}::timestamp AND e.site_id = ${siteId}) as identified_visitors
         `;
       }
 
@@ -303,11 +303,11 @@ export async function GET(request: NextRequest) {
     } else if (country && !eventType && !dateFrom) {
       // Country filter only
       statsResult = await sql`
-        SELECT 
-          (SELECT COUNT(*) FROM visitors WHERE site_id = ${siteId}) as total_visitors,
+        SELECT
+          (SELECT COUNT(DISTINCT visitor_id) FROM events WHERE country = ${country} AND site_id = ${siteId}) as total_visitors,
           (SELECT COUNT(*) FROM events WHERE event_type = 'page_view' AND country = ${country} AND site_id = ${siteId}) as total_page_views,
           (SELECT COUNT(*) FROM events WHERE country = ${country} AND site_id = ${siteId}) as total_events,
-          (SELECT COUNT(*) FROM visitors WHERE is_identified = true AND site_id = ${siteId}) as identified_visitors
+          (SELECT COUNT(DISTINCT visitor_id) FROM events e JOIN visitors v ON e.visitor_id = v.id WHERE v.is_identified = true AND e.country = ${country} AND e.site_id = ${siteId}) as identified_visitors
       `;
 
       recentEvents = await sql`
@@ -376,10 +376,10 @@ export async function GET(request: NextRequest) {
       // Event type filter only
       statsResult = await sql`
         SELECT
-          (SELECT COUNT(*) FROM visitors WHERE site_id = ${siteId}) as total_visitors,
+          (SELECT COUNT(DISTINCT visitor_id) FROM events WHERE event_type = ${eventType} AND site_id = ${siteId}) as total_visitors,
           (SELECT COUNT(*) FROM events WHERE event_type = 'page_view' AND site_id = ${siteId}) as total_page_views,
           (SELECT COUNT(*) FROM events WHERE event_type = ${eventType} AND site_id = ${siteId}) as total_events,
-          (SELECT COUNT(*) FROM visitors WHERE is_identified = true AND site_id = ${siteId}) as identified_visitors
+          (SELECT COUNT(DISTINCT e.visitor_id) FROM events e JOIN visitors v ON e.visitor_id = v.id WHERE v.is_identified = true AND e.event_type = ${eventType} AND e.site_id = ${siteId}) as identified_visitors
       `;
 
       recentEvents = await sql`
@@ -447,11 +447,11 @@ export async function GET(request: NextRequest) {
     } else if (dateFrom && country && !eventType) {
       // Date + Country filter
       statsResult = await sql`
-        SELECT 
-          (SELECT COUNT(*) FROM visitors WHERE site_id = ${siteId}) as total_visitors,
-          (SELECT COUNT(*) FROM events WHERE event_type = 'page_view' AND timestamp >= ${dateFrom}::timestamp AND site_id = ${siteId} AND country = ${country} AND site_id = ${siteId}) as total_page_views,
-          (SELECT COUNT(*) FROM events WHERE timestamp >= ${dateFrom}::timestamp AND site_id = ${siteId} AND country = ${country} AND site_id = ${siteId}) as total_events,
-          (SELECT COUNT(*) FROM visitors WHERE is_identified = true AND site_id = ${siteId}) as identified_visitors
+        SELECT
+          (SELECT COUNT(DISTINCT visitor_id) FROM events WHERE timestamp >= ${dateFrom}::timestamp AND country = ${country} AND site_id = ${siteId}) as total_visitors,
+          (SELECT COUNT(*) FROM events WHERE event_type = 'page_view' AND timestamp >= ${dateFrom}::timestamp AND country = ${country} AND site_id = ${siteId}) as total_page_views,
+          (SELECT COUNT(*) FROM events WHERE timestamp >= ${dateFrom}::timestamp AND country = ${country} AND site_id = ${siteId}) as total_events,
+          (SELECT COUNT(DISTINCT e.visitor_id) FROM events e JOIN visitors v ON e.visitor_id = v.id WHERE v.is_identified = true AND e.timestamp >= ${dateFrom}::timestamp AND e.country = ${country} AND e.site_id = ${siteId}) as identified_visitors
       `;
 
       recentEvents = await sql`
@@ -519,11 +519,11 @@ export async function GET(request: NextRequest) {
     } else if (dateFrom && eventType && !country) {
       // Date + Event Type filter
       statsResult = await sql`
-        SELECT 
-          (SELECT COUNT(*) FROM visitors WHERE site_id = ${siteId}) as total_visitors,
+        SELECT
+          (SELECT COUNT(DISTINCT visitor_id) FROM events WHERE timestamp >= ${dateFrom}::timestamp AND event_type = ${eventType} AND site_id = ${siteId}) as total_visitors,
           (SELECT COUNT(*) FROM events WHERE event_type = 'page_view' AND timestamp >= ${dateFrom}::timestamp AND site_id = ${siteId}) as total_page_views,
-          (SELECT COUNT(*) FROM events WHERE timestamp >= ${dateFrom}::timestamp AND site_id = ${siteId} AND event_type = ${eventType} AND site_id = ${siteId}) as total_events,
-          (SELECT COUNT(*) FROM visitors WHERE is_identified = true AND site_id = ${siteId}) as identified_visitors
+          (SELECT COUNT(*) FROM events WHERE timestamp >= ${dateFrom}::timestamp AND event_type = ${eventType} AND site_id = ${siteId}) as total_events,
+          (SELECT COUNT(DISTINCT e.visitor_id) FROM events e JOIN visitors v ON e.visitor_id = v.id WHERE v.is_identified = true AND e.timestamp >= ${dateFrom}::timestamp AND e.event_type = ${eventType} AND e.site_id = ${siteId}) as identified_visitors
       `;
 
       recentEvents = await sql`
@@ -591,11 +591,11 @@ export async function GET(request: NextRequest) {
     } else if (country && eventType && !dateFrom) {
       // Country + Event Type filter
       statsResult = await sql`
-        SELECT 
-          (SELECT COUNT(*) FROM visitors WHERE site_id = ${siteId}) as total_visitors,
+        SELECT
+          (SELECT COUNT(DISTINCT visitor_id) FROM events WHERE country = ${country} AND event_type = ${eventType} AND site_id = ${siteId}) as total_visitors,
           (SELECT COUNT(*) FROM events WHERE event_type = 'page_view' AND country = ${country} AND site_id = ${siteId}) as total_page_views,
-          (SELECT COUNT(*) FROM events WHERE country = ${country} AND site_id = ${siteId} AND event_type = ${eventType} AND site_id = ${siteId}) as total_events,
-          (SELECT COUNT(*) FROM visitors WHERE is_identified = true AND site_id = ${siteId}) as identified_visitors
+          (SELECT COUNT(*) FROM events WHERE country = ${country} AND event_type = ${eventType} AND site_id = ${siteId}) as total_events,
+          (SELECT COUNT(DISTINCT e.visitor_id) FROM events e JOIN visitors v ON e.visitor_id = v.id WHERE v.is_identified = true AND e.country = ${country} AND e.event_type = ${eventType} AND e.site_id = ${siteId}) as identified_visitors
       `;
 
       recentEvents = await sql`
@@ -663,11 +663,11 @@ export async function GET(request: NextRequest) {
     } else {
       // All three filters
       statsResult = await sql`
-        SELECT 
-          (SELECT COUNT(*) FROM visitors WHERE site_id = ${siteId}) as total_visitors,
-          (SELECT COUNT(*) FROM events WHERE event_type = 'page_view' AND timestamp >= ${dateFrom}::timestamp AND site_id = ${siteId} AND country = ${country} AND site_id = ${siteId}) as total_page_views,
-          (SELECT COUNT(*) FROM events WHERE timestamp >= ${dateFrom}::timestamp AND site_id = ${siteId} AND country = ${country} AND site_id = ${siteId} AND event_type = ${eventType} AND site_id = ${siteId}) as total_events,
-          (SELECT COUNT(*) FROM visitors WHERE is_identified = true AND site_id = ${siteId}) as identified_visitors
+        SELECT
+          (SELECT COUNT(DISTINCT visitor_id) FROM events WHERE timestamp >= ${dateFrom}::timestamp AND country = ${country} AND event_type = ${eventType} AND site_id = ${siteId}) as total_visitors,
+          (SELECT COUNT(*) FROM events WHERE event_type = 'page_view' AND timestamp >= ${dateFrom}::timestamp AND country = ${country} AND site_id = ${siteId}) as total_page_views,
+          (SELECT COUNT(*) FROM events WHERE timestamp >= ${dateFrom}::timestamp AND country = ${country} AND event_type = ${eventType} AND site_id = ${siteId}) as total_events,
+          (SELECT COUNT(DISTINCT e.visitor_id) FROM events e JOIN visitors v ON e.visitor_id = v.id WHERE v.is_identified = true AND e.timestamp >= ${dateFrom}::timestamp AND e.country = ${country} AND e.event_type = ${eventType} AND e.site_id = ${siteId}) as identified_visitors
       `;
 
       recentEvents = await sql`
