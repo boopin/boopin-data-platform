@@ -841,32 +841,46 @@
     }
   }
 
-  // Override push to auto-process new commands after initial load
+  // Override push to auto-process new commands
   var originalPush = BP.push;
   BP.push = function() {
     var result = originalPush.apply(BP, arguments);
-    // If already processed initial queue, immediately process new commands
-    if (initialized || document.readyState === 'complete') {
-      var newCommands = Array.prototype.slice.call(arguments);
-      for (var i = 0; i < newCommands.length; i++) {
-        var args = newCommands[i];
-        var cmd = args[0];
-        if (cmd === 'init' && !initialized) {
+
+    // Process commands immediately if we can
+    var newCommands = Array.prototype.slice.call(arguments);
+    for (var i = 0; i < newCommands.length; i++) {
+      var args = newCommands[i];
+      var cmd = args[0];
+
+      if (cmd === 'init' && !initialized) {
+        // Process the entire queue when init comes in
+        setTimeout(function() {
           processQueue();
-        } else if (cmd === 'track' && initialized) {
-          sendEvent(args[1], args[2]);
-        } else if (cmd === 'identify' && initialized) {
-          identify(args[1], args[2]);
-        }
+        }, 0);
+      } else if (cmd === 'track' && initialized) {
+        sendEvent(args[1], args[2]);
+      } else if (cmd === 'identify' && initialized) {
+        identify(args[1], args[2]);
       }
     }
+
     return result;
   };
 
+  // Initial queue processing
   if (document.readyState === 'complete') {
     processQueue();
   } else {
     window.addEventListener('load', processQueue);
+  }
+
+  // Also try processing queue on DOMContentLoaded
+  if (document.readyState === 'loading') {
+    document.addEventListener('DOMContentLoaded', function() {
+      if (!initialized && BP.length > 0) {
+        processQueue();
+      }
+    });
   }
 
 })(window, document);
