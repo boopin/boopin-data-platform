@@ -5,7 +5,9 @@
   // PULSE ANALYTICS - Enhanced Tracking Pixel
   // ============================================
 
-  var BP = window._bp || [];
+  // Initialize _bp on window if not exists
+  window._bp = window._bp || [];
+  var BP = window._bp;
   var siteId = null;  // Changed from apiKey to siteId for multi-site support
   var endpoint = null;
   var anonymousId = null;
@@ -843,7 +845,7 @@
 
   // Override push to auto-process new commands
   var originalPush = BP.push;
-  BP.push = function() {
+  var customPush = function() {
     var result = originalPush.apply(BP, arguments);
 
     // Process commands immediately if we can
@@ -866,6 +868,9 @@
 
     return result;
   };
+
+  BP.push = customPush;
+  window._bp.push = customPush;
 
   // Initial queue processing
   if (document.readyState === 'complete') {
