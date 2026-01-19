@@ -22,9 +22,9 @@ interface ReportFilters {
 async function getTrafficSourcesReport(siteId: string, filters: ReportFilters) {
   let query = `
     SELECT
-      COALESCE(e.source, 'direct') as source,
-      COALESCE(e.medium, 'none') as medium,
-      COALESCE(e.campaign, '(not set)') as campaign,
+      COALESCE(e.utm_source, 'direct') as source,
+      COALESCE(e.utm_medium, 'none') as medium,
+      COALESCE(e.utm_campaign, '(not set)') as campaign,
       COUNT(DISTINCT e.visitor_id) as unique_visitors,
       COUNT(DISTINCT e.session_id) as sessions,
       COUNT(*) as total_events,
@@ -62,17 +62,17 @@ async function getTrafficSourcesReport(siteId: string, filters: ReportFilters) {
     paramIndex++;
   }
   if (filters.source) {
-    query += ` AND e.source = $${paramIndex}`;
+    query += ` AND e.utm_source = $${paramIndex}`;
     params.push(filters.source);
     paramIndex++;
   }
   if (filters.medium) {
-    query += ` AND e.medium = $${paramIndex}`;
+    query += ` AND e.utm_medium = $${paramIndex}`;
     params.push(filters.medium);
     paramIndex++;
   }
   if (filters.campaign) {
-    query += ` AND e.campaign = $${paramIndex}`;
+    query += ` AND e.utm_campaign = $${paramIndex}`;
     params.push(filters.campaign);
     paramIndex++;
   }
@@ -83,7 +83,7 @@ async function getTrafficSourcesReport(siteId: string, filters: ReportFilters) {
   }
 
   query += `
-    GROUP BY e.source, e.medium, e.campaign
+    GROUP BY e.utm_source, e.utm_medium, e.utm_campaign
     ORDER BY unique_visitors DESC
     LIMIT 100
   `;
@@ -97,8 +97,8 @@ async function getConversionsReport(siteId: string, filters: ReportFilters) {
   let query = `
     SELECT
       e.event_type,
-      COALESCE(e.source, 'direct') as source,
-      COALESCE(e.medium, 'none') as medium,
+      COALESCE(e.utm_source, 'direct') as source,
+      COALESCE(e.utm_medium, 'none') as medium,
       COUNT(*) as conversion_count,
       COUNT(DISTINCT e.visitor_id) as unique_converters,
       COUNT(DISTINCT e.session_id) as converting_sessions,
@@ -122,12 +122,12 @@ async function getConversionsReport(siteId: string, filters: ReportFilters) {
     paramIndex++;
   }
   if (filters.source) {
-    query += ` AND e.source = $${paramIndex}`;
+    query += ` AND e.utm_source = $${paramIndex}`;
     params.push(filters.source);
     paramIndex++;
   }
   if (filters.medium) {
-    query += ` AND e.medium = $${paramIndex}`;
+    query += ` AND e.utm_medium = $${paramIndex}`;
     params.push(filters.medium);
     paramIndex++;
   }
@@ -138,7 +138,7 @@ async function getConversionsReport(siteId: string, filters: ReportFilters) {
   }
 
   query += `
-    GROUP BY e.event_type, e.source, e.medium, DATE(e.timestamp)
+    GROUP BY e.event_type, e.utm_source, e.utm_medium, DATE(e.timestamp)
     ORDER BY conversion_date DESC, conversion_count DESC
     LIMIT 500
   `;
@@ -394,12 +394,12 @@ async function getCustomReport(siteId: string, filters: ReportFilters) {
     paramIndex++;
   }
   if (filters.source) {
-    query += ` AND e.source = $${paramIndex}`;
+    query += ` AND e.utm_source = $${paramIndex}`;
     params.push(filters.source);
     paramIndex++;
   }
   if (filters.medium) {
-    query += ` AND e.medium = $${paramIndex}`;
+    query += ` AND e.utm_medium = $${paramIndex}`;
     params.push(filters.medium);
     paramIndex++;
   }
