@@ -37,6 +37,7 @@ export default function Navigation() {
         { path: '/visitors', label: '👥 Visitors' },
         { path: '/live', label: '🔴 Live Events' },
         { path: '/reports', label: '📊 Reports' },
+        { path: '/reports/advanced', label: '📈 Advanced Reports' },
         { path: '/journeys', label: '🛤️ Journeys' }
       ]
     },
