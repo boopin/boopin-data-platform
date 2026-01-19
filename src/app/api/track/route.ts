@@ -101,6 +101,7 @@ export async function POST(request: NextRequest) {
       siteId,
       anonymousId,
       sessionId,
+      deviceFingerprint,
       eventType,
       properties = {},
       pageUrl,
@@ -164,16 +165,25 @@ export async function POST(request: NextRequest) {
     let isNewVisitor = false;
 
     try {
+      // Try to find by anonymousId first
       let visitor = await sql`
         SELECT id, email, name, phone FROM visitors
         WHERE anonymous_id = ${anonymousId} AND site_id = ${siteId}
       `;
 
+      // If not found and we have fingerprint, try fingerprint fallback
+      if (visitor.length === 0 && deviceFingerprint) {
+        visitor = await sql`
+          SELECT id, email, name, phone FROM visitors
+          WHERE device_fingerprint = ${deviceFingerprint} AND site_id = ${siteId}
+        `;
+      }
+
       if (visitor.length === 0) {
         // Create new visitor
         const newVisitor = await sql`
-          INSERT INTO visitors (site_id, anonymous_id, first_seen_at, last_seen_at, visit_count, is_identified)
-          VALUES (${siteId}, ${anonymousId}, NOW(), NOW(), 1, false)
+          INSERT INTO visitors (site_id, anonymous_id, device_fingerprint, first_seen_at, last_seen_at, visit_count, is_identified)
+          VALUES (${siteId}, ${anonymousId}, ${deviceFingerprint || null}, NOW(), NOW(), 1, false)
           RETURNING id
         `;
         visitorId = newVisitor[0].id;
@@ -182,11 +192,12 @@ export async function POST(request: NextRequest) {
       } else {
         visitorId = visitor[0].id;
         console.log('Found existing visitor:', { visitorId, type: typeof visitorId, raw: visitor[0] });
-        // Update last seen and visit count
+        // Update last seen, visit count, and fingerprint if missing
         await sql`
           UPDATE visitors
           SET last_seen_at = NOW(),
-              visit_count = visit_count + 1
+              visit_count = visit_count + 1,
+              device_fingerprint = COALESCE(device_fingerprint, ${deviceFingerprint || null})
           WHERE id = ${visitorId}
         `;
       }
@@ -195,25 +206,78 @@ export async function POST(request: NextRequest) {
       throw new Error(`Visitor error: ${visitorError.message}`);
     }
 
-    // Handle identify event - update visitor with user info (HASHED FOR PRIVACY)
+    // Handle identify event - SESSION STITCHING
     if (eventType === 'identify' || eventType === 'lead_form') {
       const email = properties.email || properties.user_id || null;
       const name = properties.name || null;
       const phone = properties.phone || null;
+      const userId = properties.user_id || null;
 
       // Hash PII data before storing
       const emailHash = hashEmail(email);
       const phoneHash = hashPhone(phone);
 
-      if (emailHash || name || phoneHash) {
-        await sql`
-          UPDATE visitors
-          SET email = COALESCE(${emailHash}, email),
-              name = COALESCE(${name}, name),
-              phone = COALESCE(${phoneHash}, phone),
-              is_identified = true
-          WHERE id = ${visitorId}
+      if (emailHash || userId) {
+        // Check if there's already an identified visitor with this email/userId
+        const existingIdentified = await sql`
+          SELECT id FROM visitors
+          WHERE site_id = ${siteId}
+          AND is_identified = true
+          AND (
+            ${emailHash ? sql`email = ${emailHash}` : sql`1=0`}
+            OR ${userId ? sql`user_id = ${userId}` : sql`1=0`}
+          )
+          AND id != ${visitorId}
+          LIMIT 1
         `;
+
+        if (existingIdentified.length > 0) {
+          // Session stitching: Merge anonymous visitor into identified visitor
+          const identifiedVisitorId = existingIdentified[0].id;
+
+          console.log('Session stitching:', {
+            anonymousVisitorId: visitorId,
+            identifiedVisitorId: identifiedVisitorId
+          });
+
+          // Transfer all events from anonymous visitor to identified visitor
+          await sql`
+            UPDATE events
+            SET visitor_id = ${identifiedVisitorId}
+            WHERE visitor_id = ${visitorId}
+          `;
+
+          // Mark anonymous visitor as merged
+          await sql`
+            UPDATE visitors
+            SET merged_into = ${identifiedVisitorId}
+            WHERE id = ${visitorId}
+          `;
+
+          // Update identified visitor's info
+          await sql`
+            UPDATE visitors
+            SET name = COALESCE(${name}, name),
+                phone = COALESCE(${phoneHash}, phone),
+                last_seen_at = NOW(),
+                visit_count = visit_count + 1
+            WHERE id = ${identifiedVisitorId}
+          `;
+
+          // Use identified visitor for this event
+          visitorId = identifiedVisitorId;
+        } else {
+          // No existing identified visitor - just update current visitor
+          await sql`
+            UPDATE visitors
+            SET email = COALESCE(${emailHash}, email),
+                name = COALESCE(${name}, name),
+                phone = COALESCE(${phoneHash}, phone),
+                user_id = COALESCE(${userId}, user_id),
+                is_identified = true
+            WHERE id = ${visitorId}
+          `;
+        }
       }
     }
 

@@ -12,6 +12,7 @@
   var endpoint = null;
   var anonymousId = null;
   var sessionId = null;
+  var deviceFingerprint = null;
   var initialized = false;
 
   // Time tracking variables
@@ -47,6 +48,51 @@
     });
   }
 
+  function generateFingerprint() {
+    // Create device fingerprint from browser characteristics
+    var components = [
+      navigator.userAgent,
+      navigator.language,
+      screen.colorDepth,
+      screen.width + 'x' + screen.height,
+      new Date().getTimezoneOffset(),
+      !!window.sessionStorage,
+      !!window.localStorage,
+      navigator.hardwareConcurrency || 'unknown',
+      navigator.deviceMemory || 'unknown'
+    ];
+
+    // Add canvas fingerprint
+    try {
+      var canvas = document.createElement('canvas');
+      var ctx = canvas.getContext('2d');
+      if (ctx) {
+        ctx.textBaseline = 'top';
+        ctx.font = '14px Arial';
+        ctx.textBaseline = 'alphabetic';
+        ctx.fillStyle = '#f60';
+        ctx.fillRect(125, 1, 62, 20);
+        ctx.fillStyle = '#069';
+        ctx.fillText('Pulse Analytics', 2, 15);
+        ctx.fillStyle = 'rgba(102, 204, 0, 0.7)';
+        ctx.fillText('Pulse Analytics', 4, 17);
+        components.push(canvas.toDataURL());
+      }
+    } catch (e) {
+      components.push('canvas_blocked');
+    }
+
+    // Create hash
+    var str = components.join('|||');
+    var hash = 0;
+    for (var i = 0; i < str.length; i++) {
+      var char = str.charCodeAt(i);
+      hash = ((hash << 5) - hash) + char;
+      hash = hash & hash;
+    }
+    return 'fp_' + Math.abs(hash).toString(36);
+  }
+
   function getAnonymousId() {
     try {
       var stored = localStorage.getItem('_pa_aid');
@@ -55,7 +101,8 @@
       localStorage.setItem('_pa_aid', id);
       return id;
     } catch (e) {
-      return generateId();
+      // LocalStorage blocked - use fingerprint
+      return generateFingerprint();
     }
   }
 
@@ -140,6 +187,7 @@
       siteId: siteId,  // Added for multi-site support
       anonymousId: anonymousId,
       sessionId: sessionId,
+      deviceFingerprint: deviceFingerprint,
       eventType: eventType,
       properties: properties || {},
       pageUrl: window.location.href,
@@ -818,6 +866,7 @@
         anonymousId = getAnonymousId();
         sessionId = getSessionId();
         sessionStartTime = getSessionStartTime();
+        deviceFingerprint = generateFingerprint();
         initialized = true;
 
         // Load cart from session
