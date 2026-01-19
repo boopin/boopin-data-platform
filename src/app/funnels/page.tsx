@@ -27,6 +27,7 @@ export default function FunnelsPage() {
   const [funnels, setFunnels] = useState<Funnel[]>([]);
   const [loading, setLoading] = useState(true);
   const [showCreateModal, setShowCreateModal] = useState(false);
+  const [eventTypes, setEventTypes] = useState<string[]>([]);
   const [newFunnel, setNewFunnel] = useState({
     name: '',
     description: '',
@@ -38,7 +39,20 @@ export default function FunnelsPage() {
 
   useEffect(() => {
     fetchFunnels();
+    fetchEventTypes();
   }, [selectedSite]);
+
+  const fetchEventTypes = async () => {
+    if (!selectedSite) return;
+
+    try {
+      const response = await fetch(`/api/events/types?site_id=${selectedSite.id}`);
+      const types = await response.json();
+      setEventTypes(types || []);
+    } catch (error) {
+      console.error('Error fetching event types:', error);
+    }
+  };
 
   const fetchFunnels = async () => {
     if (!selectedSite) return;
@@ -454,19 +468,43 @@ export default function FunnelsPage() {
                       <option value="url">URL Pattern</option>
                     </select>
 
-                    <input
-                      type="text"
-                      value={step.value}
-                      onChange={(e) => updateStep(index, 'value', e.target.value)}
-                      placeholder={step.type === 'event' ? 'e.g., page_view' : 'e.g., /checkout%'}
-                      style={{
-                        width: '100%',
-                        padding: '8px 10px',
-                        border: '1px solid #cbd5e0',
-                        borderRadius: '6px',
-                        fontSize: '13px'
-                      }}
-                    />
+                    {step.type === 'event' ? (
+                      <>
+                        <input
+                          type="text"
+                          list={`event-types-${index}`}
+                          value={step.value}
+                          onChange={(e) => updateStep(index, 'value', e.target.value)}
+                          placeholder="Select or type event name"
+                          style={{
+                            width: '100%',
+                            padding: '8px 10px',
+                            border: '1px solid #cbd5e0',
+                            borderRadius: '6px',
+                            fontSize: '13px'
+                          }}
+                        />
+                        <datalist id={`event-types-${index}`}>
+                          {eventTypes.map((type) => (
+                            <option key={type} value={type} />
+                          ))}
+                        </datalist>
+                      </>
+                    ) : (
+                      <input
+                        type="text"
+                        value={step.value}
+                        onChange={(e) => updateStep(index, 'value', e.target.value)}
+                        placeholder="e.g., /checkout%"
+                        style={{
+                          width: '100%',
+                          padding: '8px 10px',
+                          border: '1px solid #cbd5e0',
+                          borderRadius: '6px',
+                          fontSize: '13px'
+                        }}
+                      />
+                    )}
                   </div>
                 </div>
               ))}

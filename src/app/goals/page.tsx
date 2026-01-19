@@ -28,6 +28,7 @@ export default function GoalsPage() {
   const [loading, setLoading] = useState(true);
   const [showModal, setShowModal] = useState(false);
   const [editingGoal, setEditingGoal] = useState<Goal | null>(null);
+  const [eventTypes, setEventTypes] = useState<string[]>([]);
   const [formData, setFormData] = useState({
     name: '',
     description: '',
@@ -50,8 +51,21 @@ export default function GoalsPage() {
     }
   };
 
+  const fetchEventTypes = async () => {
+    if (!selectedSite) return;
+
+    try {
+      const response = await fetch(`/api/events/types?site_id=${selectedSite.id}`);
+      const types = await response.json();
+      setEventTypes(types || []);
+    } catch (error) {
+      console.error('Error fetching event types:', error);
+    }
+  };
+
   useEffect(() => {
     fetchGoals();
+    fetchEventTypes();
   }, [selectedSite]);
 
   const handleSubmit = async (e: React.FormEvent) => {
@@ -469,25 +483,52 @@ export default function GoalsPage() {
                 <label style={{ display: 'block', color: '#64748b', fontSize: '13px', marginBottom: '8px', fontWeight: 500 }}>
                   Target Value *
                 </label>
-                <input
-                  type="text"
-                  value={formData.target_value}
-                  onChange={(e) => setFormData({ ...formData, target_value: e.target.value })}
-                  required
-                  style={{
-                    width: '100%',
-                    padding: '12px',
-                    borderRadius: '8px',
-                    border: '1px solid #e2e8f0',
-                    background: '#f8fafc',
-                    color: '#1e293b',
-                    fontSize: '14px'
-                  }}
-                  placeholder={formData.type === 'event' ? 'e.g., form_submit' : 'e.g., /thank-you'}
-                />
+                {formData.type === 'event' ? (
+                  <>
+                    <input
+                      type="text"
+                      list="goal-event-types"
+                      value={formData.target_value}
+                      onChange={(e) => setFormData({ ...formData, target_value: e.target.value })}
+                      required
+                      style={{
+                        width: '100%',
+                        padding: '12px',
+                        borderRadius: '8px',
+                        border: '1px solid #e2e8f0',
+                        background: '#f8fafc',
+                        color: '#1e293b',
+                        fontSize: '14px'
+                      }}
+                      placeholder="Select or type event name"
+                    />
+                    <datalist id="goal-event-types">
+                      {eventTypes.map((type) => (
+                        <option key={type} value={type} />
+                      ))}
+                    </datalist>
+                  </>
+                ) : (
+                  <input
+                    type="text"
+                    value={formData.target_value}
+                    onChange={(e) => setFormData({ ...formData, target_value: e.target.value })}
+                    required
+                    style={{
+                      width: '100%',
+                      padding: '12px',
+                      borderRadius: '8px',
+                      border: '1px solid #e2e8f0',
+                      background: '#f8fafc',
+                      color: '#1e293b',
+                      fontSize: '14px'
+                    }}
+                    placeholder="e.g., /thank-you"
+                  />
+                )}
                 <p style={{ color: '#64748b', fontSize: '12px', margin: '8px 0 0' }}>
                   {formData.type === 'event'
-                    ? 'Enter the event type to track (e.g., purchase, sign_up)'
+                    ? 'Select from tracked events or enter a custom event type (e.g., purchase, sign_up)'
                     : 'Enter the page path to track (e.g., /thank-you, /checkout/complete)'}
                 </p>
               </div>

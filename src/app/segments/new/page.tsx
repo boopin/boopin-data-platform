@@ -1,6 +1,6 @@
 'use client';
 
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
 import Link from 'next/link';
 import { useSite } from '../../../contexts/SiteContext';
@@ -48,6 +48,23 @@ export default function NewSegmentPage() {
   const [saving, setSaving] = useState(false);
   const [previewCount, setPreviewCount] = useState<number | null>(null);
   const [previewing, setPreviewing] = useState(false);
+  const [eventTypes, setEventTypes] = useState<string[]>([]);
+
+  useEffect(() => {
+    const fetchEventTypes = async () => {
+      if (!selectedSite) return;
+
+      try {
+        const response = await fetch(`/api/events/types?site_id=${selectedSite.id}`);
+        const types = await response.json();
+        setEventTypes(types || []);
+      } catch (error) {
+        console.error('Error fetching event types:', error);
+      }
+    };
+
+    fetchEventTypes();
+  }, [selectedSite]);
 
   const addRule = () => {
     setRules([...rules, { type: 'page_views', operator: 'greater_than', value: '1' }]);
@@ -238,43 +255,15 @@ export default function NewSegmentPage() {
                       style={{ ...selectStyle, width: 'auto', minWidth: '180px' }}
                     >
                       <option value="">Select event...</option>
-                      <optgroup label="📄 Page Events">
-                        <option value="page_view">Page View</option>
-                      </optgroup>
-                      <optgroup label="🛒 E-commerce">
-                        <option value="purchase">Purchase</option>
-                        <option value="add_to_cart">Add to Cart</option>
-                        <option value="remove_from_cart">Remove from Cart</option>
-                        <option value="checkout_started">Checkout Started</option>
-                        <option value="payment_completed">Payment Completed</option>
-                        <option value="product_viewed">Product Viewed</option>
-                      </optgroup>
-                      <optgroup label="👤 User Actions">
-                        <option value="signup">Sign Up</option>
-                        <option value="login">Login</option>
-                        <option value="logout">Logout</option>
-                        <option value="identify">Identify</option>
-                      </optgroup>
-                      <optgroup label="📝 Form Events">
-                        <option value="form_submit">Form Submit</option>
-                        <option value="form_started">Form Started</option>
-                        <option value="form_error">Form Error</option>
-                      </optgroup>
-                      <optgroup label="🖱️ Interaction">
-                        <option value="click">Click</option>
-                        <option value="button_click">Button Click</option>
-                        <option value="link_click">Link Click</option>
-                        <option value="download">Download</option>
-                      </optgroup>
-                      <optgroup label="🎥 Media">
-                        <option value="video_play">Video Play</option>
-                        <option value="video_pause">Video Pause</option>
-                        <option value="video_complete">Video Complete</option>
-                      </optgroup>
-                      <optgroup label="⚠️ Errors">
-                        <option value="javascript_error">JavaScript Error</option>
-                        <option value="api_error">API Error</option>
-                      </optgroup>
+                      {eventTypes.length > 0 ? (
+                        <optgroup label="📊 Tracked Events">
+                          {eventTypes.map((type) => (
+                            <option key={type} value={type}>{type}</option>
+                          ))}
+                        </optgroup>
+                      ) : (
+                        <option value="" disabled>No events tracked yet</option>
+                      )}
                     </select>
                   ) : (
                     <input
