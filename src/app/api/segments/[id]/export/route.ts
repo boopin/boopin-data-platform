@@ -1,7 +1,14 @@
 import { sql } from '../../../../../lib/db';
 import { NextRequest, NextResponse } from 'next/server';
+import crypto from 'crypto';
 
 export const dynamic = 'force-dynamic';
+
+// Hash for ad platforms (SHA-256 lowercase hex)
+function hashForAds(value: string): string {
+  if (!value) return '';
+  return crypto.createHash('sha256').update(value.toLowerCase().trim()).digest('hex');
+}
 
 // Export segment users as CSV
 export async function GET(
@@ -76,25 +83,85 @@ export async function GET(
       });
     }
 
-    // Generate CSV
-    const headers = ['email', 'name', 'phone', 'first_seen', 'last_seen', 'visits', 'visitor_id'];
-    const csvRows = [headers.join(',')];
+    // Generate CSV based on format
+    let headers: string[];
+    let csvRows: string[];
+    let filename: string;
 
-    matchingUsers.forEach((user: Record<string, unknown>) => {
-      const row = [
-        escapeCSV(user.email as string || ''),
-        escapeCSV(user.name as string || ''),
-        escapeCSV(user.phone as string || ''),
-        user.first_seen_at ? new Date(user.first_seen_at as string).toISOString() : '',
-        user.last_seen_at ? new Date(user.last_seen_at as string).toISOString() : '',
-        String(user.visit_count || 0),
-        user.id as string
-      ];
-      csvRows.push(row.join(','));
-    });
+    if (format === 'google_ads') {
+      // Google Ads Customer Match format (hashed)
+      headers = ['Email', 'Phone', 'First Name', 'Last Name', 'Country', 'Zip'];
+      csvRows = [headers.join(',')];
+
+      matchingUsers.forEach((user: Record<string, unknown>) => {
+        const email = user.email as string || '';
+        const phone = user.phone as string || '';
+        const nameParts = (user.name as string || '').split(' ');
+        const firstName = nameParts[0] || '';
+        const lastName = nameParts.slice(1).join(' ') || '';
+
+        const row = [
+          hashForAds(email),
+          hashForAds(phone),
+          hashForAds(firstName),
+          hashForAds(lastName),
+          '', // Country - would need to be added to visitors table
+          ''  // Zip - would need to be added to visitors table
+        ];
+        csvRows.push(row.join(','));
+      });
+
+      filename = `google-ads-${segment.name.replace(/[^a-z0-9]/gi, '_')}-${new Date().toISOString().split('T')[0]}.csv`;
+
+    } else if (format === 'meta_ads') {
+      // Meta (Facebook) Custom Audiences format (hashed)
+      headers = ['email', 'phone', 'fn', 'ln', 'ct', 'st', 'zip', 'country'];
+      csvRows = [headers.join(',')];
+
+      matchingUsers.forEach((user: Record<string, unknown>) => {
+        const email = user.email as string || '';
+        const phone = user.phone as string || '';
+        const nameParts = (user.name as string || '').split(' ');
+        const firstName = nameParts[0] || '';
+        const lastName = nameParts.slice(1).join(' ') || '';
+
+        const row = [
+          hashForAds(email),
+          hashForAds(phone),
+          hashForAds(firstName),
+          hashForAds(lastName),
+          '', // City
+          '', // State
+          '', // Zip
+          ''  // Country
+        ];
+        csvRows.push(row.join(','));
+      });
+
+      filename = `meta-ads-${segment.name.replace(/[^a-z0-9]/gi, '_')}-${new Date().toISOString().split('T')[0]}.csv`;
+
+    } else {
+      // Standard format (unhashed)
+      headers = ['email', 'name', 'phone', 'first_seen', 'last_seen', 'visits', 'visitor_id'];
+      csvRows = [headers.join(',')];
+
+      matchingUsers.forEach((user: Record<string, unknown>) => {
+        const row = [
+          escapeCSV(user.email as string || ''),
+          escapeCSV(user.name as string || ''),
+          escapeCSV(user.phone as string || ''),
+          user.first_seen_at ? new Date(user.first_seen_at as string).toISOString() : '',
+          user.last_seen_at ? new Date(user.last_seen_at as string).toISOString() : '',
+          String(user.visit_count || 0),
+          user.id as string
+        ];
+        csvRows.push(row.join(','));
+      });
+
+      filename = `segment-${segment.name.replace(/[^a-z0-9]/gi, '_')}-${new Date().toISOString().split('T')[0]}.csv`;
+    }
 
     const csv = csvRows.join('\n');
-    const filename = `segment-${segment.name.replace(/[^a-z0-9]/gi, '_')}-${new Date().toISOString().split('T')[0]}.csv`;
 
     return new NextResponse(csv, {
       headers: {

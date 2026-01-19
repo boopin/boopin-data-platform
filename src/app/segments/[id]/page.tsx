@@ -372,27 +372,51 @@ export default function SegmentDetailPage() {
                   <div style={{ fontSize: '32px', marginBottom: '12px' }}>📘</div>
                   <h4 style={{ margin: '0 0 8px', color: '#fff', fontSize: '16px' }}>Meta Custom Audiences</h4>
                   <p style={{ color: '#94a3b8', fontSize: '13px', margin: '0 0 20px' }}>
-                    CSV formatted for Meta Ads Manager. Upload directly to create Custom Audience.
+                    CSV with hashed emails for Meta Ads Manager. Upload directly to create Custom Audience.
                   </p>
-                  <button onClick={() => handleExport('csv')} style={{ ...buttonSecondaryStyle, background: '#1877f2' }}>
+                  <button onClick={() => handleExport('meta_ads')} style={{ ...buttonSecondaryStyle, background: '#1877f2' }}>
                     ⬇️ Download for Meta
+                  </button>
+                </div>
+
+                {/* Google Ads Format */}
+                <div style={{ background: '#0f172a', borderRadius: '12px', padding: '24px', border: '1px solid #334155' }}>
+                  <div style={{ fontSize: '32px', marginBottom: '12px' }}>🔍</div>
+                  <h4 style={{ margin: '0 0 8px', color: '#fff', fontSize: '16px' }}>Google Customer Match</h4>
+                  <p style={{ color: '#94a3b8', fontSize: '13px', margin: '0 0 20px' }}>
+                    CSV with hashed data for Google Ads. Upload to create Customer Match audience.
+                  </p>
+                  <button onClick={() => handleExport('google_ads')} style={{ ...buttonSecondaryStyle, background: '#4285f4' }}>
+                    ⬇️ Download for Google
                   </button>
                 </div>
               </div>
 
-              {/* Export Stats */}
-              <div style={{ marginTop: '24px', padding: '16px', background: '#0f172a', borderRadius: '8px', display: 'flex', gap: '32px' }}>
-                <div>
-                  <p style={{ color: '#64748b', fontSize: '11px', margin: 0, textTransform: 'uppercase' }}>Total Users</p>
-                  <p style={{ color: '#fff', fontSize: '20px', fontWeight: 700, margin: '4px 0 0' }}>{users.length}</p>
+              {/* Export Info */}
+              <div style={{ marginTop: '24px', padding: '20px', background: '#0f172a', borderRadius: '8px', border: '1px solid #334155' }}>
+                <div style={{ marginBottom: '16px' }}>
+                  <h4 style={{ margin: '0 0 8px', color: '#fff', fontSize: '14px' }}>🔒 Privacy & Security</h4>
+                  <p style={{ color: '#94a3b8', fontSize: '13px', margin: 0, lineHeight: 1.6 }}>
+                    Ad platform exports use <strong style={{ color: '#22d3ee' }}>SHA-256 hashing</strong> to protect user data.
+                    Emails, phone numbers, and names are hashed before export so your users' PII is never exposed.
+                    The ad platforms can still match users by comparing hashes.
+                  </p>
                 </div>
-                <div>
-                  <p style={{ color: '#64748b', fontSize: '11px', margin: 0, textTransform: 'uppercase' }}>With Email</p>
-                  <p style={{ color: '#22d3ee', fontSize: '20px', fontWeight: 700, margin: '4px 0 0' }}>{users.filter(u => u.email).length}</p>
-                </div>
-                <div>
-                  <p style={{ color: '#64748b', fontSize: '11px', margin: 0, textTransform: 'uppercase' }}>With Phone</p>
-                  <p style={{ color: '#10b981', fontSize: '20px', fontWeight: 700, margin: '4px 0 0' }}>{users.filter(u => u.phone).length}</p>
+
+                {/* Export Stats */}
+                <div style={{ display: 'flex', gap: '32px', paddingTop: '16px', borderTop: '1px solid #334155' }}>
+                  <div>
+                    <p style={{ color: '#64748b', fontSize: '11px', margin: 0, textTransform: 'uppercase' }}>Total Users</p>
+                    <p style={{ color: '#fff', fontSize: '20px', fontWeight: 700, margin: '4px 0 0' }}>{users.length}</p>
+                  </div>
+                  <div>
+                    <p style={{ color: '#64748b', fontSize: '11px', margin: 0, textTransform: 'uppercase' }}>With Email</p>
+                    <p style={{ color: '#22d3ee', fontSize: '20px', fontWeight: 700, margin: '4px 0 0' }}>{users.filter(u => u.email).length}</p>
+                  </div>
+                  <div>
+                    <p style={{ color: '#64748b', fontSize: '11px', margin: 0, textTransform: 'uppercase' }}>With Phone</p>
+                    <p style={{ color: '#10b981', fontSize: '20px', fontWeight: 700, margin: '4px 0 0' }}>{users.filter(u => u.phone).length}</p>
+                  </div>
                 </div>
               </div>
             </div>
