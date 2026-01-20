@@ -1,10 +1,11 @@
 'use client';
 
 import { useState, useEffect } from 'react';
-import { useRouter } from 'next/navigation';
+import { useRouter, useSearchParams } from 'next/navigation';
 import Link from 'next/link';
 import { useSite } from '../../../contexts/SiteContext';
 import Navigation from '../../../components/Navigation';
+import { getTemplateById } from '../../../lib/segmentTemplates';
 
 interface Rule {
   type: string;
@@ -25,7 +26,9 @@ const ruleTypes = [
   { value: 'referrer', label: 'Referrer', operators: ['contains', 'not_contains'] },
   { value: 'event_type', label: 'Has Event Type', operators: ['equals', 'not_equals'] },
   { value: 'is_identified', label: 'Is Identified', operators: ['equals'] },
-  { value: 'last_seen_days', label: 'Last Seen (Days Ago)', operators: ['less_than', 'greater_than', 'equals'] },
+  { value: 'has_email', label: 'Has Email', operators: ['equals'] },
+  { value: 'has_phone', label: 'Has Phone', operators: ['equals'] },
+  { value: 'last_seen_days', label: 'Last Seen (Days Ago)', operators: ['less_than', 'greater_than', 'equals', 'less_or_equal', 'greater_or_equal'] },
 ];
 
 const operatorLabels: Record<string, string> = {
@@ -41,6 +44,7 @@ const operatorLabels: Record<string, string> = {
 
 export default function NewSegmentPage() {
   const router = useRouter();
+  const searchParams = useSearchParams();
   const { selectedSite, loading: siteLoading } = useSite();
   const [name, setName] = useState('');
   const [description, setDescription] = useState('');
@@ -49,6 +53,25 @@ export default function NewSegmentPage() {
   const [previewCount, setPreviewCount] = useState<number | null>(null);
   const [previewing, setPreviewing] = useState(false);
   const [eventTypes, setEventTypes] = useState<string[]>([]);
+  const [templateName, setTemplateName] = useState<string | null>(null);
+
+  // Load template if specified in query params
+  useEffect(() => {
+    const templateId = searchParams.get('template');
+    if (templateId) {
+      const template = getTemplateById(templateId);
+      if (template) {
+        setName(template.name);
+        setDescription(template.description);
+        setRules(template.rules.map(r => ({
+          type: r.type,
+          operator: r.operator,
+          value: String(r.value)
+        })));
+        setTemplateName(template.name);
+      }
+    }
+  }, [searchParams]);
 
   useEffect(() => {
     const fetchEventTypes = async () => {
@@ -173,7 +196,28 @@ export default function NewSegmentPage() {
 
         <div style={{ background: '#1e293b', borderRadius: '12px', border: '1px solid #334155', padding: '24px', marginBottom: '24px' }}>
           <h2 style={{ margin: '0 0 20px', fontSize: '20px', color: '#fff', fontWeight: 700 }}>🎯 Create New Segment</h2>
-          
+
+          {/* Template Banner */}
+          {templateName && (
+            <div style={{
+              background: 'linear-gradient(135deg, #06b6d4, #3b82f6)',
+              borderRadius: '8px',
+              padding: '16px',
+              marginBottom: '24px',
+              border: '1px solid #0891b2'
+            }}>
+              <div style={{ display: 'flex', alignItems: 'center', gap: '8px', marginBottom: '4px' }}>
+                <span style={{ fontSize: '20px' }}>✨</span>
+                <p style={{ margin: 0, fontSize: '14px', fontWeight: 600, color: '#fff' }}>
+                  Using Template: {templateName}
+                </p>
+              </div>
+              <p style={{ margin: '4px 0 0', fontSize: '13px', color: '#e0f2fe', lineHeight: '1.5' }}>
+                This segment is pre-configured with best practices. Feel free to customize the name, description, and rules to fit your needs.
+              </p>
+            </div>
+          )}
+
           <div style={{ marginBottom: '20px' }}>
             <label style={{ color: '#94a3b8', fontSize: '13px', display: 'block', marginBottom: '6px' }}>Segment Name *</label>
             <input
@@ -228,7 +272,7 @@ export default function NewSegmentPage() {
                     ))}
                   </select>
 
-                  {rule.type === 'is_identified' ? (
+                  {(rule.type === 'is_identified' || rule.type === 'has_email' || rule.type === 'has_phone') ? (
                     <select
                       value={rule.value}
                       onChange={(e) => updateRule(index, 'value', e.target.value)}
