@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useEffect } from 'react';
+import { useState, useEffect, Suspense } from 'react';
 import { useRouter, useSearchParams } from 'next/navigation';
 import Link from 'next/link';
 import { useSite } from '../../../contexts/SiteContext';
@@ -42,10 +42,8 @@ const operatorLabels: Record<string, string> = {
   not_equals: 'does not equal',
 };
 
-// Force dynamic rendering since we use useSearchParams()
-export const dynamic = 'force-dynamic';
-
-export default function NewSegmentPage() {
+// Inner component that uses useSearchParams
+function NewSegmentPageContent() {
   const router = useRouter();
   const searchParams = useSearchParams();
   const { selectedSite, loading: siteLoading } = useSite();
@@ -366,5 +364,18 @@ export default function NewSegmentPage() {
         </div>
       </main>
     </div>
+  );
+}
+
+// Main export wrapped in Suspense
+export default function NewSegmentPage() {
+  return (
+    <Suspense fallback={
+      <div style={{ minHeight: '100vh', background: 'linear-gradient(135deg, #0f172a 0%, #1e293b 50%, #0f172a 100%)', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+        <p style={{ color: '#e2e8f0', fontSize: '16px', fontWeight: 500 }}>Loading...</p>
+      </div>
+    }>
+      <NewSegmentPageContent />
+    </Suspense>
   );
 }
