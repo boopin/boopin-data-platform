@@ -56,6 +56,7 @@ export default function Navigation() {
       label: 'Tools',
       dropdown: 'tools',
       items: [
+        { path: '/install/gtm', label: '🚀 GTM Installation' },
         { path: '/events/templates', label: '📊 Event Templates' },
         { path: '/errors', label: '🐛 Errors' },
         { path: '/settings/webhooks', label: '🔔 Webhooks' },
