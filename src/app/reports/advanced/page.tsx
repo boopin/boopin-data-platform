@@ -137,6 +137,18 @@ export default function AdvancedReportsPage() {
           row.conversion_rate
         ].join(','))
       ].join('\n');
+    } else if (reportType === 'forms' && Array.isArray(data)) {
+      csvContent = [
+        ['Form Page', 'Source', 'Medium', 'Form Starts', 'Form Submits', 'Completion Rate'].join(','),
+        ...data.map((row: any) => [
+          row.form_page,
+          row.source,
+          row.medium,
+          row.form_starts,
+          row.form_submits,
+          row.completion_rate + '%'
+        ].join(','))
+      ].join('\n');
     } else if (reportType === 'overview') {
       csvContent = [
         ['Metric', 'Value'].join(','),
@@ -145,7 +157,10 @@ export default function AdvancedReportsPage() {
         ['Total Events', data.total_events || 0].join(','),
         ['Total Pageviews', data.total_pageviews || 0].join(','),
         ['Total Conversions', data.total_conversions || 0].join(','),
+        ['Total Form Starts', data.total_form_starts || 0].join(','),
+        ['Total Form Submits', data.total_form_submits || 0].join(','),
         ['Conversion Rate', (data.conversion_rate || 0) + '%'].join(','),
+        ['Form Completion Rate', (data.form_completion_rate || 0) + '%'].join(','),
         ['Avg Pageviews/Session', data.avg_pageviews_per_session || 0].join(','),
         ['Avg Session Duration', (data.avg_session_duration || 0) + 's'].join(','),
         ['Bounce Rate', (data.bounce_rate || 0) + '%'].join(',')
@@ -337,6 +352,41 @@ export default function AdvancedReportsPage() {
           </div>
         );
 
+      case 'forms':
+        return (
+          <div style={{ background: '#ffffff', borderRadius: '12px', padding: '24px', border: '1px solid #e2e8f0' }}>
+            <h3 style={{ margin: '0 0 20px', fontSize: '18px', fontWeight: 600, color: '#1e293b' }}>
+              📝 Forms Performance
+            </h3>
+            <div style={{ overflowX: 'auto' }}>
+              <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: '13px' }}>
+                <thead>
+                  <tr style={{ background: '#f8fafc', borderBottom: '2px solid #e2e8f0' }}>
+                    <th style={{ padding: '12px', textAlign: 'left', fontWeight: 600, color: '#475569' }}>Form Page</th>
+                    <th style={{ padding: '12px', textAlign: 'left', fontWeight: 600, color: '#475569' }}>Source</th>
+                    <th style={{ padding: '12px', textAlign: 'left', fontWeight: 600, color: '#475569' }}>Medium</th>
+                    <th style={{ padding: '12px', textAlign: 'right', fontWeight: 600, color: '#475569' }}>Form Starts</th>
+                    <th style={{ padding: '12px', textAlign: 'right', fontWeight: 600, color: '#475569' }}>Form Submits</th>
+                    <th style={{ padding: '12px', textAlign: 'right', fontWeight: 600, color: '#475569' }}>Completion Rate</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {Array.isArray(data) && data.map((row: any, i: number) => (
+                    <tr key={i} style={{ borderBottom: '1px solid #e2e8f0' }}>
+                      <td style={{ padding: '12px', color: '#1e293b', fontWeight: 500, maxWidth: '300px', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{row.form_page}</td>
+                      <td style={{ padding: '12px', color: '#64748b' }}>{row.source}</td>
+                      <td style={{ padding: '12px', color: '#64748b' }}>{row.medium}</td>
+                      <td style={{ padding: '12px', textAlign: 'right', color: '#2563eb', fontWeight: 500 }}>{parseInt(row.form_starts || 0).toLocaleString()}</td>
+                      <td style={{ padding: '12px', textAlign: 'right', color: '#10b981', fontWeight: 500 }}>{parseInt(row.form_submits || 0).toLocaleString()}</td>
+                      <td style={{ padding: '12px', textAlign: 'right', color: row.completion_rate > 50 ? '#10b981' : row.completion_rate > 25 ? '#f59e0b' : '#ef4444', fontWeight: 600 }}>{parseFloat(row.completion_rate || 0).toFixed(1)}%</td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>
+          </div>
+        );
+
       case 'overview':
         return (
           <div style={{ background: '#ffffff', borderRadius: '12px', padding: '24px', border: '1px solid #e2e8f0' }}>
@@ -369,9 +419,27 @@ export default function AdvancedReportsPage() {
                 </p>
               </div>
               <div style={{ padding: '16px', background: '#f8fafc', borderRadius: '8px' }}>
+                <p style={{ color: '#64748b', fontSize: '12px', margin: 0 }}>Form Starts</p>
+                <p style={{ color: '#2563eb', fontSize: '24px', fontWeight: 700, margin: '8px 0 0' }}>
+                  {parseInt(data.total_form_starts || 0).toLocaleString()}
+                </p>
+              </div>
+              <div style={{ padding: '16px', background: '#f8fafc', borderRadius: '8px' }}>
+                <p style={{ color: '#64748b', fontSize: '12px', margin: 0 }}>Form Submits</p>
+                <p style={{ color: '#10b981', fontSize: '24px', fontWeight: 700, margin: '8px 0 0' }}>
+                  {parseInt(data.total_form_submits || 0).toLocaleString()}
+                </p>
+              </div>
+              <div style={{ padding: '16px', background: '#f8fafc', borderRadius: '8px' }}>
                 <p style={{ color: '#64748b', fontSize: '12px', margin: 0 }}>Conversion Rate</p>
                 <p style={{ color: '#10b981', fontSize: '24px', fontWeight: 700, margin: '8px 0 0' }}>
                   {parseFloat(data.conversion_rate || 0).toFixed(2)}%
+                </p>
+              </div>
+              <div style={{ padding: '16px', background: '#f8fafc', borderRadius: '8px' }}>
+                <p style={{ color: '#64748b', fontSize: '12px', margin: 0 }}>Form Completion Rate</p>
+                <p style={{ color: '#8b5cf6', fontSize: '24px', fontWeight: 700, margin: '8px 0 0' }}>
+                  {parseFloat(data.form_completion_rate || 0).toFixed(2)}%
                 </p>
               </div>
               <div style={{ padding: '16px', background: '#f8fafc', borderRadius: '8px' }}>
@@ -445,6 +513,7 @@ export default function AdvancedReportsPage() {
               { key: 'overview', label: 'Overview', icon: '📊' },
               { key: 'traffic_sources', label: 'Traffic Sources', icon: '🔗' },
               { key: 'conversions', label: 'Conversions', icon: '✅' },
+              { key: 'forms', label: 'Forms', icon: '📝' },
               { key: 'geographic', label: 'Geographic', icon: '🌍' },
               { key: 'devices', label: 'Devices', icon: '📱' }
             ].map(type => (

@@ -29,9 +29,9 @@ async function getTrafficSourcesReport(siteId: string, filters: ReportFilters) {
       COUNT(DISTINCT e.session_id) as sessions,
       COUNT(*) as total_events,
       COUNT(DISTINCT CASE WHEN e.event_type = 'pageview' THEN e.id END) as pageviews,
-      COUNT(DISTINCT CASE WHEN e.event_type IN ('lead_form', 'purchase', 'signup') THEN e.id END) as conversions,
+      COUNT(DISTINCT CASE WHEN e.event_type IN ('form_submit', 'purchase', 'sign_up', 'lead_form') THEN e.id END) as conversions,
       ROUND(
-        COUNT(DISTINCT CASE WHEN e.event_type IN ('lead_form', 'purchase', 'signup') THEN e.id END)::numeric /
+        COUNT(DISTINCT CASE WHEN e.event_type IN ('form_submit', 'purchase', 'sign_up', 'lead_form') THEN e.id END)::numeric /
         NULLIF(COUNT(DISTINCT e.session_id), 0) * 100,
         2
       ) as conversion_rate,
@@ -105,7 +105,7 @@ async function getConversionsReport(siteId: string, filters: ReportFilters) {
       DATE(e.timestamp) as conversion_date
     FROM events e
     WHERE e.site_id = $1
-      AND e.event_type IN ('lead_form', 'purchase', 'signup', 'cta_click')
+      AND e.event_type IN ('form_submit', 'purchase', 'sign_up', 'lead_form', 'cta_click', 'form_start')
   `;
 
   const params: any[] = [siteId];
@@ -258,9 +258,9 @@ async function getGeographicReport(siteId: string, filters: ReportFilters) {
       COUNT(DISTINCT visitor_id) as unique_visitors,
       COUNT(DISTINCT session_id) as sessions,
       COUNT(*) as total_events,
-      COUNT(DISTINCT CASE WHEN event_type IN ('lead_form', 'purchase', 'signup') THEN id END) as conversions,
+      COUNT(DISTINCT CASE WHEN event_type IN ('form_submit', 'purchase', 'sign_up', 'lead_form') THEN id END) as conversions,
       ROUND(
-        COUNT(DISTINCT CASE WHEN event_type IN ('lead_form', 'purchase', 'signup') THEN id END)::numeric /
+        COUNT(DISTINCT CASE WHEN event_type IN ('form_submit', 'purchase', 'sign_up', 'lead_form') THEN id END)::numeric /
         NULLIF(COUNT(DISTINCT session_id), 0) * 100,
         2
       ) as conversion_rate
@@ -307,9 +307,9 @@ async function getDevicesReport(siteId: string, filters: ReportFilters) {
       COUNT(DISTINCT visitor_id) as unique_visitors,
       COUNT(DISTINCT session_id) as sessions,
       COUNT(*) as total_events,
-      COUNT(DISTINCT CASE WHEN event_type IN ('lead_form', 'purchase', 'signup') THEN id END) as conversions,
+      COUNT(DISTINCT CASE WHEN event_type IN ('form_submit', 'purchase', 'sign_up', 'lead_form') THEN id END) as conversions,
       ROUND(
-        COUNT(DISTINCT CASE WHEN event_type IN ('lead_form', 'purchase', 'signup') THEN id END)::numeric /
+        COUNT(DISTINCT CASE WHEN event_type IN ('form_submit', 'purchase', 'sign_up', 'lead_form') THEN id END)::numeric /
         NULLIF(COUNT(DISTINCT session_id), 0) * 100,
         2
       ) as conversion_rate
@@ -346,6 +346,61 @@ async function getDevicesReport(siteId: string, filters: ReportFilters) {
   return results;
 }
 
+// Forms Report
+async function getFormsReport(siteId: string, filters: ReportFilters) {
+  let query = `
+    SELECT
+      COALESCE(e.page_url, 'Unknown') as form_page,
+      COUNT(DISTINCT CASE WHEN e.event_type = 'form_start' THEN e.visitor_id END) as form_starts,
+      COUNT(DISTINCT CASE WHEN e.event_type = 'form_submit' THEN e.visitor_id END) as form_submits,
+      COUNT(DISTINCT CASE WHEN e.event_type = 'form_start' THEN e.session_id END) as sessions_with_start,
+      COUNT(DISTINCT CASE WHEN e.event_type = 'form_submit' THEN e.session_id END) as sessions_with_submit,
+      ROUND(
+        COUNT(DISTINCT CASE WHEN e.event_type = 'form_submit' THEN e.visitor_id END)::numeric /
+        NULLIF(COUNT(DISTINCT CASE WHEN e.event_type = 'form_start' THEN e.visitor_id END), 0) * 100,
+        2
+      ) as completion_rate,
+      COALESCE(e.utm_source, 'direct') as source,
+      COALESCE(e.utm_medium, 'none') as medium
+    FROM events e
+    WHERE e.site_id = $1
+      AND e.event_type IN ('form_start', 'form_submit')
+  `;
+
+  const params: any[] = [siteId];
+  let paramIndex = 2;
+
+  if (filters.date_from) {
+    query += ` AND e.timestamp >= $${paramIndex}::timestamp`;
+    params.push(filters.date_from);
+    paramIndex++;
+  }
+  if (filters.date_to) {
+    query += ` AND e.timestamp <= $${paramIndex}::timestamp`;
+    params.push(filters.date_to);
+    paramIndex++;
+  }
+  if (filters.source) {
+    query += ` AND e.utm_source = $${paramIndex}`;
+    params.push(filters.source);
+    paramIndex++;
+  }
+  if (filters.medium) {
+    query += ` AND e.utm_medium = $${paramIndex}`;
+    params.push(filters.medium);
+    paramIndex++;
+  }
+
+  query += `
+    GROUP BY e.page_url, e.utm_source, e.utm_medium
+    ORDER BY form_starts DESC
+    LIMIT 100
+  `;
+
+  const results = await sqlClient(query, params);
+  return results;
+}
+
 // Custom Report - Overview with Filters
 async function getCustomReport(siteId: string, filters: ReportFilters) {
   let query = `
@@ -354,12 +409,19 @@ async function getCustomReport(siteId: string, filters: ReportFilters) {
       COUNT(DISTINCT e.session_id) as total_sessions,
       COUNT(*) as total_events,
       COUNT(DISTINCT CASE WHEN e.event_type = 'pageview' THEN e.id END) as total_pageviews,
-      COUNT(DISTINCT CASE WHEN e.event_type IN ('lead_form', 'purchase', 'signup') THEN e.id END) as total_conversions,
+      COUNT(DISTINCT CASE WHEN e.event_type IN ('form_submit', 'purchase', 'sign_up', 'lead_form') THEN e.id END) as total_conversions,
+      COUNT(DISTINCT CASE WHEN e.event_type = 'form_start' THEN e.id END) as total_form_starts,
+      COUNT(DISTINCT CASE WHEN e.event_type = 'form_submit' THEN e.id END) as total_form_submits,
       ROUND(
-        COUNT(DISTINCT CASE WHEN e.event_type IN ('lead_form', 'purchase', 'signup') THEN e.id END)::numeric /
+        COUNT(DISTINCT CASE WHEN e.event_type IN ('form_submit', 'purchase', 'sign_up', 'lead_form') THEN e.id END)::numeric /
         NULLIF(COUNT(DISTINCT e.session_id), 0) * 100,
         2
       ) as conversion_rate,
+      ROUND(
+        COUNT(DISTINCT CASE WHEN e.event_type = 'form_submit' THEN e.id END)::numeric /
+        NULLIF(COUNT(DISTINCT CASE WHEN e.event_type = 'form_start' THEN e.id END), 0) * 100,
+        2
+      ) as form_completion_rate,
       ROUND(AVG(session_metrics.pageviews_per_session), 2) as avg_pageviews_per_session,
       ROUND(AVG(session_metrics.duration), 0) as avg_session_duration,
       ROUND(
@@ -439,6 +501,9 @@ export async function GET(request: NextRequest) {
         break;
       case 'conversions':
         reportData = await getConversionsReport(siteId, filters);
+        break;
+      case 'forms':
+        reportData = await getFormsReport(siteId, filters);
         break;
       case 'user_behavior':
         reportData = await getUserBehaviorReport(siteId, filters);
