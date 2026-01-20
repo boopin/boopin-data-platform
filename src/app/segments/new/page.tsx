@@ -42,6 +42,9 @@ const operatorLabels: Record<string, string> = {
   not_equals: 'does not equal',
 };
 
+// Force dynamic rendering since we use useSearchParams()
+export const dynamic = 'force-dynamic';
+
 export default function NewSegmentPage() {
   const router = useRouter();
   const searchParams = useSearchParams();
