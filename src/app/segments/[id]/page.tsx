@@ -77,7 +77,7 @@ export default function SegmentDetailPage() {
     }
   }, [params.id, selectedSite]);
 
-  const handleExport = (format: 'csv' | 'json') => {
+  const handleExport = (format: 'csv' | 'json' | 'google_ads' | 'meta_ads') => {
     if (!selectedSite) return;
     window.open(`/api/segments/${params.id}/export?format=${format}&site_id=${selectedSite.id}`, '_blank');
   };
