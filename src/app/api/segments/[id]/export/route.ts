@@ -5,8 +5,15 @@ import crypto from 'crypto';
 export const dynamic = 'force-dynamic';
 
 // Hash for ad platforms (SHA-256 lowercase hex)
+// Note: Data in database is already hashed, so just return it as-is
 function hashForAds(value: string): string {
   if (!value) return '';
+  // Database stores email/phone/name as hashed values already
+  // Check if already hashed (64 character hex string from SHA-256)
+  if (/^[a-f0-9]{64}$/i.test(value)) {
+    return value; // Already hashed from database, use as-is
+  }
+  // Shouldn't reach here, but hash it anyway for safety
   return crypto.createHash('sha256').update(value.toLowerCase().trim()).digest('hex');
 }
 

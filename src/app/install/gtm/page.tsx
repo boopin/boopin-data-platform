@@ -20,8 +20,8 @@ export default function GTMInstallPage() {
   const baseUrl = typeof window !== 'undefined' ? window.location.origin : 'https://your-domain.com';
   const siteId = selectedSite?.id || 'YOUR_SITE_ID';
 
-  // Base tracking script
-  const trackingScript = `<script>
+  // Complete tracking script - handles everything in one tag
+  const completeTrackingScript = `<script>
   (function() {
     // Boopin Analytics Configuration
     window.boopinConfig = {
@@ -39,7 +39,7 @@ export default function GTMInstallPage() {
 
     // Get or create anonymous ID
     function getAnonymousId() {
-      let id = localStorage.getItem('boopin_anonymous_id');
+      var id = localStorage.getItem('boopin_anonymous_id');
       if (!id) {
         id = generateId();
         localStorage.setItem('boopin_anonymous_id', id);
@@ -49,7 +49,7 @@ export default function GTMInstallPage() {
 
     // Get or create session ID
     function getSessionId() {
-      let sessionId = sessionStorage.getItem('boopin_session_id');
+      var sessionId = sessionStorage.getItem('boopin_session_id');
       if (!sessionId) {
         sessionId = generateId();
         sessionStorage.setItem('boopin_session_id', sessionId);
@@ -59,7 +59,7 @@ export default function GTMInstallPage() {
 
     // Parse UTM parameters
     function getUtmParams() {
-      const params = new URLSearchParams(window.location.search);
+      var params = new URLSearchParams(window.location.search);
       return {
         utmSource: params.get('utm_source'),
         utmMedium: params.get('utm_medium'),
@@ -73,9 +73,9 @@ export default function GTMInstallPage() {
     window.boopin = {
       track: function(eventType, properties) {
         properties = properties || {};
-        const utmParams = getUtmParams();
+        var utmParams = getUtmParams();
 
-        const payload = {
+        var payload = {
           siteId: window.boopinConfig.siteId,
           anonymousId: getAnonymousId(),
           sessionId: getSessionId(),
@@ -114,49 +114,42 @@ export default function GTMInstallPage() {
 
     // Auto-track pageview
     window.boopin.track('pageview');
-  })();
-</script>`;
 
-  // GTM Custom HTML Tag for base tracking
-  const gtmBaseTag = trackingScript;
+    // ===== FORM TRACKING =====
+    // Track form submissions
+    document.addEventListener('submit', function(e) {
+      var form = e.target;
+      var formId = form.id || form.name || 'unnamed-form';
+      var formName = form.getAttribute('data-form-name') || formId;
+      var fieldCount = form.querySelectorAll('input, textarea, select').length;
 
-  // GTM Custom HTML Tag for form tracking
-  const gtmFormTag = `<script>
-  // Track form submissions
-  document.addEventListener('submit', function(e) {
-    var form = e.target;
-    var formId = form.id || form.name || 'unnamed-form';
-    var formName = form.getAttribute('data-form-name') || formId;
+      window.boopin.track('form_submit', {
+        form_id: formId,
+        form_name: formName,
+        fields_filled: fieldCount,
+        page_url: window.location.href
+      });
+    }, true);
 
-    // Get form field count
-    var fieldCount = form.querySelectorAll('input, textarea, select').length;
+    // Track form starts (when user focuses on first field)
+    var formStartTracked = {};
+    document.addEventListener('focus', function(e) {
+      if (e.target.matches('input, textarea, select')) {
+        var form = e.target.closest('form');
+        if (form && !formStartTracked[form]) {
+          formStartTracked[form] = true;
+          var formId = form.id || form.name || 'unnamed-form';
+          var formName = form.getAttribute('data-form-name') || formId;
 
-    window.boopin.track('form_submit', {
-      form_id: formId,
-      form_name: formName,
-      fields_filled: fieldCount,
-      page_url: window.location.href
-    });
-  }, true);
-
-  // Track form starts (when user focuses on first field)
-  var formStartTracked = {};
-  document.addEventListener('focus', function(e) {
-    if (e.target.matches('input, textarea, select')) {
-      var form = e.target.closest('form');
-      if (form && !formStartTracked[form]) {
-        formStartTracked[form] = true;
-        var formId = form.id || form.name || 'unnamed-form';
-        var formName = form.getAttribute('data-form-name') || formId;
-
-        window.boopin.track('form_start', {
-          form_id: formId,
-          form_name: formName,
-          page_url: window.location.href
-        });
+          window.boopin.track('form_start', {
+            form_id: formId,
+            form_name: formName,
+            page_url: window.location.href
+          });
+        }
       }
-    }
-  }, true);
+    }, true);
+  })();
 </script>`;
 
   return (
@@ -186,8 +179,8 @@ export default function GTMInstallPage() {
           <h2 style={{ margin: 0, fontSize: '28px', color: '#1e293b', fontWeight: 700 }}>
             📊 Google Tag Manager Installation
           </h2>
-          <p style={{ margin: '8px 0 0', color: '#64748b', fontSize: '15px' }}>
-            Install Boopin tracking on your website using Google Tag Manager
+          <p style={{ margin: '8px 0 0', color: '#64748b', fontSize: '15px', fontWeight: 600 }}>
+            ⚡ ONE tracking code for everything - pageviews, forms, and custom events
           </p>
         </div>
 
@@ -215,20 +208,26 @@ export default function GTMInstallPage() {
 
         {/* Quick Start */}
         <div style={{
-          background: 'linear-gradient(135deg, #eff6ff 0%, #dbeafe 100%)',
-          border: '1px solid #93c5fd',
+          background: 'linear-gradient(135deg, #10b981 0%, #059669 100%)',
+          border: '1px solid #059669',
           borderRadius: '12px',
           padding: '24px',
           marginBottom: '32px'
         }}>
-          <h3 style={{ margin: '0 0 16px', fontSize: '18px', fontWeight: 700, color: '#1e40af' }}>
-            🚀 Quick Start Guide
+          <h3 style={{ margin: '0 0 8px', fontSize: '20px', fontWeight: 700, color: '#ffffff' }}>
+            ⚡ Boopin USP: ONE Code for Everything
           </h3>
+          <p style={{ margin: '0 0 16px', fontSize: '14px', color: '#d1fae5', lineHeight: '1.6' }}>
+            Unlike other analytics tools that require multiple scripts, Boopin uses a single tracking code that handles pageviews, forms, and custom events automatically.
+          </p>
+          <h4 style={{ margin: '0 0 12px', fontSize: '16px', fontWeight: 600, color: '#ffffff' }}>
+            🚀 Setup in 3 minutes:
+          </h4>
           <div style={{ display: 'flex', flexDirection: 'column', gap: '12px' }}>
             <div style={{ display: 'flex', alignItems: 'start', gap: '12px' }}>
               <span style={{
-                background: '#2563eb',
-                color: '#ffffff',
+                background: '#ffffff',
+                color: '#059669',
                 borderRadius: '50%',
                 width: '24px',
                 height: '24px',
@@ -239,14 +238,14 @@ export default function GTMInstallPage() {
                 fontWeight: 700,
                 flexShrink: 0
               }}>1</span>
-              <p style={{ margin: 0, fontSize: '14px', color: '#1e40af', lineHeight: '1.6' }}>
-                Create two Custom HTML tags in GTM (one for base tracking, one for forms)
+              <p style={{ margin: 0, fontSize: '14px', color: '#ffffff', lineHeight: '1.6' }}>
+                Create <strong>ONE Custom HTML tag</strong> in Google Tag Manager
               </p>
             </div>
             <div style={{ display: 'flex', alignItems: 'start', gap: '12px' }}>
               <span style={{
-                background: '#2563eb',
-                color: '#ffffff',
+                background: '#ffffff',
+                color: '#059669',
                 borderRadius: '50%',
                 width: '24px',
                 height: '24px',
@@ -257,14 +256,14 @@ export default function GTMInstallPage() {
                 fontWeight: 700,
                 flexShrink: 0
               }}>2</span>
-              <p style={{ margin: 0, fontSize: '14px', color: '#1e40af', lineHeight: '1.6' }}>
-                Copy the code snippets below into each tag
+              <p style={{ margin: 0, fontSize: '14px', color: '#ffffff', lineHeight: '1.6' }}>
+                Copy the complete tracking code below and paste it
               </p>
             </div>
             <div style={{ display: 'flex', alignItems: 'start', gap: '12px' }}>
               <span style={{
-                background: '#2563eb',
-                color: '#ffffff',
+                background: '#ffffff',
+                color: '#059669',
                 borderRadius: '50%',
                 width: '24px',
                 height: '24px',
@@ -275,65 +274,51 @@ export default function GTMInstallPage() {
                 fontWeight: 700,
                 flexShrink: 0
               }}>3</span>
-              <p style={{ margin: 0, fontSize: '14px', color: '#1e40af', lineHeight: '1.6' }}>
-                Set both tags to fire on "All Pages"
-              </p>
-            </div>
-            <div style={{ display: 'flex', alignItems: 'start', gap: '12px' }}>
-              <span style={{
-                background: '#2563eb',
-                color: '#ffffff',
-                borderRadius: '50%',
-                width: '24px',
-                height: '24px',
-                display: 'flex',
-                alignItems: 'center',
-                justifyContent: 'center',
-                fontSize: '12px',
-                fontWeight: 700,
-                flexShrink: 0
-              }}>4</span>
-              <p style={{ margin: 0, fontSize: '14px', color: '#1e40af', lineHeight: '1.6' }}>
-                Test in Preview mode, then publish your container
+              <p style={{ margin: 0, fontSize: '14px', color: '#ffffff', lineHeight: '1.6' }}>
+                Set trigger to <strong>"All Pages"</strong> → Test → Publish
               </p>
             </div>
           </div>
         </div>
 
-        {/* Tag 1: Base Tracking */}
+        {/* Complete Tracking Code */}
         <div style={{
           background: '#ffffff',
           borderRadius: '12px',
-          border: '1px solid #e2e8f0',
+          border: '2px solid #10b981',
           overflow: 'hidden',
           marginBottom: '24px',
-          boxShadow: '0 1px 3px rgba(0, 0, 0, 0.05)'
+          boxShadow: '0 4px 6px rgba(0, 0, 0, 0.07)'
         }}>
-          <div style={{ padding: '24px', borderBottom: '1px solid #e2e8f0' }}>
+          <div style={{ padding: '24px', borderBottom: '1px solid #e2e8f0', background: 'linear-gradient(135deg, #f0fdf4 0%, #d1fae5 100%)' }}>
             <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'start', marginBottom: '12px' }}>
               <div>
-                <h3 style={{ margin: '0 0 8px', fontSize: '20px', color: '#1e293b', fontWeight: 700 }}>
-                  Tag 1: Base Tracking Script
+                <div style={{ display: 'inline-block', background: '#10b981', color: '#ffffff', padding: '4px 12px', borderRadius: '6px', fontSize: '12px', fontWeight: 700, marginBottom: '12px' }}>
+                  ⚡ COMPLETE TRACKING CODE
+                </div>
+                <h3 style={{ margin: '0 0 8px', fontSize: '22px', color: '#065f46', fontWeight: 700 }}>
+                  ONE Code - Tracks Everything
                 </h3>
-                <p style={{ margin: 0, fontSize: '14px', color: '#64748b', lineHeight: '1.6' }}>
-                  This tag sets up Boopin analytics and automatically tracks pageviews
+                <p style={{ margin: 0, fontSize: '14px', color: '#047857', lineHeight: '1.6' }}>
+                  This single code automatically tracks: <strong>Pageviews</strong>, <strong>Form Starts</strong>, <strong>Form Submits</strong>, and allows custom event tracking
                 </p>
               </div>
               <button
-                onClick={() => handleCopy('base', gtmBaseTag)}
+                onClick={() => handleCopy('complete', completeTrackingScript)}
                 style={{
-                  background: copiedSection === 'base' ? '#10b981' : '#2563eb',
+                  background: copiedSection === 'complete' ? '#10b981' : '#059669',
                   color: '#ffffff',
                   border: 'none',
-                  padding: '8px 16px',
-                  borderRadius: '6px',
-                  fontSize: '13px',
+                  padding: '10px 20px',
+                  borderRadius: '8px',
+                  fontSize: '14px',
                   fontWeight: 600,
                   cursor: 'pointer',
-                  flexShrink: 0
+                  flexShrink: 0,
+                  boxShadow: '0 2px 4px rgba(0, 0, 0, 0.1)'
                 }}
               >
-                {copiedSection === 'base' ? '✓ Copied!' : '📋 Copy Code'}
+                {copiedSection === 'complete' ? '✓ Copied!' : '📋 Copy Complete Code'}
               </button>
             </div>
           </div>
@@ -347,23 +332,23 @@ export default function GTMInstallPage() {
               textTransform: 'uppercase',
               letterSpacing: '0.5px'
             }}>
-              GTM Setup Instructions
+              📝 GTM Setup Instructions
             </h4>
             <ol style={{ margin: 0, paddingLeft: '20px', display: 'flex', flexDirection: 'column', gap: '8px' }}>
               <li style={{ fontSize: '14px', color: '#64748b', lineHeight: '1.6' }}>
-                Go to your GTM container → Tags → New
+                Go to your GTM container → <strong>Tags</strong> → <strong>New</strong>
               </li>
               <li style={{ fontSize: '14px', color: '#64748b', lineHeight: '1.6' }}>
                 Choose <strong>Custom HTML</strong> as the tag type
               </li>
               <li style={{ fontSize: '14px', color: '#64748b', lineHeight: '1.6' }}>
-                Paste the code below into the HTML field
+                Click "Copy Complete Code" above and paste it into the HTML field
               </li>
               <li style={{ fontSize: '14px', color: '#64748b', lineHeight: '1.6' }}>
                 Set triggering to <strong>All Pages</strong>
               </li>
               <li style={{ fontSize: '14px', color: '#64748b', lineHeight: '1.6' }}>
-                Name it "Boopin - Base Tracking"
+                Name it "Boopin Analytics" and <strong>Save</strong>
               </li>
             </ol>
           </div>
@@ -378,93 +363,9 @@ export default function GTMInstallPage() {
               lineHeight: '1.6',
               overflow: 'auto',
               margin: 0,
-              maxHeight: '400px'
+              maxHeight: '500px'
             }}>
-              {gtmBaseTag}
-            </pre>
-          </div>
-        </div>
-
-        {/* Tag 2: Form Tracking */}
-        <div style={{
-          background: '#ffffff',
-          borderRadius: '12px',
-          border: '1px solid #e2e8f0',
-          overflow: 'hidden',
-          marginBottom: '24px',
-          boxShadow: '0 1px 3px rgba(0, 0, 0, 0.05)'
-        }}>
-          <div style={{ padding: '24px', borderBottom: '1px solid #e2e8f0' }}>
-            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'start', marginBottom: '12px' }}>
-              <div>
-                <h3 style={{ margin: '0 0 8px', fontSize: '20px', color: '#1e293b', fontWeight: 700 }}>
-                  Tag 2: Form Tracking Script
-                </h3>
-                <p style={{ margin: 0, fontSize: '14px', color: '#64748b', lineHeight: '1.6' }}>
-                  This tag automatically tracks form starts and form submissions
-                </p>
-              </div>
-              <button
-                onClick={() => handleCopy('form', gtmFormTag)}
-                style={{
-                  background: copiedSection === 'form' ? '#10b981' : '#2563eb',
-                  color: '#ffffff',
-                  border: 'none',
-                  padding: '8px 16px',
-                  borderRadius: '6px',
-                  fontSize: '13px',
-                  fontWeight: 600,
-                  cursor: 'pointer',
-                  flexShrink: 0
-                }}
-              >
-                {copiedSection === 'form' ? '✓ Copied!' : '📋 Copy Code'}
-              </button>
-            </div>
-          </div>
-
-          <div style={{ padding: '20px 24px', background: '#f8fafc' }}>
-            <h4 style={{
-              margin: '0 0 12px',
-              fontSize: '13px',
-              fontWeight: 600,
-              color: '#475569',
-              textTransform: 'uppercase',
-              letterSpacing: '0.5px'
-            }}>
-              GTM Setup Instructions
-            </h4>
-            <ol style={{ margin: 0, paddingLeft: '20px', display: 'flex', flexDirection: 'column', gap: '8px' }}>
-              <li style={{ fontSize: '14px', color: '#64748b', lineHeight: '1.6' }}>
-                Create another new tag in GTM
-              </li>
-              <li style={{ fontSize: '14px', color: '#64748b', lineHeight: '1.6' }}>
-                Choose <strong>Custom HTML</strong> as the tag type
-              </li>
-              <li style={{ fontSize: '14px', color: '#64748b', lineHeight: '1.6' }}>
-                Paste the code below into the HTML field
-              </li>
-              <li style={{ fontSize: '14px', color: '#64748b', lineHeight: '1.6' }}>
-                Set triggering to <strong>All Pages</strong>
-              </li>
-              <li style={{ fontSize: '14px', color: '#64748b', lineHeight: '1.6' }}>
-                Name it "Boopin - Form Tracking"
-              </li>
-            </ol>
-          </div>
-
-          <div style={{ padding: '20px 24px' }}>
-            <pre style={{
-              background: '#0f172a',
-              color: '#e2e8f0',
-              padding: '20px',
-              borderRadius: '8px',
-              fontSize: '12px',
-              lineHeight: '1.6',
-              overflow: 'auto',
-              margin: 0
-            }}>
-              {gtmFormTag}
+              {completeTrackingScript}
             </pre>
           </div>
         </div>
@@ -486,7 +387,7 @@ export default function GTMInstallPage() {
               In GTM, click <strong>Preview</strong> mode and enter your website URL
             </li>
             <li style={{ fontSize: '14px', color: '#64748b', lineHeight: '1.6' }}>
-              Verify both tags fire on page load (check the GTM debugger)
+              Verify the "Boopin Analytics" tag fires on page load (check the GTM debugger)
             </li>
             <li style={{ fontSize: '14px', color: '#64748b', lineHeight: '1.6' }}>
               Open your browser's Developer Console (F12) and check for any errors
