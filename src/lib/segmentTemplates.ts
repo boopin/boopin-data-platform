@@ -30,6 +30,19 @@ export const SEGMENT_TEMPLATES: SegmentTemplate[] = [
     useCase: 'Retarget users who showed interest by starting a form but didn\'t complete it. Great for Google/Meta ads or email campaigns.'
   },
   {
+    id: 'identified-form-abandoners',
+    name: 'Identified Form Abandoners',
+    description: 'Known visitors (with email/phone) who started but didn\'t submit forms',
+    category: 'conversion',
+    icon: '🎯',
+    rules: [
+      { type: 'event_type', operator: 'equals', value: 'form_start' },
+      { type: 'event_type', operator: 'not_equals', value: 'form_submit' },
+      { type: 'is_identified', operator: 'equals', value: 'true' }
+    ],
+    useCase: 'Perfect for Google Ads Customer Match and Meta Custom Audiences. These users started a form but didn\'t complete it, AND you have their contact info from a previous interaction. Export to CSV for ad platform retargeting.'
+  },
+  {
     id: 'high-value-visitors',
     name: 'High-Value Visitors',
     description: '5+ page views in last 30 days',
