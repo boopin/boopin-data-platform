@@ -471,9 +471,34 @@ export default function AdvancedReportsPage() {
         const exitPages = data?.exitPages || [];
         const compEntryPages = comparisonData?.data?.entryPages || [];
         const compExitPages = comparisonData?.data?.exitPages || [];
+        const debugInfo = data?.debug;
 
         return (
           <div>
+            {/* Debug Info - Show if no data */}
+            {entryPages.length === 0 && exitPages.length === 0 && debugInfo && (
+              <div style={{ background: '#fef3c7', border: '1px solid #f59e0b', borderRadius: '12px', padding: '20px', marginBottom: '24px' }}>
+                <h3 style={{ margin: '0 0 12px', fontSize: '16px', fontWeight: 600, color: '#92400e' }}>
+                  ⚠️ No Data Found - Debug Information
+                </h3>
+                <div style={{ fontSize: '13px', color: '#78350f', lineHeight: '1.6' }}>
+                  <p style={{ margin: '8px 0' }}><strong>Total Events:</strong> {debugInfo.total_events || 0}</p>
+                  <p style={{ margin: '8px 0' }}><strong>Pageview Events:</strong> {debugInfo.pageview_events || 0}</p>
+                  <p style={{ margin: '8px 0' }}><strong>Events with URL:</strong> {debugInfo.events_with_url || 0}</p>
+                  <p style={{ margin: '8px 0' }}><strong>Pageviews with URL:</strong> {debugInfo.pageview_with_url || 0}</p>
+                  <p style={{ margin: '8px 0' }}><strong>Total Sessions:</strong> {debugInfo.total_sessions || 0}</p>
+                  <p style={{ margin: '8px 0' }}><strong>Event Types Found:</strong> {debugInfo.event_types ? debugInfo.event_types.join(', ') : 'None'}</p>
+                  <p style={{ margin: '8px 0' }}><strong>Sources Found:</strong> {debugInfo.sources ? debugInfo.sources.join(', ') : 'None'}</p>
+                  <p style={{ margin: '12px 0 0', padding: '12px', background: '#fffbeb', borderRadius: '6px', border: '1px solid #fcd34d' }}>
+                    <strong>Possible Issues:</strong><br/>
+                    • Make sure you have tracking code installed on your website<br/>
+                    • Verify pageview events are being sent with <code style={{ background: '#fff', padding: '2px 6px', borderRadius: '3px' }}>window.boopin.track('pageview')</code><br/>
+                    • Check that the date range includes events for source "{selectedSource}"
+                  </p>
+                </div>
+              </div>
+            )}
+
             {/* Back Button & Comparison Controls */}
             <div style={{ background: '#ffffff', borderRadius: '12px', padding: '20px', border: '1px solid #e2e8f0', marginBottom: '24px' }}>
               <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '16px' }}>

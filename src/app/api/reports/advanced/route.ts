@@ -472,6 +472,23 @@ async function getCustomReport(siteId: string, filters: ReportFilters) {
 
 // Entry/Exit Pages by Source Report
 async function getEntryExitBySourceReport(siteId: string, filters: ReportFilters) {
+  // First, get debug info about what events exist
+  const debugQuery = `
+    SELECT
+      COUNT(*) as total_events,
+      COUNT(DISTINCT CASE WHEN event_type = 'pageview' THEN id END) as pageview_events,
+      COUNT(DISTINCT CASE WHEN page_url IS NOT NULL THEN id END) as events_with_url,
+      COUNT(DISTINCT CASE WHEN event_type = 'pageview' AND page_url IS NOT NULL THEN id END) as pageview_with_url,
+      COUNT(DISTINCT session_id) as total_sessions,
+      ARRAY_AGG(DISTINCT event_type) as event_types,
+      ARRAY_AGG(DISTINCT COALESCE(utm_source, 'direct')) as sources
+    FROM events
+    WHERE site_id = $1
+  `;
+
+  const debugResults = await sqlClient(debugQuery, [siteId]);
+  console.log('Debug info for site', siteId, ':', debugResults[0]);
+
   let query = `
     WITH session_pages AS (
       SELECT
@@ -532,12 +549,17 @@ async function getEntryExitBySourceReport(siteId: string, filters: ReportFilters
   `;
 
   const results = await sqlClient(query, params);
+  console.log('Query returned', results.length, 'results for filters:', filters);
 
   // Separate into entry and exit pages
   const entryPages = results.filter((r: any) => r.page_type === 'entry');
   const exitPages = results.filter((r: any) => r.page_type === 'exit');
 
-  return { entryPages, exitPages };
+  return {
+    entryPages,
+    exitPages,
+    debug: debugResults[0] // Include debug info in response
+  };
 }
 
 // Main GET endpoint
