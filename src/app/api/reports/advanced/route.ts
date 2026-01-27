@@ -470,6 +470,76 @@ async function getCustomReport(siteId: string, filters: ReportFilters) {
   return overview[0] || {};
 }
 
+// Entry/Exit Pages by Source Report
+async function getEntryExitBySourceReport(siteId: string, filters: ReportFilters) {
+  let query = `
+    WITH session_pages AS (
+      SELECT
+        e.session_id,
+        e.page_url,
+        e.timestamp,
+        COALESCE(e.utm_source, 'direct') as source,
+        ROW_NUMBER() OVER (PARTITION BY e.session_id ORDER BY e.timestamp ASC) as entry_rank,
+        ROW_NUMBER() OVER (PARTITION BY e.session_id ORDER BY e.timestamp DESC) as exit_rank
+      FROM events e
+      WHERE e.site_id = $1
+        AND e.event_type = 'pageview'
+        AND e.page_url IS NOT NULL
+  `;
+
+  const params: any[] = [siteId];
+  let paramIndex = 2;
+
+  if (filters.date_from) {
+    query += ` AND e.timestamp >= $${paramIndex}::timestamp`;
+    params.push(filters.date_from);
+    paramIndex++;
+  }
+  if (filters.date_to) {
+    query += ` AND e.timestamp <= $${paramIndex}::timestamp`;
+    params.push(filters.date_to);
+    paramIndex++;
+  }
+  if (filters.source) {
+    query += ` AND COALESCE(e.utm_source, 'direct') = $${paramIndex}`;
+    params.push(filters.source);
+    paramIndex++;
+  }
+
+  query += `
+    )
+    SELECT
+      'entry' as page_type,
+      page_url,
+      source,
+      COUNT(*) as sessions,
+      COUNT(DISTINCT session_id) as unique_sessions
+    FROM session_pages
+    WHERE entry_rank = 1
+    GROUP BY page_url, source
+    UNION ALL
+    SELECT
+      'exit' as page_type,
+      page_url,
+      source,
+      COUNT(*) as sessions,
+      COUNT(DISTINCT session_id) as unique_sessions
+    FROM session_pages
+    WHERE exit_rank = 1
+    GROUP BY page_url, source
+    ORDER BY page_type, sessions DESC
+    LIMIT 200
+  `;
+
+  const results = await sqlClient(query, params);
+
+  // Separate into entry and exit pages
+  const entryPages = results.filter((r: any) => r.page_type === 'entry');
+  const exitPages = results.filter((r: any) => r.page_type === 'exit');
+
+  return { entryPages, exitPages };
+}
+
 // Main GET endpoint
 export async function GET(request: NextRequest) {
   try {
@@ -513,6 +583,9 @@ export async function GET(request: NextRequest) {
         break;
       case 'devices':
         reportData = await getDevicesReport(siteId, filters);
+        break;
+      case 'entry_exit_by_source':
+        reportData = await getEntryExitBySourceReport(siteId, filters);
         break;
       case 'overview':
       default:

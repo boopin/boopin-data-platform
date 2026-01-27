@@ -22,6 +22,21 @@ export default function AdvancedReportsPage() {
   const [reportType, setReportType] = useState('traffic_sources');
   const [reportData, setReportData] = useState<any>(null);
   const [loading, setLoading] = useState(false);
+  const [selectedSource, setSelectedSource] = useState<string | null>(null);
+
+  // Comparison states
+  const [comparisonMode, setComparisonMode] = useState(false);
+  const [comparisonData, setComparisonData] = useState<any>(null);
+  const [comparisonFilters, setComparisonFilters] = useState<ReportFilters>({
+    date_from: '',
+    date_to: '',
+    source: '',
+    medium: '',
+    campaign: '',
+    country: '',
+    device_type: '',
+    event_type: ''
+  });
 
   // Filter states
   const [filters, setFilters] = useState<ReportFilters>({
@@ -76,13 +91,56 @@ export default function AdvancedReportsPage() {
     }
   };
 
+  const fetchComparisonData = async () => {
+    if (!selectedSite || !comparisonFilters.date_from || !comparisonFilters.date_to) return;
+
+    try {
+      const params = new URLSearchParams({
+        site_id: selectedSite.id,
+        report_type: reportType,
+        ...Object.fromEntries(
+          Object.entries(comparisonFilters).filter(([_, v]) => v !== '')
+        )
+      });
+
+      const response = await fetch(`/api/reports/advanced?${params.toString()}`);
+      if (!response.ok) throw new Error('Failed to fetch comparison data');
+      const result = await response.json();
+      setComparisonData(result);
+    } catch (error) {
+      console.error('Failed to fetch comparison data:', error);
+    }
+  };
+
+  const handleSourceClick = (source: string) => {
+    setSelectedSource(source);
+    setReportType('entry_exit_by_source');
+    setFilters({ ...filters, source });
+  };
+
+  const handleBackToSources = () => {
+    setSelectedSource(null);
+    setReportType('traffic_sources');
+    setFilters({ ...filters, source: '' });
+    setComparisonMode(false);
+    setComparisonData(null);
+  };
+
   const exportToCSV = () => {
     if (!reportData || !reportData.data) return;
 
     let csvContent = '';
     const data = reportData.data;
 
-    if (reportType === 'traffic_sources' && Array.isArray(data)) {
+    if (reportType === 'entry_exit_by_source') {
+      const entryPages = data.entryPages || [];
+      const exitPages = data.exitPages || [];
+      csvContent = [
+        ['Type', 'Page URL', 'Source', 'Sessions'].join(','),
+        ...entryPages.map((row: any) => ['Entry', row.page_url, row.source, row.sessions].join(',')),
+        ...exitPages.map((row: any) => ['Exit', row.page_url, row.source, row.sessions].join(','))
+      ].join('\n');
+    } else if (reportType === 'traffic_sources' && Array.isArray(data)) {
       csvContent = [
         ['Source', 'Medium', 'Campaign', 'Unique Visitors', 'Sessions', 'Pageviews', 'Conversions', 'Conversion Rate', 'Avg Session Duration'].join(','),
         ...data.map((row: any) => [
@@ -204,6 +262,9 @@ export default function AdvancedReportsPage() {
             <h3 style={{ margin: '0 0 20px', fontSize: '18px', fontWeight: 600, color: '#1e293b' }}>
               🔗 Traffic Sources
             </h3>
+            <p style={{ margin: '0 0 16px', fontSize: '13px', color: '#64748b' }}>
+              💡 Click any source to view entry and exit pages for that traffic source
+            </p>
             <div style={{ overflowX: 'auto' }}>
               <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: '13px' }}>
                 <thead>
@@ -221,8 +282,26 @@ export default function AdvancedReportsPage() {
                 </thead>
                 <tbody>
                   {Array.isArray(data) && data.map((row: any, i: number) => (
-                    <tr key={i} style={{ borderBottom: '1px solid #e2e8f0' }}>
-                      <td style={{ padding: '12px', color: '#1e293b', fontWeight: 500 }}>{row.source}</td>
+                    <tr key={i} style={{ borderBottom: '1px solid #e2e8f0', transition: 'background 0.2s' }}
+                      onMouseEnter={(e) => e.currentTarget.style.background = '#f8fafc'}
+                      onMouseLeave={(e) => e.currentTarget.style.background = 'transparent'}>
+                      <td style={{ padding: '12px' }}>
+                        <button
+                          onClick={() => handleSourceClick(row.source)}
+                          style={{
+                            background: 'none',
+                            border: 'none',
+                            color: '#2563eb',
+                            fontWeight: 500,
+                            cursor: 'pointer',
+                            textDecoration: 'underline',
+                            fontSize: '13px',
+                            padding: 0
+                          }}
+                        >
+                          {row.source} →
+                        </button>
+                      </td>
                       <td style={{ padding: '12px', color: '#64748b' }}>{row.medium}</td>
                       <td style={{ padding: '12px', color: '#64748b' }}>{row.campaign}</td>
                       <td style={{ padding: '12px', textAlign: 'right', color: '#1e293b' }}>{parseInt(row.unique_visitors).toLocaleString()}</td>
@@ -383,6 +462,230 @@ export default function AdvancedReportsPage() {
                   ))}
                 </tbody>
               </table>
+            </div>
+          </div>
+        );
+
+      case 'entry_exit_by_source':
+        const entryPages = data?.entryPages || [];
+        const exitPages = data?.exitPages || [];
+        const compEntryPages = comparisonData?.data?.entryPages || [];
+        const compExitPages = comparisonData?.data?.exitPages || [];
+
+        return (
+          <div>
+            {/* Back Button & Comparison Controls */}
+            <div style={{ background: '#ffffff', borderRadius: '12px', padding: '20px', border: '1px solid #e2e8f0', marginBottom: '24px' }}>
+              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '16px' }}>
+                <button
+                  onClick={handleBackToSources}
+                  style={{
+                    background: '#f8fafc',
+                    border: '1px solid #e2e8f0',
+                    borderRadius: '8px',
+                    padding: '8px 16px',
+                    fontSize: '14px',
+                    fontWeight: 500,
+                    cursor: 'pointer',
+                    color: '#475569'
+                  }}
+                >
+                  ← Back to Traffic Sources
+                </button>
+                <button
+                  onClick={() => {
+                    setComparisonMode(!comparisonMode);
+                    if (comparisonMode) {
+                      setComparisonData(null);
+                      setComparisonFilters({
+                        date_from: '',
+                        date_to: '',
+                        source: '',
+                        medium: '',
+                        campaign: '',
+                        country: '',
+                        device_type: '',
+                        event_type: ''
+                      });
+                    }
+                  }}
+                  style={{
+                    background: comparisonMode ? '#ef4444' : '#2563eb',
+                    border: 'none',
+                    borderRadius: '8px',
+                    padding: '8px 16px',
+                    fontSize: '14px',
+                    fontWeight: 600,
+                    cursor: 'pointer',
+                    color: '#ffffff'
+                  }}
+                >
+                  {comparisonMode ? '✕ Cancel Comparison' : '📊 Compare Dates'}
+                </button>
+              </div>
+
+              <h3 style={{ margin: '0 0 8px', fontSize: '20px', fontWeight: 700, color: '#1e293b' }}>
+                Entry & Exit Pages for "{selectedSource}"
+              </h3>
+              <p style={{ margin: 0, fontSize: '13px', color: '#64748b' }}>
+                Period: {new Date(filters.date_from || '').toLocaleDateString()} - {new Date(filters.date_to || '').toLocaleDateString()}
+              </p>
+
+              {/* Comparison Date Picker */}
+              {comparisonMode && (
+                <div style={{ marginTop: '16px', padding: '16px', background: '#f8fafc', borderRadius: '8px' }}>
+                  <h4 style={{ margin: '0 0 12px', fontSize: '14px', fontWeight: 600, color: '#1e293b' }}>
+                    Compare with another date range:
+                  </h4>
+                  <div style={{ display: 'flex', gap: '12px', alignItems: 'end' }}>
+                    <div>
+                      <label style={{ color: '#64748b', fontSize: '12px', display: 'block', marginBottom: '6px' }}>From Date</label>
+                      <input
+                        type="date"
+                        value={comparisonFilters.date_from}
+                        onChange={(e) => setComparisonFilters({ ...comparisonFilters, date_from: e.target.value, source: selectedSource || '' })}
+                        style={{
+                          padding: '8px',
+                          borderRadius: '6px',
+                          border: '1px solid #e2e8f0',
+                          fontSize: '13px'
+                        }}
+                      />
+                    </div>
+                    <div>
+                      <label style={{ color: '#64748b', fontSize: '12px', display: 'block', marginBottom: '6px' }}>To Date</label>
+                      <input
+                        type="date"
+                        value={comparisonFilters.date_to}
+                        onChange={(e) => setComparisonFilters({ ...comparisonFilters, date_to: e.target.value, source: selectedSource || '' })}
+                        style={{
+                          padding: '8px',
+                          borderRadius: '6px',
+                          border: '1px solid #e2e8f0',
+                          fontSize: '13px'
+                        }}
+                      />
+                    </div>
+                    <button
+                      onClick={fetchComparisonData}
+                      style={{
+                        background: '#2563eb',
+                        color: '#ffffff',
+                        border: 'none',
+                        borderRadius: '6px',
+                        padding: '8px 16px',
+                        fontSize: '13px',
+                        fontWeight: 600,
+                        cursor: 'pointer'
+                      }}
+                    >
+                      Compare
+                    </button>
+                  </div>
+                </div>
+              )}
+            </div>
+
+            {/* Entry Pages */}
+            <div style={{ background: '#ffffff', borderRadius: '12px', padding: '24px', border: '1px solid #e2e8f0', marginBottom: '24px' }}>
+              <h3 style={{ margin: '0 0 16px', fontSize: '18px', fontWeight: 600, color: '#1e293b' }}>
+                🚪 Entry Pages
+                {comparisonMode && comparisonData && (
+                  <span style={{ fontSize: '13px', fontWeight: 400, color: '#64748b', marginLeft: '12px' }}>
+                    (Comparing with {new Date(comparisonFilters.date_from || '').toLocaleDateString()} - {new Date(comparisonFilters.date_to || '').toLocaleDateString()})
+                  </span>
+                )}
+              </h3>
+              <div style={{ overflowX: 'auto' }}>
+                <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: '13px' }}>
+                  <thead>
+                    <tr style={{ background: '#f8fafc', borderBottom: '2px solid #e2e8f0' }}>
+                      <th style={{ padding: '12px', textAlign: 'left', fontWeight: 600, color: '#475569' }}>Page URL</th>
+                      <th style={{ padding: '12px', textAlign: 'right', fontWeight: 600, color: '#475569' }}>Sessions</th>
+                      {comparisonMode && comparisonData && (
+                        <>
+                          <th style={{ padding: '12px', textAlign: 'right', fontWeight: 600, color: '#475569' }}>Comparison Sessions</th>
+                          <th style={{ padding: '12px', textAlign: 'right', fontWeight: 600, color: '#475569' }}>Change</th>
+                        </>
+                      )}
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {entryPages.map((row: any, i: number) => {
+                      const compRow = compEntryPages.find((c: any) => c.page_url === row.page_url);
+                      const change = compRow ? ((parseInt(row.sessions) - parseInt(compRow.sessions)) / parseInt(compRow.sessions) * 100).toFixed(1) : null;
+
+                      return (
+                        <tr key={i} style={{ borderBottom: '1px solid #e2e8f0' }}>
+                          <td style={{ padding: '12px', color: '#1e293b', fontWeight: 500, maxWidth: '400px', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{row.page_url}</td>
+                          <td style={{ padding: '12px', textAlign: 'right', color: '#2563eb', fontWeight: 600 }}>{parseInt(row.sessions).toLocaleString()}</td>
+                          {comparisonMode && comparisonData && (
+                            <>
+                              <td style={{ padding: '12px', textAlign: 'right', color: '#64748b' }}>
+                                {compRow ? parseInt(compRow.sessions).toLocaleString() : '-'}
+                              </td>
+                              <td style={{ padding: '12px', textAlign: 'right', fontWeight: 600, color: change && parseFloat(change) > 0 ? '#10b981' : change && parseFloat(change) < 0 ? '#ef4444' : '#64748b' }}>
+                                {change ? `${parseFloat(change) > 0 ? '+' : ''}${change}%` : '-'}
+                              </td>
+                            </>
+                          )}
+                        </tr>
+                      );
+                    })}
+                  </tbody>
+                </table>
+              </div>
+            </div>
+
+            {/* Exit Pages */}
+            <div style={{ background: '#ffffff', borderRadius: '12px', padding: '24px', border: '1px solid #e2e8f0' }}>
+              <h3 style={{ margin: '0 0 16px', fontSize: '18px', fontWeight: 600, color: '#1e293b' }}>
+                🚪 Exit Pages
+                {comparisonMode && comparisonData && (
+                  <span style={{ fontSize: '13px', fontWeight: 400, color: '#64748b', marginLeft: '12px' }}>
+                    (Comparing with {new Date(comparisonFilters.date_from || '').toLocaleDateString()} - {new Date(comparisonFilters.date_to || '').toLocaleDateString()})
+                  </span>
+                )}
+              </h3>
+              <div style={{ overflowX: 'auto' }}>
+                <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: '13px' }}>
+                  <thead>
+                    <tr style={{ background: '#f8fafc', borderBottom: '2px solid #e2e8f0' }}>
+                      <th style={{ padding: '12px', textAlign: 'left', fontWeight: 600, color: '#475569' }}>Page URL</th>
+                      <th style={{ padding: '12px', textAlign: 'right', fontWeight: 600, color: '#475569' }}>Sessions</th>
+                      {comparisonMode && comparisonData && (
+                        <>
+                          <th style={{ padding: '12px', textAlign: 'right', fontWeight: 600, color: '#475569' }}>Comparison Sessions</th>
+                          <th style={{ padding: '12px', textAlign: 'right', fontWeight: 600, color: '#475569' }}>Change</th>
+                        </>
+                      )}
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {exitPages.map((row: any, i: number) => {
+                      const compRow = compExitPages.find((c: any) => c.page_url === row.page_url);
+                      const change = compRow ? ((parseInt(row.sessions) - parseInt(compRow.sessions)) / parseInt(compRow.sessions) * 100).toFixed(1) : null;
+
+                      return (
+                        <tr key={i} style={{ borderBottom: '1px solid #e2e8f0' }}>
+                          <td style={{ padding: '12px', color: '#1e293b', fontWeight: 500, maxWidth: '400px', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{row.page_url}</td>
+                          <td style={{ padding: '12px', textAlign: 'right', color: '#ef4444', fontWeight: 600 }}>{parseInt(row.sessions).toLocaleString()}</td>
+                          {comparisonMode && comparisonData && (
+                            <>
+                              <td style={{ padding: '12px', textAlign: 'right', color: '#64748b' }}>
+                                {compRow ? parseInt(compRow.sessions).toLocaleString() : '-'}
+                              </td>
+                              <td style={{ padding: '12px', textAlign: 'right', fontWeight: 600, color: change && parseFloat(change) > 0 ? '#10b981' : change && parseFloat(change) < 0 ? '#ef4444' : '#64748b' }}>
+                                {change ? `${parseFloat(change) > 0 ? '+' : ''}${change}%` : '-'}
+                              </td>
+                            </>
+                          )}
+                        </tr>
+                      );
+                    })}
+                  </tbody>
+                </table>
+              </div>
             </div>
           </div>
         );
