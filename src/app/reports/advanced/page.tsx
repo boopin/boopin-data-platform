@@ -53,6 +53,20 @@ export default function AdvancedReportsPage() {
   // Available event types for dropdown
   const [eventTypes, setEventTypes] = useState<string[]>([]);
 
+  // Check URL parameters on mount
+  useEffect(() => {
+    const params = new URLSearchParams(window.location.search);
+    const sourceParam = params.get('source');
+    const viewParam = params.get('view');
+
+    if (sourceParam && viewParam === 'entry_exit') {
+      // User clicked from dashboard - show entry/exit pages
+      setSelectedSource(sourceParam);
+      setReportType('entry_exit_by_source');
+      setFilters(prev => ({ ...prev, source: sourceParam }));
+    }
+  }, []);
+
   useEffect(() => {
     if (selectedSite) {
       // Fetch available event types

@@ -638,9 +638,12 @@ export default function Dashboard() {
 
       {/* Source/Medium Breakdown Table */}
       <div style={{ marginTop: '32px', background: '#ffffff', borderRadius: '12px', padding: '24px', border: '1px solid #e2e8f0', boxShadow: '0 1px 3px rgba(0, 0, 0, 0.05)' }}>
-        <h2 style={{ color: '#1e293b', fontSize: '18px', margin: '0 0 20px', display: 'flex', alignItems: 'center', gap: '8px', fontWeight: 700 }}>
+        <h2 style={{ color: '#1e293b', fontSize: '18px', margin: '0 0 8px', display: 'flex', alignItems: 'center', gap: '8px', fontWeight: 700 }}>
           <span>📈</span> Traffic Source / Medium Breakdown
         </h2>
+        <p style={{ margin: '0 0 20px', fontSize: '13px', color: '#64748b' }}>
+          💡 Click any source to view entry and exit pages for that traffic source
+        </p>
         <div style={{ overflowX: 'auto' }}>
           <table style={{ width: '100%', borderCollapse: 'collapse' }}>
             <thead>
@@ -662,7 +665,23 @@ export default function Dashboard() {
                     <tr key={i} style={{ borderBottom: '1px solid #f1f5f9', transition: 'background 0.2s' }}
                         onMouseEnter={e => (e.currentTarget.style.background = '#f8fafc')}
                         onMouseLeave={e => (e.currentTarget.style.background = 'transparent')}>
-                      <td style={{ padding: '14px 16px', color: '#1e293b', fontSize: '14px', fontWeight: 600 }}>{row.source}</td>
+                      <td style={{ padding: '14px 16px' }}>
+                        <a
+                          href={`/reports/advanced?source=${encodeURIComponent(row.source)}&view=entry_exit`}
+                          style={{
+                            color: '#2563eb',
+                            fontSize: '14px',
+                            fontWeight: 600,
+                            textDecoration: 'none',
+                            borderBottom: '1px solid transparent',
+                            transition: 'border-color 0.2s'
+                          }}
+                          onMouseEnter={e => e.currentTarget.style.borderBottomColor = '#2563eb'}
+                          onMouseLeave={e => e.currentTarget.style.borderBottomColor = 'transparent'}
+                        >
+                          {row.source} →
+                        </a>
+                      </td>
                       <td style={{ padding: '14px 16px', color: '#64748b', fontSize: '14px' }}>{row.medium}</td>
                       <td style={{ padding: '14px 16px', textAlign: 'right', color: '#1e293b', fontSize: '14px', fontWeight: 500 }}>{row.sessions.toLocaleString()}</td>
                       <td style={{ padding: '14px 16px', textAlign: 'right', color: '#1e293b', fontSize: '14px' }}>{row.unique_visitors.toLocaleString()}</td>
