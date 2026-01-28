@@ -716,28 +716,37 @@ async function getEntryExitBySourceReport(siteId: string, filters: ReportFilters
   }
 
   query += `
+    ),
+    entry_pages AS (
+      SELECT
+        'entry' as page_type,
+        page_url,
+        source,
+        COUNT(*) as sessions,
+        COUNT(DISTINCT session_id) as unique_sessions
+      FROM session_pages
+      WHERE entry_rank = 1
+      GROUP BY page_url, source
+      ORDER BY sessions DESC
+      LIMIT 100
+    ),
+    exit_pages AS (
+      SELECT
+        'exit' as page_type,
+        page_url,
+        source,
+        COUNT(*) as sessions,
+        COUNT(DISTINCT session_id) as unique_sessions
+      FROM session_pages
+      WHERE exit_rank = 1
+      GROUP BY page_url, source
+      ORDER BY sessions DESC
+      LIMIT 100
     )
-    SELECT
-      'entry' as page_type,
-      page_url,
-      source,
-      COUNT(*) as sessions,
-      COUNT(DISTINCT session_id) as unique_sessions
-    FROM session_pages
-    WHERE entry_rank = 1
-    GROUP BY page_url, source
+    SELECT * FROM entry_pages
     UNION ALL
-    SELECT
-      'exit' as page_type,
-      page_url,
-      source,
-      COUNT(*) as sessions,
-      COUNT(DISTINCT session_id) as unique_sessions
-    FROM session_pages
-    WHERE exit_rank = 1
-    GROUP BY page_url, source
+    SELECT * FROM exit_pages
     ORDER BY page_type, sessions DESC
-    LIMIT 200
   `;
 
   const results = await sqlClient(query, params);
