@@ -28,7 +28,7 @@ async function getTrafficSourcesReport(siteId: string, filters: ReportFilters) {
       COUNT(DISTINCT e.visitor_id) as unique_visitors,
       COUNT(DISTINCT e.session_id) as sessions,
       COUNT(*) as total_events,
-      COUNT(DISTINCT CASE WHEN e.event_type = 'pageview' THEN e.id END) as pageviews,
+      COUNT(DISTINCT CASE WHEN e.event_type IN ('pageview', 'page_view') THEN e.id END) as pageviews,
       COUNT(DISTINCT CASE WHEN e.event_type IN ('form_submit', 'purchase', 'sign_up', 'lead_form') THEN e.id END) as conversions,
       ROUND(
         COUNT(DISTINCT CASE WHEN e.event_type IN ('form_submit', 'purchase', 'sign_up', 'lead_form') THEN e.id END)::numeric /
@@ -164,7 +164,7 @@ async function getUserBehaviorReport(siteId: string, filters: ReportFilters) {
       ), 0) as avg_time_on_page
     FROM events
     WHERE site_id = $1
-      AND event_type = 'pageview'
+      AND event_type IN ('pageview', 'page_view')
       AND page_url IS NOT NULL
   `;
 
@@ -202,7 +202,7 @@ async function getUserBehaviorReport(siteId: string, filters: ReportFilters) {
         ROW_NUMBER() OVER (PARTITION BY session_id ORDER BY timestamp DESC) as exit_rank
       FROM events
       WHERE site_id = $1
-        AND event_type = 'pageview'
+        AND event_type IN ('pageview', 'page_view')
         AND page_url IS NOT NULL
   `;
 
@@ -408,7 +408,7 @@ async function getCustomReport(siteId: string, filters: ReportFilters) {
       COUNT(DISTINCT e.visitor_id) as total_visitors,
       COUNT(DISTINCT e.session_id) as total_sessions,
       COUNT(*) as total_events,
-      COUNT(DISTINCT CASE WHEN e.event_type = 'pageview' THEN e.id END) as total_pageviews,
+      COUNT(DISTINCT CASE WHEN e.event_type IN ('pageview', 'page_view') THEN e.id END) as total_pageviews,
       COUNT(DISTINCT CASE WHEN e.event_type IN ('form_submit', 'purchase', 'sign_up', 'lead_form') THEN e.id END) as total_conversions,
       COUNT(DISTINCT CASE WHEN e.event_type = 'form_start' THEN e.id END) as total_form_starts,
       COUNT(DISTINCT CASE WHEN e.event_type = 'form_submit' THEN e.id END) as total_form_submits,
@@ -476,9 +476,9 @@ async function getEntryExitBySourceReport(siteId: string, filters: ReportFilters
   const debugQuery = `
     SELECT
       COUNT(*) as total_events,
-      COUNT(DISTINCT CASE WHEN event_type = 'pageview' THEN id END) as pageview_events,
+      COUNT(DISTINCT CASE WHEN event_type IN ('pageview', 'page_view') THEN id END) as pageview_events,
       COUNT(DISTINCT CASE WHEN page_url IS NOT NULL THEN id END) as events_with_url,
-      COUNT(DISTINCT CASE WHEN event_type = 'pageview' AND page_url IS NOT NULL THEN id END) as pageview_with_url,
+      COUNT(DISTINCT CASE WHEN event_type IN ('pageview', 'page_view') AND page_url IS NOT NULL THEN id END) as pageview_with_url,
       COUNT(DISTINCT session_id) as total_sessions,
       ARRAY_AGG(DISTINCT event_type) as event_types,
       ARRAY_AGG(DISTINCT COALESCE(utm_source, 'direct')) as sources
@@ -500,7 +500,7 @@ async function getEntryExitBySourceReport(siteId: string, filters: ReportFilters
         ROW_NUMBER() OVER (PARTITION BY e.session_id ORDER BY e.timestamp DESC) as exit_rank
       FROM events e
       WHERE e.site_id = $1
-        AND e.event_type = 'pageview'
+        AND e.event_type IN ('pageview', 'page_view')
         AND e.page_url IS NOT NULL
   `;
 
