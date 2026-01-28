@@ -526,6 +526,113 @@ async function getCustomReport(siteId: string, filters: ReportFilters) {
 
 // Entry/Exit Pages by Source Report
 async function getEntryExitBySourceReport(siteId: string, filters: ReportFilters) {
+  // First, get comprehensive metrics for this source
+  const metricsQuery = `
+    SELECT
+      COUNT(DISTINCT e.visitor_id) as total_visitors,
+      COUNT(DISTINCT e.session_id) as total_sessions,
+      COUNT(DISTINCT CASE WHEN e.event_type IN ('pageview', 'page_view') THEN e.id END) as total_pageviews,
+      COUNT(DISTINCT CASE WHEN e.event_type IN ('form_submit', 'purchase', 'sign_up', 'lead_form') THEN e.id END) as total_conversions,
+      COUNT(DISTINCT CASE WHEN e.event_type = 'form_start' THEN e.id END) as form_starts,
+      COUNT(DISTINCT CASE WHEN e.event_type = 'form_submit' THEN e.id END) as form_submits,
+      ROUND(
+        COUNT(DISTINCT CASE WHEN e.event_type IN ('form_submit', 'purchase', 'sign_up', 'lead_form') THEN e.id END)::numeric /
+        NULLIF(COUNT(DISTINCT e.session_id), 0) * 100,
+        2
+      ) as conversion_rate,
+      ROUND(
+        COUNT(DISTINCT CASE WHEN e.event_type = 'form_submit' THEN e.id END)::numeric /
+        NULLIF(COUNT(DISTINCT CASE WHEN e.event_type = 'form_start' THEN e.id END), 0) * 100,
+        2
+      ) as form_completion_rate,
+      ROUND(
+        COUNT(DISTINCT CASE WHEN e.event_type IN ('pageview', 'page_view') THEN e.id END)::numeric /
+        NULLIF(COUNT(DISTINCT e.session_id), 0),
+        2
+      ) as avg_pages_per_session,
+      ROUND(AVG(session_duration.duration), 0) as avg_session_duration,
+      ROUND(
+        COUNT(DISTINCT CASE WHEN session_pageviews.pageviews = 1 THEN session_pageviews.session_id END)::numeric /
+        NULLIF(COUNT(DISTINCT e.session_id), 0) * 100,
+        2
+      ) as bounce_rate
+    FROM events e
+    LEFT JOIN (
+      SELECT
+        session_id,
+        EXTRACT(EPOCH FROM (MAX(timestamp) - MIN(timestamp))) as duration
+      FROM events
+      WHERE site_id = $1
+      GROUP BY session_id
+    ) session_duration ON session_duration.session_id = e.session_id
+    LEFT JOIN (
+      SELECT
+        session_id,
+        COUNT(*) as pageviews
+      FROM events
+      WHERE site_id = $1 AND event_type IN ('pageview', 'page_view')
+      GROUP BY session_id
+    ) session_pageviews ON session_pageviews.session_id = e.session_id
+    WHERE e.site_id = $1
+  `;
+
+  const metricsParams: any[] = [siteId];
+  let metricsIndex = 2;
+  let metricsConditions = '';
+
+  if (filters.date_from) {
+    metricsConditions += ` AND e.timestamp >= $${metricsIndex}::timestamp`;
+    metricsParams.push(filters.date_from);
+    metricsIndex++;
+  }
+  if (filters.date_to) {
+    metricsConditions += ` AND e.timestamp <= $${metricsIndex}::timestamp`;
+    metricsParams.push(filters.date_to);
+    metricsIndex++;
+  }
+  if (filters.source) {
+    metricsConditions += ` AND (
+      CASE
+        WHEN e.utm_source IS NOT NULL THEN e.utm_source
+        WHEN e.page_url LIKE '%gclid=%' OR e.page_url LIKE '%gad_source=%' THEN 'google'
+        WHEN e.page_url LIKE '%fbclid=%' THEN 'facebook'
+        WHEN e.page_url LIKE '%msclkid=%' THEN 'bing'
+        WHEN e.page_url LIKE '%li_fat_id=%' THEN 'linkedin'
+        WHEN e.page_url LIKE '%twclid=%' THEN 'twitter'
+        WHEN e.page_url LIKE '%ttclid=%' THEN 'tiktok'
+        ELSE 'direct'
+      END
+    ) = $${metricsIndex}`;
+    metricsParams.push(filters.source);
+    metricsIndex++;
+  }
+
+  const metricsResult = await sqlClient(metricsQuery + metricsConditions, metricsParams);
+  const metrics = metricsResult[0] || {};
+
+  // Get top converting pages for this source
+  const topPagesQuery = `
+    SELECT
+      e.page_url,
+      COUNT(DISTINCT CASE WHEN e.event_type IN ('pageview', 'page_view') THEN e.visitor_id END) as visitors,
+      COUNT(DISTINCT CASE WHEN e.event_type IN ('form_submit', 'purchase', 'sign_up', 'lead_form') THEN e.visitor_id END) as conversions,
+      ROUND(
+        COUNT(DISTINCT CASE WHEN e.event_type IN ('form_submit', 'purchase', 'sign_up', 'lead_form') THEN e.visitor_id END)::numeric /
+        NULLIF(COUNT(DISTINCT CASE WHEN e.event_type IN ('pageview', 'page_view') THEN e.visitor_id END), 0) * 100,
+        2
+      ) as conversion_rate
+    FROM events e
+    WHERE e.site_id = $1
+      AND e.page_url IS NOT NULL
+      ${metricsConditions}
+    GROUP BY e.page_url
+    HAVING COUNT(DISTINCT CASE WHEN e.event_type IN ('form_submit', 'purchase', 'sign_up', 'lead_form') THEN e.visitor_id END) > 0
+    ORDER BY conversions DESC
+    LIMIT 10
+  `;
+
+  const topPages = await sqlClient(topPagesQuery, metricsParams);
+
   // First, get debug info about what events exist
   const debugQuery = `
     SELECT
@@ -641,6 +748,8 @@ async function getEntryExitBySourceReport(siteId: string, filters: ReportFilters
   const exitPages = results.filter((r: any) => r.page_type === 'exit');
 
   return {
+    metrics,
+    topConvertingPages: topPages,
     entryPages,
     exitPages,
     debug: debugResults[0] // Include debug info in response

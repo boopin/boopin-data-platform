@@ -486,6 +486,8 @@ export default function AdvancedReportsPage() {
         const compEntryPages = comparisonData?.data?.entryPages || [];
         const compExitPages = comparisonData?.data?.exitPages || [];
         const debugInfo = data?.debug;
+        const metrics = data?.metrics || {};
+        const topConvertingPages = data?.topConvertingPages || [];
 
         return (
           <div>
@@ -620,6 +622,120 @@ export default function AdvancedReportsPage() {
                     >
                       Compare
                     </button>
+                  </div>
+                </div>
+              )}
+            </div>
+
+            {/* Source Metrics Overview */}
+            <div style={{ background: '#ffffff', borderRadius: '12px', padding: '24px', border: '1px solid #e2e8f0', marginBottom: '24px' }}>
+              <h3 style={{ margin: '0 0 20px', fontSize: '18px', fontWeight: 600, color: '#1e293b' }}>
+                📊 Source Performance Metrics
+              </h3>
+              <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(200px, 1fr))', gap: '16px', marginBottom: '24px' }}>
+                <div style={{ padding: '16px', background: '#f8fafc', borderRadius: '8px', border: '1px solid #e2e8f0' }}>
+                  <p style={{ color: '#64748b', fontSize: '12px', margin: 0, fontWeight: 500 }}>Total Visitors</p>
+                  <p style={{ color: '#1e293b', fontSize: '28px', fontWeight: 700, margin: '8px 0 0' }}>
+                    {parseInt(metrics.total_visitors || 0).toLocaleString()}
+                  </p>
+                </div>
+                <div style={{ padding: '16px', background: '#f8fafc', borderRadius: '8px', border: '1px solid #e2e8f0' }}>
+                  <p style={{ color: '#64748b', fontSize: '12px', margin: 0, fontWeight: 500 }}>Total Sessions</p>
+                  <p style={{ color: '#1e293b', fontSize: '28px', fontWeight: 700, margin: '8px 0 0' }}>
+                    {parseInt(metrics.total_sessions || 0).toLocaleString()}
+                  </p>
+                </div>
+                <div style={{ padding: '16px', background: '#f8fafc', borderRadius: '8px', border: '1px solid #e2e8f0' }}>
+                  <p style={{ color: '#64748b', fontSize: '12px', margin: 0, fontWeight: 500 }}>Total Pageviews</p>
+                  <p style={{ color: '#1e293b', fontSize: '28px', fontWeight: 700, margin: '8px 0 0' }}>
+                    {parseInt(metrics.total_pageviews || 0).toLocaleString()}
+                  </p>
+                </div>
+                <div style={{ padding: '16px', background: '#f8fafc', borderRadius: '8px', border: '1px solid #e2e8f0' }}>
+                  <p style={{ color: '#64748b', fontSize: '12px', margin: 0, fontWeight: 500 }}>Conversions</p>
+                  <p style={{ color: '#10b981', fontSize: '28px', fontWeight: 700, margin: '8px 0 0' }}>
+                    {parseInt(metrics.total_conversions || 0).toLocaleString()}
+                  </p>
+                </div>
+                <div style={{ padding: '16px', background: '#f8fafc', borderRadius: '8px', border: '1px solid #e2e8f0' }}>
+                  <p style={{ color: '#64748b', fontSize: '12px', margin: 0, fontWeight: 500 }}>Conversion Rate</p>
+                  <p style={{ color: '#10b981', fontSize: '28px', fontWeight: 700, margin: '8px 0 0' }}>
+                    {parseFloat(metrics.conversion_rate || 0).toFixed(2)}%
+                  </p>
+                </div>
+                <div style={{ padding: '16px', background: '#f8fafc', borderRadius: '8px', border: '1px solid #e2e8f0' }}>
+                  <p style={{ color: '#64748b', fontSize: '12px', margin: 0, fontWeight: 500 }}>Avg. Pages/Session</p>
+                  <p style={{ color: '#1e293b', fontSize: '28px', fontWeight: 700, margin: '8px 0 0' }}>
+                    {parseFloat(metrics.avg_pages_per_session || 0).toFixed(1)}
+                  </p>
+                </div>
+                <div style={{ padding: '16px', background: '#f8fafc', borderRadius: '8px', border: '1px solid #e2e8f0' }}>
+                  <p style={{ color: '#64748b', fontSize: '12px', margin: 0, fontWeight: 500 }}>Avg. Session Duration</p>
+                  <p style={{ color: '#1e293b', fontSize: '28px', fontWeight: 700, margin: '8px 0 0' }}>
+                    {parseInt(metrics.avg_session_duration || 0)}s
+                  </p>
+                </div>
+                <div style={{ padding: '16px', background: '#f8fafc', borderRadius: '8px', border: '1px solid #e2e8f0' }}>
+                  <p style={{ color: '#64748b', fontSize: '12px', margin: 0, fontWeight: 500 }}>Bounce Rate</p>
+                  <p style={{ color: '#ef4444', fontSize: '28px', fontWeight: 700, margin: '8px 0 0' }}>
+                    {parseFloat(metrics.bounce_rate || 0).toFixed(1)}%
+                  </p>
+                </div>
+                <div style={{ padding: '16px', background: '#f8fafc', borderRadius: '8px', border: '1px solid #e2e8f0' }}>
+                  <p style={{ color: '#64748b', fontSize: '12px', margin: 0, fontWeight: 500 }}>Form Starts</p>
+                  <p style={{ color: '#2563eb', fontSize: '28px', fontWeight: 700, margin: '8px 0 0' }}>
+                    {parseInt(metrics.form_starts || 0).toLocaleString()}
+                  </p>
+                </div>
+                <div style={{ padding: '16px', background: '#f8fafc', borderRadius: '8px', border: '1px solid #e2e8f0' }}>
+                  <p style={{ color: '#64748b', fontSize: '12px', margin: 0, fontWeight: 500 }}>Form Submits</p>
+                  <p style={{ color: '#10b981', fontSize: '28px', fontWeight: 700, margin: '8px 0 0' }}>
+                    {parseInt(metrics.form_submits || 0).toLocaleString()}
+                  </p>
+                </div>
+                <div style={{ padding: '16px', background: '#f8fafc', borderRadius: '8px', border: '1px solid #e2e8f0' }}>
+                  <p style={{ color: '#64748b', fontSize: '12px', margin: 0, fontWeight: 500 }}>Form Completion Rate</p>
+                  <p style={{ color: parseFloat(metrics.form_completion_rate || 0) > 50 ? '#10b981' : '#f59e0b', fontSize: '28px', fontWeight: 700, margin: '8px 0 0' }}>
+                    {parseFloat(metrics.form_completion_rate || 0).toFixed(1)}%
+                  </p>
+                </div>
+              </div>
+
+              {/* Top Converting Pages */}
+              {topConvertingPages.length > 0 && (
+                <div style={{ marginTop: '24px' }}>
+                  <h4 style={{ margin: '0 0 16px', fontSize: '16px', fontWeight: 600, color: '#1e293b' }}>
+                    🎯 Top Converting Pages
+                  </h4>
+                  <div style={{ overflowX: 'auto' }}>
+                    <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: '13px' }}>
+                      <thead>
+                        <tr style={{ background: '#f8fafc', borderBottom: '2px solid #e2e8f0' }}>
+                          <th style={{ padding: '12px', textAlign: 'left', fontWeight: 600, color: '#475569' }}>Page URL</th>
+                          <th style={{ padding: '12px', textAlign: 'right', fontWeight: 600, color: '#475569' }}>Visitors</th>
+                          <th style={{ padding: '12px', textAlign: 'right', fontWeight: 600, color: '#475569' }}>Conversions</th>
+                          <th style={{ padding: '12px', textAlign: 'right', fontWeight: 600, color: '#475569' }}>Conv. Rate</th>
+                        </tr>
+                      </thead>
+                      <tbody>
+                        {topConvertingPages.map((page: any, i: number) => (
+                          <tr key={i} style={{ borderBottom: '1px solid #e2e8f0' }}>
+                            <td style={{ padding: '12px', color: '#1e293b', fontWeight: 500, maxWidth: '400px', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
+                              {page.page_url}
+                            </td>
+                            <td style={{ padding: '12px', textAlign: 'right', color: '#64748b' }}>
+                              {parseInt(page.visitors).toLocaleString()}
+                            </td>
+                            <td style={{ padding: '12px', textAlign: 'right', color: '#10b981', fontWeight: 600 }}>
+                              {parseInt(page.conversions).toLocaleString()}
+                            </td>
+                            <td style={{ padding: '12px', textAlign: 'right', color: parseFloat(page.conversion_rate) > 10 ? '#10b981' : '#64748b', fontWeight: 600 }}>
+                              {parseFloat(page.conversion_rate).toFixed(1)}%
+                            </td>
+                          </tr>
+                        ))}
+                      </tbody>
+                    </table>
                   </div>
                 </div>
               )}
