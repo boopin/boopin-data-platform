@@ -22,8 +22,26 @@ interface ReportFilters {
 async function getTrafficSourcesReport(siteId: string, filters: ReportFilters) {
   let query = `
     SELECT
-      COALESCE(e.utm_source, 'direct') as source,
-      COALESCE(e.utm_medium, 'none') as medium,
+      CASE
+        WHEN e.utm_source IS NOT NULL THEN e.utm_source
+        WHEN e.page_url LIKE '%gclid=%' OR e.page_url LIKE '%gad_source=%' THEN 'google'
+        WHEN e.page_url LIKE '%fbclid=%' THEN 'facebook'
+        WHEN e.page_url LIKE '%msclkid=%' THEN 'bing'
+        WHEN e.page_url LIKE '%li_fat_id=%' THEN 'linkedin'
+        WHEN e.page_url LIKE '%twclid=%' THEN 'twitter'
+        WHEN e.page_url LIKE '%ttclid=%' THEN 'tiktok'
+        ELSE 'direct'
+      END as source,
+      CASE
+        WHEN e.utm_medium IS NOT NULL THEN e.utm_medium
+        WHEN e.page_url LIKE '%gclid=%' OR e.page_url LIKE '%gad_source=%' THEN 'cpc'
+        WHEN e.page_url LIKE '%fbclid=%' THEN 'cpc'
+        WHEN e.page_url LIKE '%msclkid=%' THEN 'cpc'
+        WHEN e.page_url LIKE '%li_fat_id=%' THEN 'cpc'
+        WHEN e.page_url LIKE '%twclid=%' THEN 'cpc'
+        WHEN e.page_url LIKE '%ttclid=%' THEN 'cpc'
+        ELSE 'none'
+      END as medium,
       COALESCE(e.utm_campaign, '(not set)') as campaign,
       COUNT(DISTINCT e.visitor_id) as unique_visitors,
       COUNT(DISTINCT e.session_id) as sessions,
@@ -83,7 +101,7 @@ async function getTrafficSourcesReport(siteId: string, filters: ReportFilters) {
   }
 
   query += `
-    GROUP BY e.utm_source, e.utm_medium, e.utm_campaign
+    GROUP BY source, medium, campaign
     ORDER BY unique_visitors DESC
     LIMIT 100
   `;
@@ -97,8 +115,26 @@ async function getConversionsReport(siteId: string, filters: ReportFilters) {
   let query = `
     SELECT
       e.event_type,
-      COALESCE(e.utm_source, 'direct') as source,
-      COALESCE(e.utm_medium, 'none') as medium,
+      CASE
+        WHEN e.utm_source IS NOT NULL THEN e.utm_source
+        WHEN e.page_url LIKE '%gclid=%' OR e.page_url LIKE '%gad_source=%' THEN 'google'
+        WHEN e.page_url LIKE '%fbclid=%' THEN 'facebook'
+        WHEN e.page_url LIKE '%msclkid=%' THEN 'bing'
+        WHEN e.page_url LIKE '%li_fat_id=%' THEN 'linkedin'
+        WHEN e.page_url LIKE '%twclid=%' THEN 'twitter'
+        WHEN e.page_url LIKE '%ttclid=%' THEN 'tiktok'
+        ELSE 'direct'
+      END as source,
+      CASE
+        WHEN e.utm_medium IS NOT NULL THEN e.utm_medium
+        WHEN e.page_url LIKE '%gclid=%' OR e.page_url LIKE '%gad_source=%' THEN 'cpc'
+        WHEN e.page_url LIKE '%fbclid=%' THEN 'cpc'
+        WHEN e.page_url LIKE '%msclkid=%' THEN 'cpc'
+        WHEN e.page_url LIKE '%li_fat_id=%' THEN 'linkedin'
+        WHEN e.page_url LIKE '%twclid=%' THEN 'cpc'
+        WHEN e.page_url LIKE '%ttclid=%' THEN 'cpc'
+        ELSE 'none'
+      END as medium,
       COUNT(*) as conversion_count,
       COUNT(DISTINCT e.visitor_id) as unique_converters,
       COUNT(DISTINCT e.session_id) as converting_sessions,
@@ -138,7 +174,7 @@ async function getConversionsReport(siteId: string, filters: ReportFilters) {
   }
 
   query += `
-    GROUP BY e.event_type, e.utm_source, e.utm_medium, DATE(e.timestamp)
+    GROUP BY e.event_type, source, medium, DATE(e.timestamp)
     ORDER BY conversion_date DESC, conversion_count DESC
     LIMIT 500
   `;
@@ -360,8 +396,26 @@ async function getFormsReport(siteId: string, filters: ReportFilters) {
         NULLIF(COUNT(DISTINCT CASE WHEN e.event_type = 'form_start' THEN e.visitor_id END), 0) * 100,
         2
       ) as completion_rate,
-      COALESCE(e.utm_source, 'direct') as source,
-      COALESCE(e.utm_medium, 'none') as medium
+      CASE
+        WHEN e.utm_source IS NOT NULL THEN e.utm_source
+        WHEN e.page_url LIKE '%gclid=%' OR e.page_url LIKE '%gad_source=%' THEN 'google'
+        WHEN e.page_url LIKE '%fbclid=%' THEN 'facebook'
+        WHEN e.page_url LIKE '%msclkid=%' THEN 'bing'
+        WHEN e.page_url LIKE '%li_fat_id=%' THEN 'linkedin'
+        WHEN e.page_url LIKE '%twclid=%' THEN 'twitter'
+        WHEN e.page_url LIKE '%ttclid=%' THEN 'tiktok'
+        ELSE 'direct'
+      END as source,
+      CASE
+        WHEN e.utm_medium IS NOT NULL THEN e.utm_medium
+        WHEN e.page_url LIKE '%gclid=%' OR e.page_url LIKE '%gad_source=%' THEN 'cpc'
+        WHEN e.page_url LIKE '%fbclid=%' THEN 'cpc'
+        WHEN e.page_url LIKE '%msclkid=%' THEN 'cpc'
+        WHEN e.page_url LIKE '%li_fat_id=%' THEN 'linkedin'
+        WHEN e.page_url LIKE '%twclid=%' THEN 'cpc'
+        WHEN e.page_url LIKE '%ttclid=%' THEN 'cpc'
+        ELSE 'none'
+      END as medium
     FROM events e
     WHERE e.site_id = $1
       AND e.event_type IN ('form_start', 'form_submit')
@@ -392,7 +446,7 @@ async function getFormsReport(siteId: string, filters: ReportFilters) {
   }
 
   query += `
-    GROUP BY e.page_url, e.utm_source, e.utm_medium
+    GROUP BY e.page_url, source, medium
     ORDER BY form_starts DESC
     LIMIT 100
   `;
@@ -481,7 +535,18 @@ async function getEntryExitBySourceReport(siteId: string, filters: ReportFilters
       COUNT(DISTINCT CASE WHEN event_type IN ('pageview', 'page_view') AND page_url IS NOT NULL THEN id END) as pageview_with_url,
       COUNT(DISTINCT session_id) as total_sessions,
       ARRAY_AGG(DISTINCT event_type) as event_types,
-      ARRAY_AGG(DISTINCT COALESCE(utm_source, 'direct')) as sources
+      ARRAY_AGG(DISTINCT
+        CASE
+          WHEN utm_source IS NOT NULL THEN utm_source
+          WHEN page_url LIKE '%gclid=%' OR page_url LIKE '%gad_source=%' THEN 'google'
+          WHEN page_url LIKE '%fbclid=%' THEN 'facebook'
+          WHEN page_url LIKE '%msclkid=%' THEN 'bing'
+          WHEN page_url LIKE '%li_fat_id=%' THEN 'linkedin'
+          WHEN page_url LIKE '%twclid=%' THEN 'twitter'
+          WHEN page_url LIKE '%ttclid=%' THEN 'tiktok'
+          ELSE 'direct'
+        END
+      ) as sources
     FROM events
     WHERE site_id = $1
   `;
@@ -495,7 +560,16 @@ async function getEntryExitBySourceReport(siteId: string, filters: ReportFilters
         e.session_id,
         e.page_url,
         e.timestamp,
-        COALESCE(e.utm_source, 'direct') as source,
+        CASE
+          WHEN e.utm_source IS NOT NULL THEN e.utm_source
+          WHEN e.page_url LIKE '%gclid=%' OR e.page_url LIKE '%gad_source=%' THEN 'google'
+          WHEN e.page_url LIKE '%fbclid=%' THEN 'facebook'
+          WHEN e.page_url LIKE '%msclkid=%' THEN 'bing'
+          WHEN e.page_url LIKE '%li_fat_id=%' THEN 'linkedin'
+          WHEN e.page_url LIKE '%twclid=%' THEN 'twitter'
+          WHEN e.page_url LIKE '%ttclid=%' THEN 'tiktok'
+          ELSE 'direct'
+        END as source,
         ROW_NUMBER() OVER (PARTITION BY e.session_id ORDER BY e.timestamp ASC) as entry_rank,
         ROW_NUMBER() OVER (PARTITION BY e.session_id ORDER BY e.timestamp DESC) as exit_rank
       FROM events e
@@ -518,7 +592,18 @@ async function getEntryExitBySourceReport(siteId: string, filters: ReportFilters
     paramIndex++;
   }
   if (filters.source) {
-    query += ` AND COALESCE(e.utm_source, 'direct') = $${paramIndex}`;
+    query += ` AND (
+      CASE
+        WHEN e.utm_source IS NOT NULL THEN e.utm_source
+        WHEN e.page_url LIKE '%gclid=%' OR e.page_url LIKE '%gad_source=%' THEN 'google'
+        WHEN e.page_url LIKE '%fbclid=%' THEN 'facebook'
+        WHEN e.page_url LIKE '%msclkid=%' THEN 'bing'
+        WHEN e.page_url LIKE '%li_fat_id=%' THEN 'linkedin'
+        WHEN e.page_url LIKE '%twclid=%' THEN 'twitter'
+        WHEN e.page_url LIKE '%ttclid=%' THEN 'tiktok'
+        ELSE 'direct'
+      END
+    ) = $${paramIndex}`;
     params.push(filters.source);
     paramIndex++;
   }
